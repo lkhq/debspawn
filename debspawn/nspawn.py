@@ -19,12 +19,22 @@
 
 import os
 import subprocess
+import platform
+
+
+def generate_nspawn_machine_name(osroot):
+    from random import choices
+    from string import ascii_lowercase, digits
+
+    nid = ''.join(choices(ascii_lowercase + digits, k=4))
+    return '{}-{}-{}'.format(platform.node(), osroot.get_name(), nid)
 
 
 def nspawn_run_persist(gconf, osroot, commands):
     osroot_name = osroot.get_name()
     cmd = ['systemd-nspawn',
            '--chdir=/tmp',
+           '-M', generate_nspawn_machine_name(osroot),
            '-aD', os.path.join(gconf.osroots_dir, osroot_name)]
     cmd.extend(commands)
 
@@ -38,6 +48,7 @@ def nspawn_run(gconf, osroot, commands):
     osroot_name = osroot.get_name()
     cmd = ['systemd-nspawn',
            '--chdir=/srv',
+           '-M', generate_nspawn_machine_name(osroot),
            '-axD', os.path.join(gconf.osroots_dir, osroot_name)]
     cmd.extend(commands)
 
