@@ -190,6 +190,13 @@ def build_package():
     return True
 
 
+def setup_environment():
+    os.environ['LANG'] = 'C.UTF-8'
+    os.environ['HOME'] = '/nonexistent'
+
+    del os.environ['LOGNAME']
+
+
 def main():
     if not os.environ.get('container'):
         print('This helper script must be run in a systemd-nspawn container.')
