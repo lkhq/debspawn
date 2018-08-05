@@ -130,7 +130,8 @@ def drop_privileges():
     uid = pwn.pw_uid
     os.setuid(uid)
 
-    os.system('whoami')
+    os.environ['USER'] = BUILD_USER
+    os.environ['HOME'] = '/nonexistent'  # ensure HOME is invalid
 
 
 def update_container():
@@ -170,9 +171,6 @@ def build_package():
 
     os.chdir('/srv/build')
 
-    #for f in glob('/srv/build/*'):
-    #    os.system('rm -r {}'.format(f))
-
     run_command('chown -R {} /srv/build'.format(BUILD_USER))
     #run_command('sudo -u {} apt-get source {}'.format(BUILD_USER, sys.argv[1]))
     for f in glob('./*'):
@@ -186,8 +184,8 @@ def build_package():
 
     print_section('Build')
 
-    #drop_privileges()
-    run_command('sudo -u {} dpkg-buildpackage'.format(BUILD_USER))
+    drop_privileges()
+    run_command('dpkg-buildpackage')
 
     return True
 
@@ -202,6 +200,8 @@ def main():
                         help='Initialize the container.')
     parser.add_argument('--build', dest='build', default=None,
                         help='Build a Debian package.')
+
+    setup_environment()
 
     options = parser.parse_args(sys.argv[1:])
     if options.update:
