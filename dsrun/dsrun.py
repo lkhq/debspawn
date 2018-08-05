@@ -21,6 +21,8 @@
 import os
 import sys
 import pwd
+import subprocess
+from contextlib import contextmanager
 from argparse import ArgumentParser
 from glob import glob
 
@@ -28,11 +30,99 @@ from glob import glob
 BUILD_USER = 'builder'
 
 
-def call(cmd):
-    print(' ! {}'.format(cmd))
-    r = os.system(cmd)
-    if r != 0:
+def run_command_capture(command, input=None):
+    if not isinstance(command, list):
+        command = shlex.split(command)
+
+    if not input:
+        input = None
+    elif isinstance(input, str):
+        input = input.encode('utf-8')
+    elif not isinstance(input, bytes):
+        input = input.read()
+
+    try:
+        pipe = subprocess.Popen(command,
+                                shell=False,
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                )
+    except OSError:
+        return (None, None, -1)
+
+    (output, stderr) = pipe.communicate(input=input)
+    (output, stderr) = (c.decode('utf-8', errors='ignore') for c in (output, stderr))
+    return (output, stderr, pipe.returncode)
+
+
+def safe_run_capture(cmd, input=None, expected=0):
+    if not isinstance(expected, tuple):
+        expected = (expected, )
+
+    out, err, ret = run_command_capture(cmd, input=input)
+
+    if ret not in expected:
+        raise SubprocessError(out, err, ret, cmd)
+
+    return out, err, ret
+
+
+def run_command(cmd):
+    if isinstance(cmd, str):
+        cmd = cmd.split(' ')
+
+    #print(' ! {}'.format(cmd))
+    p = subprocess.run(cmd)
+    if p.returncode != 0:
+        print('Command `{}` failed.'.format(' '.join(cmd)))
         sys.exit(r)
+
+
+def detect_dpkg_architecture():
+    out, _, ret = safe_run_capture(['dpkg-architecture', '-qDEB_HOST_ARCH'])
+    return out.strip()
+
+
+def print_textbox(title, tl, hline, tr, vline, bl, br):
+    def write_utf8(s):
+        sys.stdout.buffer.write(s.encode('utf-8'))
+
+    l = len(title)
+    write_utf8('\n{}'.format(tl))
+    write_utf8(hline * (10 + l))
+    write_utf8('{}\n'.format(tr))
+
+    write_utf8('{}  {}'.format(vline, title))
+    write_utf8(' ' * 8)
+    write_utf8('{}\n'.format(vline))
+
+    write_utf8(bl)
+    write_utf8(hline * (10 + l))
+    write_utf8('{}\n'.format(br))
+
+    sys.stdout.flush()
+
+
+def print_header(title):
+    print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
+
+
+def print_section(title):
+    print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
+
+
+@contextmanager
+def eatmydata():
+    try:
+        # FIXME: We just oferride the env vars here, maybe just appending
+        # to them is much better
+        os.environ['LD_LIBRARY_PATH'] = '/usr/lib/libeatmydata'
+        os.environ['LD_PRELOAD'] = 'libeatmydata.so'
+        yield
+    finally:
+        del os.environ['LD_LIBRARY_PATH']
+        del os.environ['LD_PRELOAD']
 
 
 def drop_privileges():
@@ -44,18 +134,60 @@ def drop_privileges():
 
 
 def update_container():
-    call('apt-get update -q')
-    call('apt-get full-upgrade -q --yes')
-    call('apt-get install build-essential --no-install-recommends -q --yes')
+    print_header('Updating container contents')
+
+    run_command('apt-get update -q')
+    run_command('apt-get full-upgrade -q --yes')
+    run_command(['apt-get', 'install', '--no-install-recommends', '-q', '--yes',
+                     'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
 
     try:
         pwd.getpwnam(BUILD_USER)
     except KeyError:
         print('No "{}" user, creating it.'.format(BUILD_USER))
-        call('adduser --system --no-create-home --disabled-password {}'.format(BUILD_USER))
+        run_command('adduser --system --no-create-home --disabled-password {}'.format(BUILD_USER))
 
-    call('mkdir -p /srv/build')
-    call('chown {} /srv/build'.format(BUILD_USER))
+    run_command('mkdir -p /srv/build')
+    run_command('chown {} /srv/build'.format(BUILD_USER))
+
+    return True
+
+
+def build_package():
+    print_header('Package build')
+    print('Package: {}'.format('?'))
+    print('Version: {}'.format('?'))
+    print('Distribution: {}'.format('?'))
+    print('Architecture: {}'.format(detect_dpkg_architecture()))
+
+    print_section('Preparing container for build')
+
+    with eatmydata():
+        run_command('apt-get update -q')
+        run_command('apt-get full-upgrade -q --yes')
+        run_command(['apt-get', 'install', '--no-install-recommends', '-q', '--yes',
+                     'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
+
+    os.chdir('/srv/build')
+
+    #for f in glob('/srv/build/*'):
+    #    os.system('rm -r {}'.format(f))
+
+    run_command('chown -R {} /srv/build'.format(BUILD_USER))
+    #run_command('sudo -u {} apt-get source {}'.format(BUILD_USER, sys.argv[1]))
+    for f in glob('./*'):
+        if os.path.isdir(f):
+            os.chdir(f)
+            break
+
+    print_section('Installing package build-dependencies')
+    with eatmydata():
+        run_command('apt-get build-dep -q --yes ./')
+
+    print_section('Build')
+
+    #drop_privileges()
+    run_command('sudo -u {} dpkg-buildpackage'.format(BUILD_USER))
 
     return True
 
@@ -77,26 +209,9 @@ def main():
         if not r:
             return 2
     elif options.build:
-        call('apt update')
-        call('apt full-upgrade -q --yes')
-
-        call('apt install --no-install-recommends dpkg-dev fakeroot -q --yes')
-        os.chdir('/srv/build')
-
-        #for f in glob('/srv/build/*'):
-        #    os.system('rm -r {}'.format(f))
-
-        call('chown -R {} /srv/build'.format(BUILD_USER))
-        #call('sudo -u {} apt-get source {}'.format(BUILD_USER, sys.argv[1]))
-        for f in glob('./*'):
-            if os.path.isdir(f):
-                os.chdir(f)
-                break
-
-        call('apt-get build-dep -q --yes ./')
-
-        #drop_privileges()
-        call('sudo -u {} dpkg-buildpackage'.format(BUILD_USER))
+        r = build_package()
+        if not r:
+            return 2
 
     return 0
 
