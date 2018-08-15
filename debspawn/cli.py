@@ -19,7 +19,7 @@ import os
 import sys
 from argparse import ArgumentParser
 from .config import GlobalConfig
-from .osroot import OSRoot
+from .osbase import OSBase
 
 
 def _get_config(mainfile, conf_file=None):
@@ -48,8 +48,6 @@ def run(mainfile, args):
 
 
     if cmdname == 'new':
-        from .bootstrap import bootstrap_new
-
         parser.add_argument('--variant', action='store', dest='variant', default=None,
                         help='Set the bootstrap script variant to use for generating the root fs.')
         parser.add_argument('--mirror', action='store', dest='mirror', default=None,
@@ -64,14 +62,11 @@ def run(mainfile, args):
             print('Need at least a suite name to bootstrap!')
             sys.exit(1)
         gconf = _get_config(mainfile, options.config)
-        r = bootstrap_new(gconf, \
-                            OSRoot(options.suite, options.arch, options.variant), \
-                            options.mirror)
+        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+        r = osbase.create(options.mirror)
         if not r:
             sys.exit(2)
     elif cmdname == 'update':
-        from .update import update_osroot
-
         parser.add_argument('--variant', action='store', dest='variant', default=None,
                         help='Set the bootstrap script variant to use for generating the root fs.')
         parser.add_argument('suite', action='store', nargs='?', default=None,
@@ -84,7 +79,8 @@ def run(mainfile, args):
             print('Need at least a suite name for update!')
             sys.exit(1)
         gconf = _get_config(mainfile, options.config)
-        r = update_osroot(gconf, OSRoot(options.suite, options.arch, options.variant))
+        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+        r = osbase.update()
         if not r:
             sys.exit(2)
     elif cmdname == 'build':

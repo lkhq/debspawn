@@ -19,23 +19,13 @@
 
 import os
 import subprocess
-import platform
 
 
-def generate_nspawn_machine_name(osroot):
-    from random import choices
-    from string import ascii_lowercase, digits
-
-    nid = ''.join(choices(ascii_lowercase + digits, k=4))
-    return '{}-{}-{}'.format(platform.node(), osroot.get_name(), nid)
-
-
-def nspawn_run_persist(gconf, osroot, commands):
-    osroot_name = osroot.get_name()
+def nspawn_run_persist(base_dir, machine_name, commands):
     cmd = ['systemd-nspawn',
            '--chdir=/tmp',
-           '-M', generate_nspawn_machine_name(osroot),
-           '-aD', os.path.join(gconf.osroots_dir, osroot_name)]
+           '-M', machine_name,
+           '-aqD', base_dir]
     cmd.extend(commands)
 
     proc = subprocess.run(cmd)
@@ -44,12 +34,11 @@ def nspawn_run_persist(gconf, osroot, commands):
     return True
 
 
-def nspawn_run(gconf, osroot, commands):
-    osroot_name = osroot.get_name()
+def nspawn_run(base_dir, machine_name, commands):
     cmd = ['systemd-nspawn',
            '--chdir=/srv',
-           '-M', generate_nspawn_machine_name(osroot),
-           '-axD', os.path.join(gconf.osroots_dir, osroot_name)]
+           '-M', machine_name,
+           '-aqxD', base_dir]
     cmd.extend(commands)
 
     proc = subprocess.run(cmd)
@@ -58,13 +47,13 @@ def nspawn_run(gconf, osroot, commands):
     return True
 
 
-def nspawn_run_helper(gconf, osroot, commands):
+def nspawn_run_helper(base_dir, machine_name, commands):
     cmd = ['/usr/lib/debspawn/dsrun.py']
     cmd.extend(commands)
-    return nspawn_run(gconf, osroot, cmd)
+    return nspawn_run(base_dir, machine_name, cmd)
 
 
-def nspawn_run_helper_persist(gconf, osroot, commands):
+def nspawn_run_helper_persist(base_dir, machine_name, commands):
     cmd = ['/usr/lib/debspawn/dsrun.py']
     cmd.extend(commands)
-    return nspawn_run_persist(gconf, osroot, cmd)
+    return nspawn_run_persist(base_dir, machine_name, cmd)

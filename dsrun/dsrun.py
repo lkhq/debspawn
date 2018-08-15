@@ -135,8 +135,6 @@ def drop_privileges():
 
 
 def update_container():
-    print_header('Updating container contents')
-
     run_command('apt-get update -q')
     run_command('apt-get full-upgrade -q --yes')
     run_command(['apt-get', 'install', '--no-install-recommends', '-q', '--yes',
