@@ -76,7 +76,7 @@ def run_command(cmd):
     p = subprocess.run(cmd)
     if p.returncode != 0:
         print('Command `{}` failed.'.format(' '.join(cmd)))
-        sys.exit(r)
+        sys.exit(p.returncode)
 
 
 def detect_dpkg_architecture():
@@ -135,10 +135,13 @@ def drop_privileges():
 
 
 def update_container():
-    run_command('apt-get update -q')
-    run_command('apt-get full-upgrade -q --yes')
-    run_command(['apt-get', 'install', '--no-install-recommends', '-q', '--yes',
-                     'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
+    with eatmydata():
+        run_command('apt-get update -q')
+        run_command('apt-get full-upgrade -q --yes')
+        run_command(['apt-get', 'install', '--no-install-recommends', '-q', '--yes',
+                         'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
+        run_command('apt-get --purge autoremove -q --yes')
+        run_command('apt-get clean')
 
     try:
         pwd.getpwnam(BUILD_USER)
@@ -152,13 +155,7 @@ def update_container():
     return True
 
 
-def build_package():
-    print_header('Package build')
-    print('Package: {}'.format('?'))
-    print('Version: {}'.format('?'))
-    print('Distribution: {}'.format('?'))
-    print('Architecture: {}'.format(detect_dpkg_architecture()))
-
+def prepare_package_build():
     print_section('Preparing container for build')
 
     with eatmydata():
@@ -180,9 +177,18 @@ def build_package():
     with eatmydata():
         run_command('apt-get build-dep -q --yes ./')
 
+    return True
+
+
+def build_package():
     print_section('Build')
 
-    drop_privileges()
+    os.chdir('/srv/build')
+    for f in glob('./*'):
+        if os.path.isdir(f):
+            os.chdir(f)
+            break
+
     run_command('dpkg-buildpackage')
 
     return True
@@ -203,7 +209,9 @@ def main():
     parser = ArgumentParser(description='DebSpawn helper script')
     parser.add_argument('--update', action='store_true', dest='update',
                         help='Initialize the container.')
-    parser.add_argument('--build', dest='build', default=None,
+    parser.add_argument('--build-prepare', dest='build_prepare', default=None,
+                        help='Prepare building a Debian package.')
+    parser.add_argument('--build-run', dest='build_run', default=None,
                         help='Build a Debian package.')
 
     setup_environment()
@@ -213,7 +221,11 @@ def main():
         r = update_container()
         if not r:
             return 2
-    elif options.build:
+    elif options.build_prepare:
+        r = prepare_package_build()
+        if not r:
+            return 2
+    elif options.build_run:
         r = build_package()
         if not r:
             return 2

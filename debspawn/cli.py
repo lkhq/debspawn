@@ -100,7 +100,8 @@ def run(mainfile, args):
             print('Need at least a suite name for building!')
             sys.exit(1)
         gconf = _get_config(mainfile, options.config)
-        r = build_dir(gconf, OSRoot(options.suite, options.arch, options.variant), options.directory)
+        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+        r = build_dir(osbase, options.directory)
         if not r:
             sys.exit(2)
     elif cmdname == 'run':

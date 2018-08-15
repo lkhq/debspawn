@@ -20,12 +20,12 @@
 import os
 import subprocess
 from pathlib import Path
+from .utils.misc import print_header, print_section
 from .utils.command import safe_run
-from .utils.misc import copy_helper_script
 from .nspawn import nspawn_run_helper
 
 
-def build_dir(gconf, osroot, pkg_dir):
+def build_dir(osbase, pkg_dir):
     if os.getuid() != 0:
         print('This command needs to be run as root.')
         return False
@@ -33,15 +33,37 @@ def build_dir(gconf, osroot, pkg_dir):
     if not pkg_dir:
         pkg_dir = os.getcwd()
 
+    print_header('Package build')
+    print('Package: {}'.format('?'))
+    print('Version: {}'.format('?'))
+    print('Distribution: {}'.format(osbase.suite))
+    print('Architecture: {}'.format(osbase.arch))
 
-    osroot_name = osroot.get_name()
-    cmd = ['systemd-nspawn',
-           '--chdir=/srv',
-           '--bind={}:/srv/build/'.format(os.path.normpath(os.path.join(pkg_dir, '..'))),
-           '-axD', os.path.join(gconf.osroots_dir, osroot_name),
-           '/usr/lib/debspawn/dsrun.py', '--build=auto']
+    with osbase.new_instance() as (instance_dir, machine_name):
+        # prepare the build. At this point, we only run trusted code and the container
+        # has network access
+        cmd = ['systemd-nspawn',
+               '--chdir=/srv',
+               '-M', machine_name,
+               '--bind={}:/srv/build/'.format(os.path.normpath(os.path.join(pkg_dir, '..'))),
+               '-aqD', instance_dir,
+               '/usr/lib/debspawn/dsrun.py', '--build-prepare=auto']
 
-    proc = subprocess.run(cmd)
-    if proc.returncode != 0:
-        return False
+        proc = subprocess.run(cmd)
+        if proc.returncode != 0:
+            return False
+
+        # run the actual build. At this point, code is less trusted, and we disable network access.
+        cmd = ['systemd-nspawn',
+               '--chdir=/srv',
+               '-M', machine_name,
+               '-u', 'builder',
+               '--private-network',
+               '--bind={}:/srv/build/'.format(os.path.normpath(os.path.join(pkg_dir, '..'))),
+               '-aqD', instance_dir,
+               '/usr/lib/debspawn/dsrun.py', '--build-run=auto']
+
+        proc = subprocess.run(cmd)
+        if proc.returncode != 0:
+            return False
     return True
