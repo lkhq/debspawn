@@ -102,10 +102,10 @@ def run(mainfile, args):
         gconf = _get_config(mainfile, options.config)
         osbase = OSBase(gconf, options.suite, options.arch, options.variant)
 
-        if os.path.isfile(options.target):
-            r = build_from_dsc(osbase, options.target)
-        else:
+        if not options.target or os.path.isdir(options.target):
             r = build_from_directory(osbase, options.target)
+        else:
+            r = build_from_dsc(osbase, options.target)
         if not r:
             sys.exit(2)
     elif cmdname == 'run':
