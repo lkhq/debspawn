@@ -39,7 +39,8 @@ class GlobalConfig:
             with open(fname) as json_file:
                 jdata = json.load(json_file)
 
-        self._osroots_dir = jdata.get('OSRootsDir', '/var/cache/debspawn/')
+        self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
+        self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
         self._dsrun_path  = '/usr/lib/debspawn/dsrun.py'
 
     @property
@@ -53,3 +54,7 @@ class GlobalConfig:
     @property
     def osroots_dir(self) -> str:
         return self._osroots_dir
+
+    @property
+    def results_dir(self) -> str:
+        return self._results_dir

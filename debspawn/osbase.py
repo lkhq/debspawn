@@ -46,6 +46,9 @@ class OSBase:
     def _make_name(self):
         if not self._arch:
             out, _, ret = safe_run(['dpkg-architecture', '-qDEB_HOST_ARCH'])
+            if ret != 0:
+                raise Exception('Running dpkg-architecture failed: {}'.format(out))
+
             self._arch = out.strip()
         if self._variant:
             return '{}-{}-{}'.format(self._suite, self._arch, self._variant)
@@ -72,6 +75,12 @@ class OSBase:
     @property
     def global_config(self):
         return self._gconf
+
+    @property
+    def results_dir(self):
+        resdir = self._gconf.results_dir
+        Path(resdir).mkdir(parents=True, exist_ok=True)
+        return resdir
 
 
     def _copy_helper_script(self, osroot_path):

@@ -84,7 +84,7 @@ def run(mainfile, args):
         if not r:
             sys.exit(2)
     elif cmdname == 'build':
-        from .build import build_dir
+        from .build import build_from_directory
 
         parser.add_argument('--variant', action='store', dest='variant', default=None,
                         help='Set the bootstrap script variant to use for generating the root fs.')
@@ -101,7 +101,7 @@ def run(mainfile, args):
             sys.exit(1)
         gconf = _get_config(mainfile, options.config)
         osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-        r = build_dir(osbase, options.directory)
+        r = build_from_directory(osbase, options.directory)
         if not r:
             sys.exit(2)
     elif cmdname == 'run':
