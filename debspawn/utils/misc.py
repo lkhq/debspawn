@@ -67,6 +67,17 @@ def temp_dir(basename=None):
         shutil.rmtree(tmp_path)
 
 
+def ensure_root():
+    if os.geteuid() == 0:
+        return
+
+    if shutil.which('sudo'):
+        os.execvp("sudo", ["sudo"] + sys.argv)
+    else:
+        print('This command needs to be run as root.')
+        sys.exit(1)
+
+
 def print_textbox(title, tl, hline, tr, vline, bl, br):
     def write_utf8(s):
         sys.stdout.buffer.write(s.encode('utf-8'))

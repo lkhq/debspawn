@@ -22,16 +22,12 @@ import subprocess
 import shutil
 from pathlib import Path
 from glob import glob
-from .utils.misc import print_header, print_section, temp_dir, cd
+from .utils.misc import ensure_root, print_header, print_section, temp_dir, cd
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper
 
 
 def internal_execute_build(osbase, pkg_dir):
-    if os.getuid() != 0:
-        print('This command needs to be run as root.')
-        return False
-
     if not pkg_dir:
         raise Exception('Package directory is missing!')
 
@@ -74,6 +70,7 @@ def print_build_detail(osbase, pkgname, version):
 
 
 def build_from_directory(osbase, pkg_dir):
+    ensure_root()
     if not pkg_dir:
         pkg_dir = os.getcwd()
 

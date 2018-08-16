@@ -22,7 +22,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from contextlib import contextmanager
-from .utils.misc import temp_dir, print_header, print_section
+from .utils.misc import ensure_root, temp_dir, print_header, print_section
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
 from .nspawn import nspawn_run_persist, nspawn_run_helper_persist
@@ -113,9 +113,7 @@ class OSBase:
 
 
     def create(self, mirror=None):
-        if os.getuid() != 0:
-            print('This command needs to be run as root.')
-            return False
+        ensure_root()
 
         if self.exists():
             print('This configuration has already been created. You can only delete or update it.')
@@ -177,9 +175,7 @@ class OSBase:
 
 
     def update(self):
-        if os.getuid() != 0:
-            print('This command needs to be run as root.')
-            return False
+        ensure_root()
 
         if not self.exists():
             print('Can not update "{}": The configuration does not exist.'.format(self.name))
