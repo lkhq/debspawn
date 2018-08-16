@@ -69,6 +69,28 @@ def print_build_detail(osbase, pkgname, version):
     print()
 
 
+def _read_source_package_details():
+    out, err, ret = safe_run(['dpkg-parsechangelog'])
+    if ret != 0:
+        raise Exception('Running dpkg-parsechangelog failed: {}{}'.format(out, err))
+
+    pkg_sourcename = None
+    pkg_version = None
+    for line in out.split('\n'):
+        if line.startswith('Source: '):
+            pkg_sourcename = line[8:].strip()
+        elif line.startswith('Version: '):
+            pkg_version = line[9:].strip()
+
+    if not pkg_sourcename or not pkg_version:
+        print('Unable to determine source package name or source package version. Can not continue.')
+        return None, None, None
+
+    dsc_fname = '{}_{}.dsc'.format(pkg_sourcename, pkg_version)
+
+    return pkg_sourcename, pkg_version, dsc_fname
+
+
 def build_from_directory(osbase, pkg_dir):
     ensure_root()
     if not pkg_dir:
@@ -78,23 +100,10 @@ def build_from_directory(osbase, pkg_dir):
 
     print_section('Creating source package')
     with cd(pkg_dir):
-        out, err, ret = safe_run(['dpkg-parsechangelog'])
-        if ret != 0:
-            raise Exception('Running dpkg-parsechangelog failed: {}{}'.format(out, err))
-
-        pkg_sourcename = None
-        pkg_version = None
-        for line in out.split('\n'):
-            if line.startswith('Source: '):
-                pkg_sourcename = line[8:].strip()
-            elif line.startswith('Version: '):
-                pkg_version = line[9:].strip()
-
-        if not pkg_sourcename or not pkg_version:
-            print('Unable to determine source package name or source package version. Can not continue.')
+        pkg_sourcename, pkg_version, dsc_fname = _read_source_package_details()
+        if not pkg_sourcename:
             return False
 
-        dsc_fname = '{}_{}.dsc'.format(pkg_sourcename, pkg_version)
         cmd = ['dpkg-buildpackage', '-S', '-d', '--no-sign']
         proc = subprocess.run(cmd)
         if proc.returncode != 0:
@@ -110,6 +119,49 @@ def build_from_directory(osbase, pkg_dir):
             proc = subprocess.run(cmd)
             if proc.returncode != 0:
                 return False
+
+        ret = internal_execute_build(osbase, pkg_tmp_dir)
+        if not ret:
+            return False
+
+        print_section('Retrieving build artifacts')
+        for f in glob(os.path.join(pkg_tmp_dir, '*.*')):
+            if os.path.isfile(f):
+                shutil.copy2(f, osbase.results_dir)
+    print('Done.')
+
+    return True
+
+
+def build_from_dsc(osbase, dsc_fname):
+    ensure_root()
+
+    dsc_fname = os.path.abspath(os.path.normpath(dsc_fname))
+    tmp_prefix = os.path.basename(dsc_fname).replace('.dsc', '').replace(' ', '-')
+    with temp_dir(tmp_prefix) as pkg_tmp_dir:
+        with cd(pkg_tmp_dir):
+            cmd = ['dpkg-source',
+                   '-x', dsc_fname]
+            proc = subprocess.run(cmd)
+            if proc.returncode != 0:
+                return False
+
+            pkg_srcdir = None
+            for f in glob('./*'):
+                if os.path.isdir(f):
+                    pkg_srcdir = f
+                    break
+            if not pkg_srcdir:
+                print('Unable to find source directory of extracted package.')
+                return False
+
+            with cd(pkg_srcdir):
+                pkg_sourcename, pkg_version, dsc_fname = _read_source_package_details()
+                if not pkg_sourcename:
+                    return False
+
+            print_header('Package build')
+            print_build_detail(osbase, pkg_sourcename, pkg_version)
 
         ret = internal_execute_build(osbase, pkg_tmp_dir)
         if not ret:
