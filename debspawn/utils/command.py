@@ -20,9 +20,6 @@
 
 import shlex
 import subprocess
-import select
-import time
-from io import StringIO
 
 
 class SubprocessError(Exception):
@@ -73,4 +70,3 @@ def safe_run(cmd, input=None, expected=0):
         raise SubprocessError(out, err, ret, cmd)
 
     return out, err, ret
-

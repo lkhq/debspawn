@@ -30,7 +30,9 @@ from .aptcache import APTCache
 
 
 class OSBase:
-    ''' Describes an OS base registered with debspawn '''
+    '''
+    Describes an OS base registered with debspawn
+    '''
 
     def __init__(self, gconf, suite, arch, variant=None):
         self._gconf = gconf
@@ -44,7 +46,6 @@ class OSBase:
         # ensure we can (de)compress zstd tarballs
         ensure_tar_zstd()
 
-
     def _make_name(self):
         if not self._arch:
             out, _, ret = safe_run(['dpkg-architecture', '-qDEB_HOST_ARCH'])
@@ -56,7 +57,6 @@ class OSBase:
             return '{}-{}-{}'.format(self._suite, self._arch, self._variant)
         else:
             return '{}-{}'.format(self._suite, self._arch)
-
 
     @property
     def name(self) -> str:
@@ -88,7 +88,6 @@ class OSBase:
         Path(resdir).mkdir(parents=True, exist_ok=True)
         return resdir
 
-
     def _copy_helper_script(self, osroot_path):
         script_location = os.path.join(osroot_path, 'usr', 'lib', 'debspawn')
         Path(script_location).mkdir(parents=True, exist_ok=True)
@@ -100,14 +99,11 @@ class OSBase:
 
         os.chmod(script_fname, 0o0755)
 
-
     def get_tarball_location(self):
         return os.path.join(self._gconf.osroots_dir, '{}.tar.zst'.format(self.name))
 
-
     def exists(self):
         return os.path.isfile(self.get_tarball_location())
-
 
     def new_nspawn_machine_name(self):
         import platform
@@ -116,7 +112,6 @@ class OSBase:
 
         nid = ''.join(choices(ascii_lowercase + digits, k=4))
         return '{}-{}-{}'.format(platform.node(), self.name, nid)
-
 
     def create(self, mirror=None):
         ''' Create new container base image '''
@@ -132,7 +127,7 @@ class OSBase:
         print_header('Creating new base: {} [{}]'.format(self.suite, self.arch))
         print('Using mirror: {}'.format(mirror if mirror else 'default'))
         if self.variant:
-            print('variant: {}'.format(variant))
+            print('variant: {}'.format(self.variant))
         cmd = ['debootstrap',
                '--arch={}'.format(self.arch),
                '--include=python3-minimal']
@@ -162,13 +157,11 @@ class OSBase:
         print('Done.')
         return True
 
-
     @contextmanager
     def new_instance(self, basename=None):
         with temp_dir() as tdir:
             decompress_tarball(self.get_tarball_location(), tdir)
             yield tdir, self.new_nspawn_machine_name()
-
 
     def make_instance_permanent(self, instance_dir):
         ''' Add changes done in the current instance to the main tarball of this OS tree, replacing it. '''
@@ -182,7 +175,6 @@ class OSBase:
 
         tar_size = os.path.getsize(self.get_tarball_location())
         print('New compressed tarball size is {}'.format(format_filesize(tar_size)))
-
 
     def update(self):
         ''' Update container base image '''
@@ -212,7 +204,6 @@ class OSBase:
         print('Done.')
         return True
 
-
     def login(self, persistent=False):
         ''' Interactive shell login into the container '''
         ensure_root()
@@ -237,7 +228,6 @@ class OSBase:
 
         print('Done.')
         return True
-
 
     def run(self, command, build_dir, artifacts_dir, copy_command=False, header_msg=None):
         ''' Run an arbitrary command or script in the container '''

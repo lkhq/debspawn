@@ -20,9 +20,8 @@
 import os
 import subprocess
 import shutil
-from pathlib import Path
 from glob import glob
-from .utils.misc import ensure_root, print_header, print_section, temp_dir, cd, colored_output_allowed
+from .utils.misc import ensure_root, print_header, print_section, temp_dir, cd
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
@@ -37,12 +36,12 @@ def internal_execute_build(osbase, pkg_dir, buildflags):
 
         with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
             nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
-            r = nspawn_run_helper_persist(osbase, \
-                                          instance_dir, \
-                                          machine_name, \
-                                          '--build-prepare', \
-                                          '/srv', \
-                                          nspawn_flags, \
+            r = nspawn_run_helper_persist(osbase,
+                                          instance_dir,
+                                          machine_name,
+                                          '--build-prepare',
+                                          '/srv',
+                                          nspawn_flags,
                                           aptcache_tmp)
             if r != 0:
                 return False
@@ -54,12 +53,12 @@ def internal_execute_build(osbase, pkg_dir, buildflags):
             helper_flags = ['--build-run']
             if buildflags:
                 helper_flags.append('--buildflags={}'.format(' '.join(buildflags)))
-            r = nspawn_run_helper_persist(osbase, \
-                                          instance_dir, \
-                                          machine_name, \
-                                          helper_flags, \
-                                          '/srv', \
-                                          nspawn_flags, \
+            r = nspawn_run_helper_persist(osbase,
+                                          instance_dir,
+                                          machine_name,
+                                          helper_flags,
+                                          '/srv',
+                                          nspawn_flags,
                                           aptcache_tmp)
             if r != 0:
                 return False

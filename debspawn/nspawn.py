@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import subprocess
 import platform
 from .utils.misc import temp_dir, colored_output_allowed, unicode_allowed
@@ -43,6 +42,7 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
         flags = flags.split(' ')
 
     personality = get_nspawn_personality(osbase)
+
     def run_nspawn_with_aptcache(aptcache_tmp_dir):
         cmd = ['systemd-nspawn',
                '--chdir={}'.format(chdir),

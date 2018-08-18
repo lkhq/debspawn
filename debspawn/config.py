@@ -19,16 +19,12 @@
 
 import json
 import os
-import platform
-from typing import List
-from pathlib import Path
-import logging as log
 
 
 class GlobalConfig:
-    """
+    '''
     Global configuration affecting all of DebSpawn.
-    """
+    '''
 
     def load(self, fname=None):
         if not fname:
@@ -42,7 +38,7 @@ class GlobalConfig:
         self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
         self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
         self._aptcache_dir = jdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
-        self._dsrun_path  = '/usr/lib/debspawn/dsrun.py'
+        self._dsrun_path = '/usr/lib/debspawn/dsrun.py'
 
     @property
     def dsrun_path(self) -> str:

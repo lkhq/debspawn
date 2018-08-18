@@ -40,7 +40,7 @@ def init_config(options):
     if options.no_unicode:
         set_unicode_allowed(False)
     else:
-        if not 'utf-8' in os.environ.get('LANG', 'utf-8').lower():
+        if 'utf-8' not in os.environ.get('LANG', 'utf-8').lower():
             log.warning('Building with unicode support, but your environment does not seem to support unicode.')
         set_unicode_allowed(True)
 
@@ -178,15 +178,15 @@ def run(mainfile, args):
     sp = subparsers.add_parser('build', help="Build a package in an isolated environment")
     add_container_select_arguments(sp)
     sp.add_argument('-s', '--sign', action='store_true', dest='sign',
-                        help='Sign the resulting package.')
+                    help='Sign the resulting package.')
     sp.add_argument('--arch-only', action='store_true', dest='arch_only',
-                        help='Build only architecture-specific packages.')
+                    help='Build only architecture-specific packages.')
     sp.add_argument('--indep-only', action='store_true', dest='indep_only',
-                        help='Build only architecture-independent (arch:all) packages.')
+                    help='Build only architecture-independent (arch:all) packages.')
     sp.add_argument('--include-orig', action='store_true', dest='include_orig',
-                        help='Forces the inclusion of the original source.')
+                    help='Forces the inclusion of the original source.')
     sp.add_argument('--buildflags', action='store_true', dest='buildflags',
-                        help='Set flags passed through to dpkg-buildpackage.')
+                    help='Set flags passed through to dpkg-buildpackage.')
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)
@@ -218,10 +218,10 @@ def run(mainfile, args):
         custom_command = None
         for i, arg in enumerate(args):
             if arg == '---':
-                if i+1 == len(args):
+                if i + 1 == len(args):
                     print('No command was given after "---", can not continue.')
                     sys.exit(1)
-                custom_command = args[i+1:]
+                custom_command = args[i + 1:]
                 args = args[:i]
                 break
 

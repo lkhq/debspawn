@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import os
+import sys
 from debspawn import cli
-import sys, os
 
 thisfile = __file__
 if not os.path.isabs(thisfile):

@@ -69,7 +69,7 @@ def ensure_root():
 
 def colored_output_allowed():
     return (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()) or \
-            ('TERM' in os.environ and os.environ['TERM']=='ANSI')
+           ('TERM' in os.environ and os.environ['TERM'] == 'ANSI')
 
 
 def unicode_allowed():
@@ -121,7 +121,7 @@ def print_section(title):
 
 
 def format_filesize(num, suffix='B'):
-    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0

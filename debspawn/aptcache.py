@@ -31,7 +31,6 @@ class APTCache:
     def __init__(self, osbase):
         self._cache_dir = os.path.join(osbase.global_config.aptcache_dir, osbase.name)
 
-
     def merge_from_dir(self, tmp_cache_dir):
         '''
         Merge in packages from a temporary cache
@@ -50,11 +49,10 @@ class APTCache:
                 shutil.copy2(pkg_fname, pkg_tmp_name)
                 try:
                     os.rename(pkg_tmp_name, pkg_cachepath)
-                except:
+                except OSError:
                     # maybe some other debspawn instance tried to add the package just now,
                     # in that case we give up
                     os.remove(pkg_tmp_name)
-
 
     def create_instance_cache(self, tmp_cache_dir):
         '''
@@ -69,7 +67,6 @@ class APTCache:
 
             if not os.path.isfile(pkg_cachepath):
                 shutil.copy2(pkg_fname, pkg_cachepath)
-
 
     def clear(self):
         '''
