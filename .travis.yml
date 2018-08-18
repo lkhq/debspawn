@@ -1,4 +1,5 @@
 # Travis CI config for Debspawn
+
 language: python
 dist: trusty
 
@@ -18,5 +19,4 @@ install:
 script:
   - ./setup.py build
   - ./setup.py install --root=/tmp
-  - flake8 --ignore E501 spark/
-  - flake8 --ignore E501 dsrun/
+  - flake8 --ignore E501 ./
