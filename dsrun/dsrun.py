@@ -66,7 +66,6 @@ def run_apt_command(cmd):
     run_command(apt_cmd, env)
 
 
-
 def print_textbox(title, tl, hline, tr, vline, bl, br):
     def write_utf8(s):
         sys.stdout.buffer.write(s.encode('utf-8'))
@@ -108,23 +107,14 @@ def print_section(title):
 @contextmanager
 def eatmydata():
     try:
-        # FIXME: We just oferride the env vars here, maybe just appending
-        # to them is much better
+        # FIXME: We just override the env vars here, appending to them would
+        # be much cleaner.
         os.environ['LD_LIBRARY_PATH'] = '/usr/lib/libeatmydata'
         os.environ['LD_PRELOAD'] = 'libeatmydata.so'
         yield
     finally:
         del os.environ['LD_LIBRARY_PATH']
         del os.environ['LD_PRELOAD']
-
-
-def drop_privileges():
-    pwn = pwd.getpwnam(BUILD_USER)
-    uid = pwn.pw_uid
-    os.setuid(uid)
-
-    os.environ['USER'] = BUILD_USER
-    os.environ['HOME'] = '/nonexistent'  # ensure HOME is invalid
 
 
 def update_container():
@@ -185,6 +175,8 @@ def build_package():
 
     run_command('dpkg-buildpackage')
 
+    # run_command will exit the whole program if the command failed,
+    # so we can return True here
     return True
 
 
