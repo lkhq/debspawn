@@ -70,9 +70,9 @@ def print_textbox(title, tl, hline, tr, vline, bl, br):
     def write_utf8(s):
         sys.stdout.buffer.write(s.encode('utf-8'))
 
-    l = len(title)
+    tlen = len(title)
     write_utf8('\n{}'.format(tl))
-    write_utf8(hline * (10 + l))
+    write_utf8(hline * (10 + tlen))
     write_utf8('{}\n'.format(tr))
 
     write_utf8('{}  {}'.format(vline, title))
@@ -80,7 +80,7 @@ def print_textbox(title, tl, hline, tr, vline, bl, br):
     write_utf8('{}\n'.format(vline))
 
     write_utf8(bl)
-    write_utf8(hline * (10 + l))
+    write_utf8(hline * (10 + tlen))
     write_utf8('{}\n'.format(br))
 
     sys.stdout.flush()
@@ -211,7 +211,7 @@ def main():
     # initialize environment defaults
     global unicode_enabled, color_enabled
     unicode_enabled = not options.no_unicode
-    color_enabled   = not options.no_color
+    color_enabled = not options.no_color
     setup_environment(color_enabled, unicode_enabled)
 
     if options.update:
