@@ -1,0 +1,22 @@
+# Travis CI config for Debspawn
+language: python
+dist: trusty
+
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  - "nightly"
+
+matrix:
+  allow_failures:
+    - python: "nightly"
+
+install:
+ - pip install flake8
+
+script:
+  - ./setup.py build
+  - ./setup.py install --root=/tmp
+  - flake8 --ignore E501 spark/
+  - flake8 --ignore E501 dsrun/
