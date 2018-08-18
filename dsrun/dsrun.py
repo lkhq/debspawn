@@ -30,58 +30,41 @@ from glob import glob
 BUILD_USER = 'builder'
 
 
-def run_command_capture(command, input=None):
-    if not isinstance(command, list):
-        command = shlex.split(command)
+#
+# Globals
+#
 
-    if not input:
-        input = None
-    elif isinstance(input, str):
-        input = input.encode('utf-8')
-    elif not isinstance(input, bytes):
-        input = input.read()
-
-    try:
-        pipe = subprocess.Popen(command,
-                                shell=False,
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                )
-    except OSError:
-        return (None, None, -1)
-
-    (output, stderr) = pipe.communicate(input=input)
-    (output, stderr) = (c.decode('utf-8', errors='ignore') for c in (output, stderr))
-    return (output, stderr, pipe.returncode)
+unicode_enabled = True
+color_enabled = True
 
 
-def safe_run_capture(cmd, input=None, expected=0):
-    if not isinstance(expected, tuple):
-        expected = (expected, )
-
-    out, err, ret = run_command_capture(cmd, input=input)
-
-    if ret not in expected:
-        raise SubprocessError(out, err, ret, cmd)
-
-    return out, err, ret
-
-
-def run_command(cmd):
+def run_command(cmd, env=None):
     if isinstance(cmd, str):
         cmd = cmd.split(' ')
 
-    #print(' ! {}'.format(cmd))
-    p = subprocess.run(cmd)
+    proc_env = env
+    if proc_env:
+        proc_env = os.environ.copy()
+        proc_env.update(env)
+
+    p = subprocess.run(cmd, env=proc_env)
     if p.returncode != 0:
         print('Command `{}` failed.'.format(' '.join(cmd)))
         sys.exit(p.returncode)
 
 
-def detect_dpkg_architecture():
-    out, _, ret = safe_run_capture(['dpkg-architecture', '-qDEB_HOST_ARCH'])
-    return out.strip()
+def run_apt_command(cmd):
+    if isinstance(cmd, str):
+        cmd = cmd.split(' ')
+
+    env = {'DEBIAN_FRONTEND': 'noninteractive'}
+    apt_cmd = ['apt-get',
+               '-uyq',
+               '-o Dpkg::Options::="--force-confold"']
+    apt_cmd.extend(cmd)
+
+    run_command(apt_cmd, env)
+
 
 
 def print_textbox(title, tl, hline, tr, vline, bl, br):
@@ -105,11 +88,21 @@ def print_textbox(title, tl, hline, tr, vline, bl, br):
 
 
 def print_header(title):
-    print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
+    global unicode_enabled
+
+    if unicode_enabled:
+        print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
+    else:
+        print_textbox(title, '+', '═', '+', '|', '+', '+')
 
 
 def print_section(title):
-    print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
+    global unicode_enabled
+
+    if unicode_enabled:
+        print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
+    else:
+        print_textbox(title, '+', '-', '+', '|', '+', '+')
 
 
 @contextmanager
@@ -136,12 +129,14 @@ def drop_privileges():
 
 def update_container():
     with eatmydata():
-        run_command('apt-get update -q')
-        run_command('apt-get full-upgrade -q --yes')
-        run_command(['apt-get', 'install', '--no-install-recommends', '-q', '--yes',
+        run_apt_command('update')
+        run_apt_command('full-upgrade')
+
+        run_apt_command(['install', '--no-install-recommends',
                          'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
-        run_command('apt-get --purge autoremove -q --yes')
-        run_command('apt-get clean')
+
+        run_apt_command(['--purge', 'autoremove'])
+        run_apt_command('clean')
 
     try:
         pwd.getpwnam(BUILD_USER)
@@ -159,15 +154,14 @@ def prepare_package_build():
     print_section('Preparing container for build')
 
     with eatmydata():
-        run_command('apt-get update -q')
-        run_command('apt-get full-upgrade -q --yes')
-        run_command(['apt-get', 'install', '--no-install-recommends', '-q', '--yes',
-                     'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
+        run_apt_command('update')
+        run_apt_command('full-upgrade')
+        run_apt_command(['install', '--no-install-recommends',
+                         'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
 
     os.chdir('/srv/build')
 
     run_command('chown -R {} /srv/build'.format(BUILD_USER))
-    #run_command('sudo -u {} apt-get source {}'.format(BUILD_USER, sys.argv[1]))
     for f in glob('./*'):
         if os.path.isdir(f):
             os.chdir(f)
@@ -175,7 +169,7 @@ def prepare_package_build():
 
     print_section('Installing package build-dependencies')
     with eatmydata():
-        run_command('apt-get build-dep -q --yes ./')
+        run_apt_command(['build-dep', './'])
 
     return True
 
@@ -194,9 +188,11 @@ def build_package():
     return True
 
 
-def setup_environment():
-    os.environ['LANG'] = 'C.UTF-8'
+def setup_environment(use_color=True, use_unicode=True):
+    os.environ['LANG'] = 'C.UTF-8' if use_unicode else 'C'
     os.environ['HOME'] = '/nonexistent'
+
+    os.environ['TERM'] = 'xterm-256color' if use_color else 'xterm-mono'
 
     del os.environ['LOGNAME']
 
@@ -209,14 +205,23 @@ def main():
     parser = ArgumentParser(description='DebSpawn helper script')
     parser.add_argument('--update', action='store_true', dest='update',
                         help='Initialize the container.')
-    parser.add_argument('--build-prepare', dest='build_prepare', default=None,
+    parser.add_argument('--no-color', action='store_true', dest='no_color',
+                        help='Disable terminal colors.')
+    parser.add_argument('--no-unicode', action='store_true', dest='no_unicode',
+                        help='Disable unicode support.')
+    parser.add_argument('--build-prepare', action='store_true', dest='build_prepare',
                         help='Prepare building a Debian package.')
-    parser.add_argument('--build-run', dest='build_run', default=None,
+    parser.add_argument('--build-run', action='store_true', dest='build_run',
                         help='Build a Debian package.')
 
-    setup_environment()
-
     options = parser.parse_args(sys.argv[1:])
+
+    # initialize environment defaults
+    global unicode_enabled, color_enabled
+    unicode_enabled = not options.no_unicode
+    color_enabled   = not options.no_color
+    setup_environment(color_enabled, unicode_enabled)
+
     if options.update:
         r = update_container()
         if not r:

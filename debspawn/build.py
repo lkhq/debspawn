@@ -22,9 +22,9 @@ import subprocess
 import shutil
 from pathlib import Path
 from glob import glob
-from .utils.misc import ensure_root, print_header, print_section, temp_dir, cd
+from .utils.misc import ensure_root, print_header, print_section, temp_dir, cd, colored_output_allowed
 from .utils.command import safe_run
-from .nspawn import nspawn_run_helper
+from .nspawn import nspawn_run_helper, nspawn_make_helper_cmd
 
 
 def internal_execute_build(osbase, pkg_dir):
@@ -38,8 +38,8 @@ def internal_execute_build(osbase, pkg_dir):
                '--chdir=/srv',
                '-M', machine_name,
                '--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
-               '-aqD', instance_dir,
-               '/usr/lib/debspawn/dsrun.py', '--build-prepare=auto']
+               '-aqD', instance_dir]
+        cmd.extend(nspawn_make_helper_cmd('--build-prepare'))
 
         proc = subprocess.run(cmd)
         if proc.returncode != 0:
@@ -52,8 +52,8 @@ def internal_execute_build(osbase, pkg_dir):
                '-u', 'builder',
                '--private-network',
                '--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
-               '-aqD', instance_dir,
-               '/usr/lib/debspawn/dsrun.py', '--build-run=auto']
+               '-aqD', instance_dir]
+        cmd.extend(nspawn_make_helper_cmd('--build-run'))
 
         proc = subprocess.run(cmd)
         if proc.returncode != 0:

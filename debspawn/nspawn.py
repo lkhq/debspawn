@@ -19,6 +19,7 @@
 
 import os
 import subprocess
+from .utils.misc import colored_output_allowed, unicode_allowed
 
 
 def nspawn_run_persist(base_dir, machine_name, commands):
@@ -47,13 +48,25 @@ def nspawn_run(base_dir, machine_name, commands):
     return True
 
 
-def nspawn_run_helper(base_dir, machine_name, commands):
+def nspawn_make_helper_cmd(flags):
+    if isinstance(flags, str):
+        flags = flags.split(' ')
+
     cmd = ['/usr/lib/debspawn/dsrun.py']
-    cmd.extend(commands)
+    if not colored_output_allowed():
+        cmd.append('--no-color')
+    if not unicode_allowed():
+        cmd.append('--no-unicode')
+
+    cmd.extend(flags)
+    return cmd
+
+
+def nspawn_run_helper(base_dir, machine_name, commands):
+    cmd = nspawn_make_helper_cmd(commands)
     return nspawn_run(base_dir, machine_name, cmd)
 
 
 def nspawn_run_helper_persist(base_dir, machine_name, commands):
-    cmd = ['/usr/lib/debspawn/dsrun.py']
-    cmd.extend(commands)
+    cmd = nspawn_make_helper_cmd(commands)
     return nspawn_run_persist(base_dir, machine_name, cmd)

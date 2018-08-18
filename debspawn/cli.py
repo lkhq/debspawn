@@ -17,17 +17,29 @@
 
 import os
 import sys
+import logging as log
 from argparse import ArgumentParser
 from .config import GlobalConfig
+from .utils.misc import set_unicode_allowed
 from .osbase import OSBase
 
 
-def _get_config(mainfile, conf_file=None):
+def init_config(mainfile, options):
     gconf = GlobalConfig()
-    gconf.load(conf_file)
+    gconf.load(options.config)
 
     if not mainfile.startswith('/usr'):
         gconf.dsrun_path = os.path.normpath(os.path.join(mainfile, '..', 'dsrun', 'dsrun.py'))
+
+    # check if we are forbidden from using unicode - otherwise we build
+    # with unicode enabled by default
+    if options.no_unicode:
+        set_unicode_allowed(False)
+    else:
+        if not 'utf-8' in os.environ.get('LANG', 'utf-8').lower():
+            log.warning('Building with unicode support, but your environment does not seem to support unicode.')
+        set_unicode_allowed(True)
+
     return gconf
 
 
@@ -43,8 +55,8 @@ def run(mainfile, args):
                         help='Path to the global config file.')
     parser.add_argument('--verbose', action='store_true', dest='verbose',
                         help='Enable debug messages.')
-
-
+    parser.add_argument('--no-unicode', action='store_true', dest='no_unicode',
+                        help='Enable debug messages.')
 
 
     if cmdname == 'new':
@@ -61,7 +73,7 @@ def run(mainfile, args):
         if not options.suite:
             print('Need at least a suite name to bootstrap!')
             sys.exit(1)
-        gconf = _get_config(mainfile, options.config)
+        gconf = init_config(mainfile, options)
         osbase = OSBase(gconf, options.suite, options.arch, options.variant)
         r = osbase.create(options.mirror)
         if not r:
@@ -78,7 +90,7 @@ def run(mainfile, args):
         if not options.suite:
             print('Need at least a suite name for update!')
             sys.exit(1)
-        gconf = _get_config(mainfile, options.config)
+        gconf = init_config(mainfile, options)
         osbase = OSBase(gconf, options.suite, options.arch, options.variant)
         r = osbase.update()
         if not r:
@@ -99,7 +111,7 @@ def run(mainfile, args):
         if not options.suite:
             print('Need at least a suite name for building!')
             sys.exit(1)
-        gconf = _get_config(mainfile, options.config)
+        gconf = init_config(mainfile, options)
         osbase = OSBase(gconf, options.suite, options.arch, options.variant)
 
         if not options.target or os.path.isdir(options.target):

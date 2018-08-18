@@ -25,6 +25,9 @@ from contextlib import contextmanager
 from ..utils.command import safe_run
 
 
+unicode_allowed = True
+
+
 def sign(changes, gpg):
     if changes.endswith(".dud"):
         safe_run(['gpg', '-u', gpg, '--clearsign', changes])
@@ -78,6 +81,21 @@ def ensure_root():
         sys.exit(1)
 
 
+def colored_output_allowed():
+    return (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()) or \
+            ('TERM' in os.environ and os.environ['TERM']=='ANSI')
+
+
+def unicode_allowed():
+    global unicode_allowed
+    return unicode_allowed
+
+
+def set_unicode_allowed(val):
+    global unicode_allowed
+    unicode_allowed = val
+
+
 def print_textbox(title, tl, hline, tr, vline, bl, br):
     def write_utf8(s):
         sys.stdout.buffer.write(s.encode('utf-8'))
@@ -99,8 +117,18 @@ def print_textbox(title, tl, hline, tr, vline, bl, br):
 
 
 def print_header(title):
-    print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
+    global unicode_allowed
+
+    if unicode_allowed:
+        print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
+    else:
+        print_textbox(title, '+', '═', '+', '|', '+', '+')
 
 
 def print_section(title):
-    print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
+    global unicode_allowed
+
+    if unicode_allowed:
+        print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
+    else:
+        print_textbox(title, '+', '-', '+', '|', '+', '+')
