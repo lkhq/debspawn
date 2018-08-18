@@ -23,13 +23,16 @@ from .config import GlobalConfig
 from .utils.misc import set_unicode_allowed
 from .osbase import OSBase
 
+__mainfile = None
 
-def init_config(mainfile, options):
+def init_config(options):
+    global __mainfile
+
     gconf = GlobalConfig()
     gconf.load(options.config)
 
-    if not mainfile.startswith('/usr'):
-        gconf.dsrun_path = os.path.normpath(os.path.join(mainfile, '..', 'dsrun', 'dsrun.py'))
+    if not __mainfile.startswith('/usr'):
+        gconf.dsrun_path = os.path.normpath(os.path.join(__mainfile, '..', 'dsrun', 'dsrun.py'))
 
     # check if we are forbidden from using unicode - otherwise we build
     # with unicode enabled by default
@@ -41,6 +44,77 @@ def init_config(mainfile, options):
         set_unicode_allowed(True)
 
     return gconf
+
+
+def command_create(options):
+    ''' Create new container image '''
+
+    if not options.suite:
+        print('Need at least a suite name to bootstrap!')
+        sys.exit(1)
+    gconf = init_config(options)
+    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    r = osbase.create(options.mirror)
+    if not r:
+        sys.exit(2)
+
+
+def command_update(options):
+    ''' Update container image '''
+
+    if not options.suite:
+        print('Need at least a suite name for update!')
+        sys.exit(1)
+    gconf = init_config(options)
+    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    r = osbase.update()
+    if not r:
+        sys.exit(2)
+
+
+def command_build(options):
+    ''' Build a package in a new volatile container '''
+
+    from .build import build_from_directory, build_from_dsc
+
+    if not options.suite:
+        print('Need at least a suite name for building!')
+        sys.exit(1)
+    gconf = init_config(options)
+    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+
+    if not options.target or os.path.isdir(options.target):
+        r = build_from_directory(osbase, options.target)
+    else:
+        r = build_from_dsc(osbase, options.target)
+    if not r:
+        sys.exit(2)
+
+
+def command_login(options):
+    ''' Open interactive session in a container '''
+
+    if not options.suite:
+        print('Need at least a suite name!')
+        sys.exit(1)
+    gconf = init_config(options)
+    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    r = osbase.login(options.persistent)
+    if not r:
+        sys.exit(2)
+
+
+def command_run(options, custom_command):
+    ''' Run arbitrary command in container session '''
+
+    if not options.suite:
+        print('Need at least a suite name!')
+        sys.exit(1)
+    gconf = init_config(options)
+    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    r = osbase.run(custom_command, options.build_dir, options.artifacts_dir, options.external_commad, options.header)
+    if not r:
+        sys.exit(2)
 
 
 def add_container_select_arguments(parser):
@@ -56,117 +130,78 @@ def run(mainfile, args):
     if len(args) == 0:
         print('Need a subcommand to proceed!')
         sys.exit(1)
-    cmdname = args[0]
-    cmdargs = args[1:]
+
+    global __mainfile
+    __mainfile = mainfile
 
     parser = ArgumentParser(description='Build in nspawn containers')
+    subparsers = parser.add_subparsers(dest='sp_name', title='subcommands')
+
+    # generic arguments
     parser.add_argument('--config', action='store', dest='config', default=None,
                         help='Path to the global config file.')
     parser.add_argument('--verbose', action='store_true', dest='verbose',
                         help='Enable debug messages.')
     parser.add_argument('--no-unicode', action='store_true', dest='no_unicode',
-                        help='Enable debug messages.')
+                        help='Disable unicode support.')
 
-    # handle subcommands
-    if cmdname == 'new':
-        add_container_select_arguments(parser)
-        parser.add_argument('--mirror', action='store', dest='mirror', default=None,
-                        help='Set a specific mirror to bootstrap from.')
+    # 'create' command
+    sp = subparsers.add_parser('create', help="Create new container image")
+    add_container_select_arguments(sp)
+    sp.add_argument('--mirror', action='store', dest='mirror', default=None,
+                    help='Set a specific mirror to bootstrap from.')
+    sp.set_defaults(func=command_create)
 
-        options = parser.parse_args(cmdargs)
-        if not options.suite:
-            print('Need at least a suite name to bootstrap!')
-            sys.exit(1)
-        gconf = init_config(mainfile, options)
-        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-        r = osbase.create(options.mirror)
-        if not r:
-            sys.exit(2)
+    # 'update' command
+    sp = subparsers.add_parser('update', help="Update a container image")
+    add_container_select_arguments(sp)
+    sp.set_defaults(func=command_update)
 
-    elif cmdname == 'update':
-        add_container_select_arguments(parser)
+    # 'build' command
+    sp = subparsers.add_parser('build', help="Build a package in an isolated environment")
+    add_container_select_arguments(sp)
+    sp.add_argument('target', action='store', nargs='?', default=None,
+                    help='The source package file or source directory to build.')
+    sp.set_defaults(func=command_build)
 
-        options = parser.parse_args(cmdargs)
-        if not options.suite:
-            print('Need at least a suite name for update!')
-            sys.exit(1)
-        gconf = init_config(mainfile, options)
-        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-        r = osbase.update()
-        if not r:
-            sys.exit(2)
+    # 'login' command
+    sp = subparsers.add_parser('login', help="Open interactive session in a container")
+    add_container_select_arguments(sp)
+    sp.add_argument('--persistent', action='store_true', dest='persistent',
+                    help='Make changes done in the session persistent.')
+    sp.set_defaults(func=command_login)
 
-    elif cmdname == 'build':
-        from .build import build_from_directory, build_from_dsc
+    # 'run' command
+    sp = subparsers.add_parser('run', help="Run arbitrary command in an ephemeral container")
+    add_container_select_arguments(sp)
+    sp.add_argument('--artifacts-out', action='store', dest='artifacts_dir', default=None,
+                    help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')
+    sp.add_argument('--build-dir', action='store', dest='build_dir', default=None,
+                    help='Select a host directory that gets bind mounted to /srv/build.')
+    sp.add_argument('--external-command', action='store_true', dest='external_commad',
+                    help='If set, the command script will be copied from the host to the container and then executed.')
+    sp.add_argument('--header', action='store', dest='header', default=None,
+                    help='Name of the task that is run, will be printed as header.')
+    sp.add_argument('command', action='store', nargs='*', default=None,
+                    help='The command to run.')
 
-        add_container_select_arguments(parser)
-        parser.add_argument('target', action='store', nargs='?', default=None,
-                        help='The source package file or source directory to build.')
-
-        options = parser.parse_args(cmdargs)
-        if not options.suite:
-            print('Need at least a suite name for building!')
-            sys.exit(1)
-        gconf = init_config(mainfile, options)
-        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-
-        if not options.target or os.path.isdir(options.target):
-            r = build_from_directory(osbase, options.target)
-        else:
-            r = build_from_dsc(osbase, options.target)
-        if not r:
-            sys.exit(2)
-
-    elif cmdname == 'login':
-        add_container_select_arguments(parser)
-        parser.add_argument('--persistent', action='store_true', dest='persistent',
-                        help='Make changes done in the session persistent.')
-
-        options = parser.parse_args(cmdargs)
-        if not options.suite:
-            print('Need at least a suite name!')
-            sys.exit(1)
-        gconf = init_config(mainfile, options)
-        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-        r = osbase.login(options.persistent)
-        if not r:
-            sys.exit(2)
-
-    elif cmdname == 'run':
-        add_container_select_arguments(parser)
-        parser.add_argument('--artifacts-out', action='store', dest='artifacts_dir', default=None,
-                        help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')
-        parser.add_argument('--build-dir', action='store', dest='build_dir', default=None,
-                        help='Select a host directory that gets bind mounted to /srv/build.')
-        parser.add_argument('--external-command', action='store_true', dest='external_commad',
-                        help='If set, the command script will be copied from the host to the container and then executed.')
-        parser.add_argument('--header', action='store', dest='header', default=None,
-                        help='Name of the task that is run, will be printed as header.')
-        parser.add_argument('command', action='store', nargs='*', default=None,
-                        help='The command to run.')
-
+    # special case, so 'run' can understand which arguments are for debspawn and which are
+    # for the command to be executed
+    if args[0] == 'run':
         custom_command = None
-        for i, arg in enumerate(cmdargs):
+        for i, arg in enumerate(args):
             if arg == '---':
-                if i == len(cmdargs):
+                if i+1 == len(args):
                     print('No command was given after "---", can not continue.')
                     sys.exit(1)
-                custom_command = cmdargs[i+1:]
-                cmdargs = cmdargs[:i]
+                custom_command = args[i+1:]
+                args = args[:i]
                 break
 
-        options = parser.parse_args(cmdargs)
+    args = parser.parse_args(args)
+    if args.sp_name == 'run':
         if not custom_command:
-            custom_command = options.command
-        if not options.suite:
-            print('Need at least a suite name!')
-            sys.exit(1)
-        gconf = init_config(mainfile, options)
-        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-        r = osbase.run(custom_command, options.build_dir, options.artifacts_dir, options.external_commad, options.header)
-        if not r:
-            sys.exit(2)
-
+            custom_command = args.command
+        command_run(args, custom_command)
     else:
-        print('Command "{}" is unknown.'.format(cmdname))
-        sys.exit(1)
+        args.func(args)
