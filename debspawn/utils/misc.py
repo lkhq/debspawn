@@ -132,3 +132,11 @@ def print_section(title):
         print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
     else:
         print_textbox(title, '+', '-', '+', '|', '+', '+')
+
+
+def format_filesize(num, suffix='B'):
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)

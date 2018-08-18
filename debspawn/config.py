@@ -41,6 +41,7 @@ class GlobalConfig:
 
         self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
         self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
+        self._aptcache_dir = jdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
         self._dsrun_path  = '/usr/lib/debspawn/dsrun.py'
 
     @property
@@ -48,7 +49,7 @@ class GlobalConfig:
         return self._dsrun_path
 
     @dsrun_path.setter
-    def dsrun_path(self, v):
+    def dsrun_path(self, v) -> str:
         self._dsrun_path = v
 
     @property
@@ -58,3 +59,7 @@ class GlobalConfig:
     @property
     def results_dir(self) -> str:
         return self._results_dir
+
+    @property
+    def aptcache_dir(self) -> str:
+        return self._aptcache_dir

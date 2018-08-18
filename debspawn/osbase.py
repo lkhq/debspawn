@@ -22,10 +22,11 @@ import subprocess
 import shutil
 from pathlib import Path
 from contextlib import contextmanager
-from .utils.misc import ensure_root, temp_dir, print_header, print_section
+from .utils.misc import ensure_root, temp_dir, print_header, print_section, format_filesize
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
 from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
+from .aptcache import APTCache
 
 
 class OSBase:
@@ -38,6 +39,7 @@ class OSBase:
         self._variant = variant
         self._name = self._make_name()
 
+        self._aptcache = APTCache(self)
 
         # ensure we can (de)compress zstd tarballs
         ensure_tar_zstd()
@@ -75,6 +77,10 @@ class OSBase:
     @property
     def global_config(self):
         return self._gconf
+
+    @property
+    def aptcache(self):
+        return self._aptcache
 
     @property
     def results_dir(self):
@@ -147,7 +153,7 @@ class OSBase:
             self._copy_helper_script(tdir)
 
             print_section('Configure')
-            if nspawn_run_helper_persist(tdir, self.new_nspawn_machine_name(), '--update') != 0:
+            if nspawn_run_helper_persist(self, tdir, self.new_nspawn_machine_name(), '--update') != 0:
                 return False
 
             print_section('Creating Tarball')
@@ -174,6 +180,9 @@ class OSBase:
         compress_directory(instance_dir, tarball_name)
         os.remove(tarball_name_old)
 
+        tar_size = os.path.getsize(self.get_tarball_location())
+        print('New compressed tarball size is {}'.format(format_filesize(tar_size)))
+
 
     def update(self):
         ''' Update container base image '''
@@ -184,16 +193,21 @@ class OSBase:
             return False
 
         print_header('Updating container')
+
         with self.new_instance() as (instance_dir, machine_name):
             # ensure helper script runner exists and is up to date
             self._copy_helper_script(instance_dir)
 
             print_section('Update')
-            if nspawn_run_helper_persist(instance_dir, self.new_nspawn_machine_name(), '--update') != 0:
+            if nspawn_run_helper_persist(self, instance_dir, self.new_nspawn_machine_name(), '--update') != 0:
                 return False
 
             print_section('Recreating tarball')
             self.make_instance_permanent(instance_dir)
+
+        print_section('Cleaning up cache')
+        cache_size = self._aptcache.clear()
+        print('Removed {} cached packages.'.format(cache_size))
 
         print('Done.')
         return True
@@ -213,7 +227,7 @@ class OSBase:
             self._copy_helper_script(instance_dir)
 
             # run an interactive shell in the new container
-            nspawn_run_persist(instance_dir, self.new_nspawn_machine_name(), '/srv')
+            nspawn_run_persist(self, instance_dir, self.new_nspawn_machine_name(), '/srv')
 
             if persistent:
                 print_section('Recreating tarball')
@@ -270,7 +284,7 @@ class OSBase:
                 nspawn_flags.extend(['--bind={}:/srv/build/'.format(os.path.normpath(build_dir))])
                 chdir = '/srv/build'
 
-            r = nspawn_run_persist(instance_dir, machine_name, chdir, command, nspawn_flags)
+            r = nspawn_run_persist(self, instance_dir, machine_name, chdir, command, nspawn_flags)
             if r != 0:
                 return False
 

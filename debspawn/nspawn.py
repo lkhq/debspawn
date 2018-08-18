@@ -19,28 +19,47 @@
 
 import os
 import subprocess
-from .utils.misc import colored_output_allowed, unicode_allowed
+from .utils.misc import temp_dir, colored_output_allowed, unicode_allowed
 
 
-def nspawn_run_persist(base_dir, machine_name, chdir, command=[], flags=[]):
+def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], tmp_apt_cache_dir=None):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
         flags = flags.split(' ')
 
-    cmd = ['systemd-nspawn',
-           '--chdir={}'.format(chdir),
-           '-M', machine_name]
-    cmd.extend(flags)
-    cmd.extend(['-aqD', base_dir])
-    cmd.extend(command)
+
+    def run_nspawn_with_aptcache(aptcache_tmp_dir):
+        cmd = ['systemd-nspawn',
+               '--chdir={}'.format(chdir),
+               '-M', machine_name,
+               '--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir)]
+        cmd.extend(flags)
+        cmd.extend(['-aqD', base_dir])
+        cmd.extend(command)
+
+        # ensure the temporary apt cache is up-to-date
+        osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
+
+        # run command in container
+        proc = subprocess.run(cmd)
+
+        # archive APT cache, so future runs of this command are faster
+        osbase.aptcache.merge_from_dir(aptcache_tmp_dir)
+
+        return proc
 
 
-    proc = subprocess.run(cmd)
+    if tmp_apt_cache_dir:
+        proc = run_nspawn_with_aptcache(tmp_apt_cache_dir)
+    else:
+        with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
+            proc = run_nspawn_with_aptcache(aptcache_tmp)
+
     return proc.returncode
 
 
-def nspawn_run_ephemeral(base_dir, machine_name, chdir, command=[], flags=[]):
+def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flags=[]):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -71,11 +90,11 @@ def nspawn_make_helper_cmd(flags):
     return cmd
 
 
-def nspawn_run_helper_ephemeral(base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[]):
+def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[]):
     cmd = nspawn_make_helper_cmd(helper_flags)
     return nspawn_run_ephemeral(base_dir, machine_name, chdir, cmd, nspawn_flags)
 
 
-def nspawn_run_helper_persist(base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[]):
+def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[], tmp_apt_cache_dir=None):
     cmd = nspawn_make_helper_cmd(helper_flags)
-    return nspawn_run_persist(base_dir, machine_name, chdir, cmd, nspawn_flags)
+    return nspawn_run_persist(osbase, base_dir, machine_name, chdir, cmd, nspawn_flags, tmp_apt_cache_dir)

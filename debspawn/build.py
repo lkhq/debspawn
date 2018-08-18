@@ -35,18 +35,31 @@ def internal_execute_build(osbase, pkg_dir):
         # prepare the build. At this point, we only run trusted code and the container
         # has network access
 
-        nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
-        r = nspawn_run_helper_persist(instance_dir, machine_name, '--build-prepare', '/srv', nspawn_flags)
-        if r != 0:
-            return False
+        with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
+            nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
+            r = nspawn_run_helper_persist(osbase, \
+                                          instance_dir, \
+                                          machine_name, \
+                                          '--build-prepare', \
+                                          '/srv', \
+                                          nspawn_flags, \
+                                          aptcache_tmp)
+            if r != 0:
+                return False
 
-        # run the actual build. At this point, code is less trusted, and we disable network access.
-        nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
-                        '-u', 'builder',
-                        '--private-network']
-        r = nspawn_run_helper_persist(instance_dir, machine_name, '--build-run', '/srv', nspawn_flags)
-        if r != 0:
-            return False
+            # run the actual build. At this point, code is less trusted, and we disable network access.
+            nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
+                            '-u', 'builder',
+                            '--private-network']
+            r = nspawn_run_helper_persist(osbase, \
+                                          instance_dir, \
+                                          machine_name, \
+                                          '--build-run', \
+                                          '/srv', \
+                                          nspawn_flags, \
+                                          aptcache_tmp)
+            if r != 0:
+                return False
 
     return True
 
