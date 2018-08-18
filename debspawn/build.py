@@ -27,7 +27,7 @@ from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
 
-def internal_execute_build(osbase, pkg_dir):
+def internal_execute_build(osbase, pkg_dir, buildflags):
     if not pkg_dir:
         raise Exception('Package directory is missing!')
 
@@ -51,10 +51,13 @@ def internal_execute_build(osbase, pkg_dir):
             nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
                             '-u', 'builder',
                             '--private-network']
+            helper_flags = ['--build-run']
+            if buildflags:
+                helper_flags.append('--buildflags={}'.format(' '.join(buildflags)))
             r = nspawn_run_helper_persist(osbase, \
                                           instance_dir, \
                                           machine_name, \
-                                          '--build-run', \
+                                          helper_flags, \
                                           '/srv', \
                                           nspawn_flags, \
                                           aptcache_tmp)
@@ -94,6 +97,23 @@ def _read_source_package_details():
     return pkg_sourcename, pkg_version, dsc_fname
 
 
+def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig=False, extra_flags=[]):
+    if build_arch_only and build_indep_only:
+        print('Can not build only arch-indep and only arch-specific packages at the same time. Nothing would get built. Please check your flags.')
+        return False, []
+
+    buildflags = []
+    if build_arch_only:
+        buildflags.append('-B')
+    if build_indep_only:
+        buildflags.append('-A')
+    if include_orig:
+        buildflags.append('-sa')
+    buildflags.extend(extra_flags)
+
+    return True, buildflags
+
+
 def _retrieve_artifacts(osbase, tmp_dir):
     print_section('Retrieving build artifacts')
 
@@ -116,10 +136,14 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     return True
 
 
-def build_from_directory(osbase, pkg_dir, sign=False):
+def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, extra_dpkg_flags=[]):
     ensure_root()
     if not pkg_dir:
         pkg_dir = os.getcwd()
+
+    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags)
+    if not r:
+        return False
 
     print_header('Package build (from directory)')
 
@@ -145,7 +169,7 @@ def build_from_directory(osbase, pkg_dir, sign=False):
             if proc.returncode != 0:
                 return False
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
         if not ret:
             return False
 
@@ -163,8 +187,12 @@ def build_from_directory(osbase, pkg_dir, sign=False):
     return True
 
 
-def build_from_dsc(osbase, dsc_fname, sign=False):
+def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, extra_dpkg_flags=[]):
     ensure_root()
+
+    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags)
+    if not r:
+        return False
 
     dsc_fname = os.path.abspath(os.path.normpath(dsc_fname))
     tmp_prefix = os.path.basename(dsc_fname).replace('.dsc', '').replace(' ', '-')
@@ -193,7 +221,7 @@ def build_from_dsc(osbase, dsc_fname, sign=False):
             print_header('Package build')
             print_build_detail(osbase, pkg_sourcename, pkg_version)
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
         if not ret:
             return False
 

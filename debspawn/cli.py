@@ -84,10 +84,26 @@ def command_build(options):
     gconf = init_config(options)
     osbase = OSBase(gconf, options.suite, options.arch, options.variant)
 
+    buildflags = []
+    if options.buildflags:
+        buildflags = options.buildflags.split(' ')
+
     if not options.target or os.path.isdir(options.target):
-        r = build_from_directory(osbase, options.target, options.sign)
+        r = build_from_directory(osbase,
+                                 options.target,
+                                 sign=options.sign,
+                                 build_arch_only=options.arch_only,
+                                 build_indep_only=options.indep_only,
+                                 include_orig=options.include_orig,
+                                 extra_dpkg_flags=buildflags)
     else:
-        r = build_from_dsc(osbase, options.target, options.sign)
+        r = build_from_dsc(osbase,
+                           options.target,
+                           sign=options.sign,
+                           build_arch_only=options.arch_only,
+                           build_indep_only=options.indep_only,
+                           include_orig=options.include_orig,
+                           extra_dpkg_flags=buildflags)
     if not r:
         sys.exit(2)
 
@@ -121,7 +137,7 @@ def command_run(options, custom_command):
 def add_container_select_arguments(parser):
     parser.add_argument('--variant', action='store', dest='variant', default=None,
                         help='Set the bootstrap script variant.')
-    parser.add_argument('--arch', action='store', dest='arch', default=None,
+    parser.add_argument('-a', '--arch', action='store', dest='arch', default=None,
                         help='The architecture of the container.')
     parser.add_argument('suite', action='store', nargs='?', default=None,
                         help='The suite name of the container.')
@@ -139,7 +155,7 @@ def run(mainfile, args):
     subparsers = parser.add_subparsers(dest='sp_name', title='subcommands')
 
     # generic arguments
-    parser.add_argument('--config', action='store', dest='config', default=None,
+    parser.add_argument('-c', '--config', action='store', dest='config', default=None,
                         help='Path to the global config file.')
     parser.add_argument('--verbose', action='store_true', dest='verbose',
                         help='Enable debug messages.')
@@ -161,8 +177,16 @@ def run(mainfile, args):
     # 'build' command
     sp = subparsers.add_parser('build', help="Build a package in an isolated environment")
     add_container_select_arguments(sp)
-    sp.add_argument('--sign', action='store_true', dest='sign',
+    sp.add_argument('-s', '--sign', action='store_true', dest='sign',
                         help='Sign the resulting package.')
+    sp.add_argument('--arch-only', action='store_true', dest='arch_only',
+                        help='Build only architecture-specific packages.')
+    sp.add_argument('--indep-only', action='store_true', dest='indep_only',
+                        help='Build only architecture-independent (arch:all) packages.')
+    sp.add_argument('--include-orig', action='store_true', dest='include_orig',
+                        help='Forces the inclusion of the original source.')
+    sp.add_argument('--buildflags', action='store_true', dest='buildflags',
+                        help='Set flags passed through to dpkg-buildpackage.')
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)

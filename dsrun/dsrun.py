@@ -164,7 +164,7 @@ def prepare_package_build():
     return True
 
 
-def build_package():
+def build_package(buildflags=None):
     print_section('Build')
 
     os.chdir('/srv/build')
@@ -173,7 +173,10 @@ def build_package():
             os.chdir(f)
             break
 
-    run_command('dpkg-buildpackage')
+    cmd = ['dpkg-buildpackage']
+    if buildflags:
+        cmd.extend(buildflags)
+    run_command(cmd)
 
     # run_command will exit the whole program if the command failed,
     # so we can return True here
@@ -205,6 +208,8 @@ def main():
                         help='Prepare building a Debian package.')
     parser.add_argument('--build-run', action='store_true', dest='build_run',
                         help='Build a Debian package.')
+    parser.add_argument('--buildflags', action='store', dest='buildflags', default=None,
+                        help='Flags passed to dpkg-buildpackage.')
 
     options = parser.parse_args(sys.argv[1:])
 
@@ -223,7 +228,10 @@ def main():
         if not r:
             return 2
     elif options.build_run:
-        r = build_package()
+        buildflags = []
+        if options.buildflags:
+            buildflags = options.buildflags.split(' ')
+        r = build_package(buildflags)
         if not r:
             return 2
 
