@@ -25,7 +25,7 @@ from contextlib import contextmanager
 from .utils.misc import ensure_root, temp_dir, print_header, print_section
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
-from .nspawn import nspawn_run_helper_persist
+from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
 
 
 class OSBase:
@@ -192,6 +192,31 @@ class OSBase:
 
             print_section('Recreating tarball')
             self.make_instance_permanent(instance_dir)
+
+        print('Done.')
+        return True
+
+
+    def login(self, persistent=False):
+        ensure_root()
+
+        if not self.exists():
+            print('Can not enter "{}": The configuration does not exist.'.format(self.name))
+            return False
+
+        print_header('Login (persistent changes) for {}'.format(self.name) if persistent else 'Login for {}'.format(self.name))
+        with self.new_instance() as (instance_dir, machine_name):
+            # ensure helper script runner exists and is up to date
+            self._copy_helper_script(instance_dir)
+
+            # run an interactive shell in the new container
+            nspawn_run_persist(instance_dir, self.new_nspawn_machine_name(), '/srv')
+
+            if persistent:
+                print_section('Recreating tarball')
+                self.make_instance_permanent(instance_dir)
+            else:
+                print('Changes discarded.')
 
         print('Done.')
         return True

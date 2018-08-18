@@ -120,9 +120,26 @@ def run(mainfile, args):
             r = build_from_dsc(osbase, options.target)
         if not r:
             sys.exit(2)
-    elif cmdname == 'run':
-        pass
     elif cmdname == 'login':
+        parser.add_argument('--variant', action='store', dest='variant', default=None,
+                        help='Set the bootstrap script variant to use for generating the root fs.')
+        parser.add_argument('--arch', action='store', dest='arch', default=None,
+                        help='The architecture to bootstrap for.')
+        parser.add_argument('--persistent', action='store_true', dest='persistent',
+                        help='Make changes done in the session persistent.')
+        parser.add_argument('suite', action='store', nargs='?', default=None,
+                        help='The suite to bootstrap.')
+
+        options = parser.parse_args(cmdargs)
+        if not options.suite:
+            print('Need at least a suite name!')
+            sys.exit(1)
+        gconf = init_config(mainfile, options)
+        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+        r = osbase.login(options.persistent)
+        if not r:
+            sys.exit(2)
+    elif cmdname == 'run':
         pass
     else:
         print('Command "{}" is unknown.'.format(cmdname))
