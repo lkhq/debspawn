@@ -84,9 +84,9 @@ def command_build(options):
     osbase = OSBase(gconf, options.suite, options.arch, options.variant)
 
     if not options.target or os.path.isdir(options.target):
-        r = build_from_directory(osbase, options.target)
+        r = build_from_directory(osbase, options.target, options.sign)
     else:
-        r = build_from_dsc(osbase, options.target)
+        r = build_from_dsc(osbase, options.target, options.sign)
     if not r:
         sys.exit(2)
 
@@ -160,6 +160,8 @@ def run(mainfile, args):
     # 'build' command
     sp = subparsers.add_parser('build', help="Build a package in an isolated environment")
     add_container_select_arguments(sp)
+    sp.add_argument('--sign', action='store_true', dest='sign',
+                        help='Sign the resulting package.')
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)

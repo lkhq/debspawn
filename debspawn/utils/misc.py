@@ -22,23 +22,9 @@ import sys
 import shutil
 from pathlib import Path
 from contextlib import contextmanager
-from ..utils.command import safe_run
 
 
 unicode_allowed = True
-
-
-def sign(changes, gpg):
-    if changes.endswith(".dud"):
-        safe_run(['gpg', '-u', gpg, '--clearsign', changes])
-        os.rename("%s.asc" % (changes), changes)
-    else:
-        safe_run(['debsign', '-k', gpg, changes])
-
-
-def upload(changes, gpg, host):
-    sign(changes, gpg)
-    return safe_run(['dput', host, changes])
 
 
 @contextmanager

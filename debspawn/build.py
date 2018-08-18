@@ -94,7 +94,29 @@ def _read_source_package_details():
     return pkg_sourcename, pkg_version, dsc_fname
 
 
-def build_from_directory(osbase, pkg_dir):
+def _retrieve_artifacts(osbase, tmp_dir):
+    print_section('Retrieving build artifacts')
+
+    acount = 0
+    for f in glob(os.path.join(tmp_dir, '*.*')):
+        if os.path.isfile(f):
+            shutil.copy2(f, osbase.results_dir)
+            acount += 1
+    print('Copied {} files.'.format(acount))
+
+
+def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
+    print_section('Signing Package')
+    changes_basename = '{}_{}_{}.changes'.format(spkg_name, spkg_version, build_arch)
+
+    proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)])
+    if proc.returncode != 0:
+        print('Signing failed.')
+        return False
+    return True
+
+
+def build_from_directory(osbase, pkg_dir, sign=False):
     ensure_root()
     if not pkg_dir:
         pkg_dir = os.getcwd()
@@ -127,16 +149,21 @@ def build_from_directory(osbase, pkg_dir):
         if not ret:
             return False
 
-        print_section('Retrieving build artifacts')
-        for f in glob(os.path.join(pkg_tmp_dir, '*.*')):
-            if os.path.isfile(f):
-                shutil.copy2(f, osbase.results_dir)
+        # copy build results
+        _retrieve_artifacts(osbase, pkg_tmp_dir)
+
+    # sign the resulting package
+    if sign:
+        r = _sign_result(osbase.results_dir, pkg_sourcename, pkg_version, osbase.arch)
+        if not r:
+            return False
+
     print('Done.')
 
     return True
 
 
-def build_from_dsc(osbase, dsc_fname):
+def build_from_dsc(osbase, dsc_fname, sign=False):
     ensure_root()
 
     dsc_fname = os.path.abspath(os.path.normpath(dsc_fname))
@@ -170,10 +197,15 @@ def build_from_dsc(osbase, dsc_fname):
         if not ret:
             return False
 
-        print_section('Retrieving build artifacts')
-        for f in glob(os.path.join(pkg_tmp_dir, '*.*')):
-            if os.path.isfile(f):
-                shutil.copy2(f, osbase.results_dir)
+        # copy build results
+        _retrieve_artifacts(osbase, pkg_tmp_dir)
+
+    # sign the resulting package
+    if sign:
+        r = _sign_result(osbase.results_dir, pkg_sourcename, pkg_version, osbase.arch)
+        if not r:
+            return False
+
     print('Done.')
 
     return True
