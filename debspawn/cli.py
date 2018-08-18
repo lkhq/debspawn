@@ -136,20 +136,34 @@ def run(mainfile, args):
         add_container_select_arguments(parser)
         parser.add_argument('--artifacts-out', action='store', dest='artifacts_dir', default=None,
                         help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')
+        parser.add_argument('--build-dir', action='store', dest='build_dir', default=None,
+                        help='Select a host directory that gets bind mounted to /srv/build.')
         parser.add_argument('--external-command', action='store_true', dest='external_commad',
                         help='If set, the command script will be copied from the host to the container and then executed.')
         parser.add_argument('--header', action='store', dest='header', default=None,
                         help='Name of the task that is run, will be printed as header.')
-        parser.add_argument('command', action='store', nargs='+', default=None,
+        parser.add_argument('command', action='store', nargs='*', default=None,
                         help='The command to run.')
 
+        custom_command = None
+        for i, arg in enumerate(cmdargs):
+            if arg == '---':
+                if i == len(cmdargs):
+                    print('No command was given after "---", can not continue.')
+                    sys.exit(1)
+                custom_command = cmdargs[i+1:]
+                cmdargs = cmdargs[:i]
+                break
+
         options = parser.parse_args(cmdargs)
+        if not custom_command:
+            custom_command = options.command
         if not options.suite:
             print('Need at least a suite name!')
             sys.exit(1)
         gconf = init_config(mainfile, options)
         osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-        r = osbase.run(options.command, options.artifacts_dir, options.external_commad, options.header)
+        r = osbase.run(custom_command, options.build_dir, options.artifacts_dir, options.external_commad, options.header)
         if not r:
             sys.exit(2)
 

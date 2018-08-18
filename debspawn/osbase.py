@@ -225,7 +225,7 @@ class OSBase:
         return True
 
 
-    def run(self, command, artifacts_dir, copy_command, header_msg=None):
+    def run(self, command, build_dir, artifacts_dir, copy_command=False, header_msg=None):
         ''' Run an arbitrary command or script in the container '''
         ensure_root()
 
@@ -263,9 +263,14 @@ class OSBase:
                 command[0] = os.path.join('/srv', 'tmp', os.path.basename(host_script))
 
             nspawn_flags = []
+            chdir = '/srv'
             if artifacts_dir:
-                nspawn_flags = ['--bind={}:/srv/artifacts/'.format(os.path.normpath(artifacts_dir))]
-            r = nspawn_run_persist(instance_dir, machine_name, '/srv', command, nspawn_flags)
+                nspawn_flags.extend(['--bind={}:/srv/artifacts/'.format(os.path.normpath(artifacts_dir))])
+            if build_dir:
+                nspawn_flags.extend(['--bind={}:/srv/build/'.format(os.path.normpath(build_dir))])
+                chdir = '/srv/build'
+
+            r = nspawn_run_persist(instance_dir, machine_name, chdir, command, nspawn_flags)
             if r != 0:
                 return False
 
