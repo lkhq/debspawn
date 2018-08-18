@@ -19,7 +19,21 @@
 
 import os
 import subprocess
+import platform
 from .utils.misc import temp_dir, colored_output_allowed, unicode_allowed
+
+
+def get_nspawn_personality(osbase):
+    '''
+    Return the syszemd-nspawn container personality for the given combination
+    of host architecture and base OS.
+    This allows running x86 builds on amd64 machines.
+    '''
+    import fnmatch
+
+    if platform.machine() == 'x86_64' and fnmatch.filter([osbase.arch], 'i?86'):
+        return 'x86'
+    return None
 
 
 def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], tmp_apt_cache_dir=None):
@@ -28,12 +42,14 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
     if isinstance(flags, str):
         flags = flags.split(' ')
 
-
+    personality = get_nspawn_personality(osbase)
     def run_nspawn_with_aptcache(aptcache_tmp_dir):
         cmd = ['systemd-nspawn',
                '--chdir={}'.format(chdir),
                '-M', machine_name,
                '--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir)]
+        if personality:
+            cmd.append('--personality={}'.format(personality))
         cmd.extend(flags)
         cmd.extend(['-aqD', base_dir])
         cmd.extend(command)
@@ -65,9 +81,13 @@ def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flag
     if isinstance(flags, str):
         flags = flags.split(' ')
 
+    personality = get_nspawn_personality(osbase)
+
     cmd = ['systemd-nspawn',
            '--chdir={}'.format(chdir),
            '-M', machine_name]
+    if personality:
+        cmd.append('--personality={}'.format(personality))
     cmd.extend(flags)
     cmd.extend(['-aqxD', base_dir])
     cmd.extend(command)
