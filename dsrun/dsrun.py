@@ -157,7 +157,7 @@ def prepare_package_build():
         run_apt_command('update')
         run_apt_command('full-upgrade')
         run_apt_command(['install', '--no-install-recommends',
-                         'build-essential', 'dpkg-dev', 'fakeroot', 'eatmydata'])
+                         'build-essential', 'dpkg-dev', 'fakeroot'])
 
     os.chdir('/srv/build')
 

@@ -24,7 +24,7 @@ from pathlib import Path
 from glob import glob
 from .utils.misc import ensure_root, print_header, print_section, temp_dir, cd, colored_output_allowed
 from .utils.command import safe_run
-from .nspawn import nspawn_run_helper, nspawn_make_helper_cmd
+from .nspawn import nspawn_run_helper_persist
 
 
 def internal_execute_build(osbase, pkg_dir):
@@ -34,30 +34,20 @@ def internal_execute_build(osbase, pkg_dir):
     with osbase.new_instance() as (instance_dir, machine_name):
         # prepare the build. At this point, we only run trusted code and the container
         # has network access
-        cmd = ['systemd-nspawn',
-               '--chdir=/srv',
-               '-M', machine_name,
-               '--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
-               '-aqD', instance_dir]
-        cmd.extend(nspawn_make_helper_cmd('--build-prepare'))
 
-        proc = subprocess.run(cmd)
-        if proc.returncode != 0:
+        nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
+        r = nspawn_run_helper_persist(instance_dir, machine_name, '--build-prepare', '/srv', nspawn_flags)
+        if r != 0:
             return False
 
         # run the actual build. At this point, code is less trusted, and we disable network access.
-        cmd = ['systemd-nspawn',
-               '--chdir=/srv',
-               '-M', machine_name,
-               '-u', 'builder',
-               '--private-network',
-               '--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
-               '-aqD', instance_dir]
-        cmd.extend(nspawn_make_helper_cmd('--build-run'))
-
-        proc = subprocess.run(cmd)
-        if proc.returncode != 0:
+        nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
+                        '-u', 'builder',
+                        '--private-network']
+        r = nspawn_run_helper_persist(instance_dir, machine_name, '--build-run', '/srv', nspawn_flags)
+        if r != 0:
             return False
+
     return True
 
 

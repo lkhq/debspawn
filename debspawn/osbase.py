@@ -25,7 +25,7 @@ from contextlib import contextmanager
 from .utils.misc import ensure_root, temp_dir, print_header, print_section
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
-from .nspawn import nspawn_run_persist, nspawn_run_helper_persist
+from .nspawn import nspawn_run_helper_persist
 
 
 class OSBase:
@@ -146,7 +146,7 @@ class OSBase:
             self._copy_helper_script(tdir)
 
             print_section('Configure')
-            if not nspawn_run_helper_persist(tdir, self.new_nspawn_machine_name(), ['--update']):
+            if nspawn_run_helper_persist(tdir, self.new_nspawn_machine_name(), '--update') != 0:
                 return False
 
             print_section('Creating Tarball')
@@ -187,7 +187,7 @@ class OSBase:
             self._copy_helper_script(instance_dir)
 
             print_section('Update')
-            if not nspawn_run_helper_persist(instance_dir, machine_name, ['--update']):
+            if nspawn_run_helper_persist(instance_dir, self.new_nspawn_machine_name(), '--update') != 0:
                 return False
 
             print_section('Recreating tarball')

@@ -22,30 +22,39 @@ import subprocess
 from .utils.misc import colored_output_allowed, unicode_allowed
 
 
-def nspawn_run_persist(base_dir, machine_name, commands):
+def nspawn_run_persist(base_dir, machine_name, chdir, command=[], flags=[]):
+    if isinstance(command, str):
+        command = command.split(' ')
+    if isinstance(flags, str):
+        flags = flags.split(' ')
+
     cmd = ['systemd-nspawn',
-           '--chdir=/tmp',
-           '-M', machine_name,
-           '-aqD', base_dir]
-    cmd.extend(commands)
+           '--chdir={}'.format(chdir),
+           '-M', machine_name]
+    cmd.extend(flags)
+    cmd.extend(['-aqD', base_dir])
+    cmd.extend(command)
+
 
     proc = subprocess.run(cmd)
-    if proc.returncode != 0:
-        return False
-    return True
+    return proc.returncode
 
 
-def nspawn_run(base_dir, machine_name, commands):
+def nspawn_run_ephemeral(base_dir, machine_name, chdir, command=[], flags=[]):
+    if isinstance(command, str):
+        command = command.split(' ')
+    if isinstance(flags, str):
+        flags = flags.split(' ')
+
     cmd = ['systemd-nspawn',
-           '--chdir=/srv',
-           '-M', machine_name,
-           '-aqxD', base_dir]
-    cmd.extend(commands)
+           '--chdir={}'.format(chdir),
+           '-M', machine_name]
+    cmd.extend(flags)
+    cmd.extend(['-aqxD', base_dir])
+    cmd.extend(command)
 
     proc = subprocess.run(cmd)
-    if proc.returncode != 0:
-        return False
-    return True
+    return proc.returncode
 
 
 def nspawn_make_helper_cmd(flags):
@@ -62,11 +71,11 @@ def nspawn_make_helper_cmd(flags):
     return cmd
 
 
-def nspawn_run_helper(base_dir, machine_name, commands):
-    cmd = nspawn_make_helper_cmd(commands)
-    return nspawn_run(base_dir, machine_name, cmd)
+def nspawn_run_helper_ephemeral(base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[]):
+    cmd = nspawn_make_helper_cmd(helper_flags)
+    return nspawn_run_ephemeral(base_dir, machine_name, chdir, cmd, nspawn_flags)
 
 
-def nspawn_run_helper_persist(base_dir, machine_name, commands):
-    cmd = nspawn_make_helper_cmd(commands)
-    return nspawn_run_persist(base_dir, machine_name, cmd)
+def nspawn_run_helper_persist(base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[]):
+    cmd = nspawn_make_helper_cmd(helper_flags)
+    return nspawn_run_persist(base_dir, machine_name, chdir, cmd, nspawn_flags)
