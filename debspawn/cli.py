@@ -43,6 +43,15 @@ def init_config(mainfile, options):
     return gconf
 
 
+def add_container_select_arguments(parser):
+    parser.add_argument('--variant', action='store', dest='variant', default=None,
+                        help='Set the bootstrap script variant.')
+    parser.add_argument('--arch', action='store', dest='arch', default=None,
+                        help='The architecture of the container.')
+    parser.add_argument('suite', action='store', nargs='?', default=None,
+                        help='The suite name of the container.')
+
+
 def run(mainfile, args):
     if len(args) == 0:
         print('Need a subcommand to proceed!')
@@ -58,16 +67,11 @@ def run(mainfile, args):
     parser.add_argument('--no-unicode', action='store_true', dest='no_unicode',
                         help='Enable debug messages.')
 
-
+    # handle subcommands
     if cmdname == 'new':
-        parser.add_argument('--variant', action='store', dest='variant', default=None,
-                        help='Set the bootstrap script variant to use for generating the root fs.')
+        add_container_select_arguments(parser)
         parser.add_argument('--mirror', action='store', dest='mirror', default=None,
                         help='Set a specific mirror to bootstrap from.')
-        parser.add_argument('suite', action='store', nargs='?', default=None,
-                        help='The suite to bootstrap.')
-        parser.add_argument('arch', action='store', nargs='?', default=None,
-                        help='The architecture to bootstrap for.')
 
         options = parser.parse_args(cmdargs)
         if not options.suite:
@@ -78,13 +82,9 @@ def run(mainfile, args):
         r = osbase.create(options.mirror)
         if not r:
             sys.exit(2)
+
     elif cmdname == 'update':
-        parser.add_argument('--variant', action='store', dest='variant', default=None,
-                        help='Set the bootstrap script variant to use for generating the root fs.')
-        parser.add_argument('suite', action='store', nargs='?', default=None,
-                        help='The suite to bootstrap.')
-        parser.add_argument('arch', action='store', nargs='?', default=None,
-                        help='The architecture to bootstrap for.')
+        add_container_select_arguments(parser)
 
         options = parser.parse_args(cmdargs)
         if not options.suite:
@@ -95,15 +95,11 @@ def run(mainfile, args):
         r = osbase.update()
         if not r:
             sys.exit(2)
+
     elif cmdname == 'build':
         from .build import build_from_directory, build_from_dsc
 
-        parser.add_argument('--variant', action='store', dest='variant', default=None,
-                        help='Set the bootstrap script variant to use for generating the root fs.')
-        parser.add_argument('--arch', action='store', dest='arch', default=None,
-                        help='The architecture to bootstrap for.')
-        parser.add_argument('suite', action='store', nargs='?', default=None,
-                        help='The suite to bootstrap.')
+        add_container_select_arguments(parser)
         parser.add_argument('target', action='store', nargs='?', default=None,
                         help='The source package file or source directory to build.')
 
@@ -120,15 +116,11 @@ def run(mainfile, args):
             r = build_from_dsc(osbase, options.target)
         if not r:
             sys.exit(2)
+
     elif cmdname == 'login':
-        parser.add_argument('--variant', action='store', dest='variant', default=None,
-                        help='Set the bootstrap script variant to use for generating the root fs.')
-        parser.add_argument('--arch', action='store', dest='arch', default=None,
-                        help='The architecture to bootstrap for.')
+        add_container_select_arguments(parser)
         parser.add_argument('--persistent', action='store_true', dest='persistent',
                         help='Make changes done in the session persistent.')
-        parser.add_argument('suite', action='store', nargs='?', default=None,
-                        help='The suite to bootstrap.')
 
         options = parser.parse_args(cmdargs)
         if not options.suite:
@@ -139,8 +131,28 @@ def run(mainfile, args):
         r = osbase.login(options.persistent)
         if not r:
             sys.exit(2)
+
     elif cmdname == 'run':
-        pass
+        add_container_select_arguments(parser)
+        parser.add_argument('--artifacts-out', action='store', dest='artifacts_dir', default=None,
+                        help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')
+        parser.add_argument('--external-command', action='store_true', dest='external_commad',
+                        help='If set, the command script will be copied from the host to the container and then executed.')
+        parser.add_argument('--header', action='store', dest='header', default=None,
+                        help='Name of the task that is run, will be printed as header.')
+        parser.add_argument('command', action='store', nargs='+', default=None,
+                        help='The command to run.')
+
+        options = parser.parse_args(cmdargs)
+        if not options.suite:
+            print('Need at least a suite name!')
+            sys.exit(1)
+        gconf = init_config(mainfile, options)
+        osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+        r = osbase.run(options.command, options.artifacts_dir, options.external_commad, options.header)
+        if not r:
+            sys.exit(2)
+
     else:
         print('Command "{}" is unknown.'.format(cmdname))
         sys.exit(1)

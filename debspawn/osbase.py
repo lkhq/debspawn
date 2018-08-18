@@ -113,6 +113,7 @@ class OSBase:
 
 
     def create(self, mirror=None):
+        ''' Create new container base image '''
         ensure_root()
 
         if self.exists():
@@ -175,6 +176,7 @@ class OSBase:
 
 
     def update(self):
+        ''' Update container base image '''
         ensure_root()
 
         if not self.exists():
@@ -198,6 +200,7 @@ class OSBase:
 
 
     def login(self, persistent=False):
+        ''' Interactive shell login into the container '''
         ensure_root()
 
         if not self.exists():
@@ -217,6 +220,54 @@ class OSBase:
                 self.make_instance_permanent(instance_dir)
             else:
                 print('Changes discarded.')
+
+        print('Done.')
+        return True
+
+
+    def run(self, command, artifacts_dir, copy_command, header_msg=None):
+        ''' Run an arbitrary command or script in the container '''
+        ensure_root()
+
+        if not self.exists():
+            print('Can not run command in "{}": The base image does not exist.'.format(self.name))
+            return False
+
+        if len(command) <= 0:
+            print('No command was given. Can not continue.')
+            return False
+
+        if header_msg:
+            print_header(header_msg)
+
+        with self.new_instance() as (instance_dir, machine_name):
+            # ensure helper script runner exists and is up to date
+            self._copy_helper_script(instance_dir)
+
+            if copy_command:
+                # copy the script from the host into our container and execute it there
+                host_script = os.path.abspath(command[0])
+                if not os.path.isfile(host_script):
+                    print('Unable to find script "{}", can not copy it to the container. Exiting.'.format(host_script))
+                    return False
+
+                script_location = os.path.join(instance_dir, 'srv', 'tmp')
+                Path(script_location).mkdir(parents=True, exist_ok=True)
+                script_fname = os.path.join(script_location, os.path.basename(host_script))
+
+                if os.path.isfile(script_fname):
+                    os.remove(script_fname)
+                shutil.copy2(host_script, script_fname)
+                os.chmod(script_fname, 0o0755)
+
+                command[0] = os.path.join('/srv', 'tmp', os.path.basename(host_script))
+
+            nspawn_flags = []
+            if artifacts_dir:
+                nspawn_flags = ['--bind={}:/srv/artifacts/'.format(os.path.normpath(artifacts_dir))]
+            r = nspawn_run_persist(instance_dir, machine_name, '/srv', command, nspawn_flags)
+            if r != 0:
+                return False
 
         print('Done.')
         return True
