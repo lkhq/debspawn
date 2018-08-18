@@ -25,6 +25,7 @@ from .osbase import OSBase
 
 __mainfile = None
 
+
 def init_config(options):
     global __mainfile
 

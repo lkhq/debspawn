@@ -65,7 +65,6 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
 
         return proc
 
-
     if tmp_apt_cache_dir:
         proc = run_nspawn_with_aptcache(tmp_apt_cache_dir)
     else:
