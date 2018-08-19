@@ -83,3 +83,9 @@ class APTCache:
         shutil.rmtree(old_cache_dir)
 
         return cache_size
+
+    def delete(self):
+        '''
+        Remove cache completely - only useful when removing a base image completely.
+        '''
+        shutil.rmtree(self._cache_dir)

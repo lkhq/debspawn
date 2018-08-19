@@ -157,6 +157,29 @@ class OSBase:
         print('Done.')
         return True
 
+    def delete(self):
+        ''' Remove container base image '''
+        import shutil
+        ensure_root()
+
+        if not self.exists():
+            print('Can not delete "{}": The configuration does not exist.'.format(self.name))
+            return False
+
+        print_header('Removing base image {}'.format(self.name))
+
+        print_section('Deleting cache')
+        cache_size = self._aptcache.clear()
+        print('Removed {} cached packages.'.format(cache_size))
+        self._aptcache.delete()
+        print('Cache directory removed.')
+
+        print_section('Deleting base tarball')
+        os.remove(self.get_tarball_location())
+
+        print('Done.')
+        return True
+
     @contextmanager
     def new_instance(self, basename=None):
         with temp_dir() as tdir:

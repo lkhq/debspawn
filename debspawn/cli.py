@@ -34,6 +34,8 @@ def init_config(options):
 
     if not __mainfile.startswith('/usr'):
         gconf.dsrun_path = os.path.normpath(os.path.join(__mainfile, '..', 'dsrun', 'dsrun.py'))
+    elif __mainfile.startswith('/usr/local'):
+        gconf.dsrun_path = '/usr/local/lib/debspawn/dsrun.py'
 
     # check if we are forbidden from using unicode - otherwise we build
     # with unicode enabled by default
@@ -56,6 +58,19 @@ def command_create(options):
     gconf = init_config(options)
     osbase = OSBase(gconf, options.suite, options.arch, options.variant)
     r = osbase.create(options.mirror)
+    if not r:
+        sys.exit(2)
+
+
+def command_delete(options):
+    ''' Delete container image '''
+
+    if not options.suite:
+        print('No suite name was specified!')
+        sys.exit(1)
+    gconf = init_config(options)
+    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    r = osbase.delete()
     if not r:
         sys.exit(2)
 
@@ -163,6 +178,11 @@ def create_parser(formatter_class=None):
     sp.add_argument('--mirror', action='store', dest='mirror', default=None,
                     help='Set a specific mirror to bootstrap from.')
     sp.set_defaults(func=command_create)
+
+    # 'delete' command
+    sp = subparsers.add_parser('delete', help="Remove a container image")
+    add_container_select_arguments(sp)
+    sp.set_defaults(func=command_delete)
 
     # 'update' command
     sp = subparsers.add_parser('update', help="Update a container image")
