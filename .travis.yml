@@ -3,10 +3,15 @@
 language: python
 dist: trusty
 
+addons:
+  apt:
+    packages:
+    - xsltproc
+    - docbook-xsl
+
 python:
   - "3.5"
   - "3.6"
-  - "3.7"
   - "nightly"
 
 matrix:
