@@ -8,6 +8,7 @@ addons:
     packages:
     - xsltproc
     - docbook-xsl
+    - docbook-xml
 
 python:
   - "3.5"
@@ -24,4 +25,5 @@ install:
 script:
   - ./setup.py build
   - ./setup.py install --root=/tmp
+  - rm -rf build/
   - flake8 --ignore E501 ./
