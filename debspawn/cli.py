@@ -143,13 +143,8 @@ def add_container_select_arguments(parser):
                         help='The suite name of the container.')
 
 
-def run(mainfile, args):
-    if len(args) == 0:
-        print('Need a subcommand to proceed!')
-        sys.exit(1)
-
-    global __mainfile
-    __mainfile = mainfile
+def create_parser(formatter_class=None):
+    ''' Create debspawn CLI argument parser '''
 
     parser = ArgumentParser(description='Build in nspawn containers')
     subparsers = parser.add_subparsers(dest='sp_name', title='subcommands')
@@ -211,6 +206,19 @@ def run(mainfile, args):
                     help='Name of the task that is run, will be printed as header.')
     sp.add_argument('command', action='store', nargs='*', default=None,
                     help='The command to run.')
+
+    return parser
+
+
+def run(mainfile, args):
+    if len(args) == 0:
+        print('Need a subcommand to proceed!')
+        sys.exit(1)
+
+    global __mainfile
+    __mainfile = mainfile
+
+    parser = create_parser()
 
     # special case, so 'run' can understand which arguments are for debspawn and which are
     # for the command to be executed

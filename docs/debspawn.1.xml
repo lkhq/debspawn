@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY date        "<date>18 August, 2018</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY package     "debspawn">
+]>
+
+<refentry>
+	<refentryinfo>
+	<title>debspawn</title>
+	<copyright>
+		<year>2018</year>
+		<holder>Matthias Klumpp</holder>
+	</copyright>
+	<productname>DebSpawn</productname>
+	&date;
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>debspawn</refentrytitle>
+		<manvolnum>1</manvolnum>
+	</refmeta>
+	<refnamediv>
+		<refname>&package;</refname>
+		<refpurpose>Debian package builder and build helper using systemd-nspawn</refpurpose>
+	</refnamediv>
+
+       <refsynopsisdiv>
+	       <cmdsynopsis>
+		       <command>&package;</command>
+		       <group>
+			       <option>COMMAND</option>
+		       </group>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			This manual page documents briefly the <command>&package;</command> command.
+		</para>
+		<para>
+			<command>&package;</command> is a tool to build Debian packages in an isolated environment.
+			To achieve isolation, <command>systemd-nspawn</command> is used internally.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+		<para>dpkg-buildpackage(1), systemd-nspawn(1).</para>
+	</refsect1>
+<refsect1>
+<title>AUTHOR</title>
+<para>
+	This manual page was written by Matthias Klumpp <email>mak@debian.org</email>.
+</para>
+</refsect1>
+</refentry>
