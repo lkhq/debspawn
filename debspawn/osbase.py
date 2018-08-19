@@ -159,7 +159,6 @@ class OSBase:
 
     def delete(self):
         ''' Remove container base image '''
-        import shutil
         ensure_root()
 
         if not self.exists():
