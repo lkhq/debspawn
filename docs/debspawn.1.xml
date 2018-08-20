@@ -26,14 +26,15 @@
 	</refmeta>
 	<refnamediv>
 		<refname>&package;</refname>
-		<refpurpose>Debian package builder and build helper using systemd-nspawn</refpurpose>
+		<refpurpose>Build in nspawn containers</refpurpose>
 	</refnamediv>
 
        <refsynopsisdiv>
 	       <cmdsynopsis>
 		       <command>&package;</command>
+		       @BASE_FLAGS_SYNOPSIS@
 		       <group>
-			       <option>COMMAND</option>
+			       <option choice="req">COMMAND</option>
 		       </group>
 		</cmdsynopsis>
 	</refsynopsisdiv>
@@ -41,12 +42,55 @@
 	<refsect1>
 		<title>Description</title>
 		<para>
-			This manual page documents briefly the <command>&package;</command> command.
+			This manual page documents the <command>&package;</command> command.
 		</para>
 		<para>
-			<command>&package;</command> is a tool to build Debian packages in an isolated environment.
-			To achieve isolation, <command>systemd-nspawn</command> is used internally.
+			<command>&package;</command> is a tool to build Debian packages in an isolated environment, using nspawn containers.
+			See systemd-nspawn(1) for more information on the used container technology.
 		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Subcommands</title>
+
+		<para>
+			<command>&package;</command> actions are invoked via subcommands. Refer to their individual manual pages for further details.
+		</para>
+
+		<variablelist>
+
+			<varlistentry>
+				<term><option>create</option></term>
+				<listitem>
+					<para>
+						Create a new container base image for a specific suite, architecture and variant. A custom mirror can also be
+						provided. For details, see <command>debspawn-create(1)</command>.
+					</para>
+				</listitem>
+
+
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>delete</option></term>
+				<listitem>
+					<para>
+						Delete a container base image and all data associated with it.
+						For details, see <command>debspawn-delete(1)</command>.
+					</para>
+				</listitem>
+			</varlistentry>
+
+
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>Flags</title>
+
+		<variablelist>
+			@BASE_FLAGS_ENTRIES@
+		</variablelist>
 	</refsect1>
 
 	<refsect1>

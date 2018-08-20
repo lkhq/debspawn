@@ -9,9 +9,24 @@ from debspawn import __appname__, __version__
 from setuptools import setup
 from setuptools.command.install_scripts import install_scripts as install_scripts_orig
 from subprocess import check_call
+from docs.assemble_man import generate_docbook_pages
 
 
 class install_scripts(install_scripts_orig):
+
+    def _create_manpage(self, xml_src, out_dir):
+        man_name = os.path.splitext(os.path.basename(xml_src))[0]
+        out_fname = os.path.join(out_dir, man_name)
+
+        check_call(['xsltproc',
+                    '--nonet',
+                    '--stringparam', 'man.output.quietly', '1',
+                    '--stringparam', 'funcsynopsis.style', 'ansi',
+                    '--stringparam', 'man.th.extra1.suppress', '1',
+                    '-o', out_fname,
+                    'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
+                    xml_src])
+
     def run(self):
         if platform.system() == 'Windows':
             super().run()
@@ -41,15 +56,9 @@ class install_scripts(install_scripts_orig):
         man_dir = os.path.normpath(os.path.join(self.install_dir, '..', 'share', 'man', 'man1'))
         if not self.dry_run:
             self.mkpath(man_dir)
-
-            check_call(['xsltproc',
-                        '--nonet',
-                        '--stringparam', 'man.output.quietly', '1',
-                        '--stringparam', 'funcsynopsis.style', 'ansi',
-                        '--stringparam', 'man.th.extra1.suppress', '1',
-                        '-o', os.path.join(man_dir, 'debspawn.1'),
-                        'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
-                        'docs/debspawn.1.xml'])
+            pages = generate_docbook_pages(self.build_dir)
+            for page in pages:
+                self._create_manpage(page, man_dir)
 
 
 cmdclass = {
