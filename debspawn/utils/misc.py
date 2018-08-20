@@ -22,9 +22,7 @@ import sys
 import shutil
 from pathlib import Path
 from contextlib import contextmanager
-
-
-unicode_allowed = True
+from .env import unicode_allowed
 
 
 @contextmanager
@@ -56,32 +54,6 @@ def temp_dir(basename=None):
         shutil.rmtree(tmp_path)
 
 
-def ensure_root():
-    if os.geteuid() == 0:
-        return
-
-    if shutil.which('sudo'):
-        os.execvp("sudo", ["sudo"] + sys.argv)
-    else:
-        print('This command needs to be run as root.')
-        sys.exit(1)
-
-
-def colored_output_allowed():
-    return (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()) or \
-           ('TERM' in os.environ and os.environ['TERM'] == 'ANSI')
-
-
-def unicode_allowed():
-    global unicode_allowed
-    return unicode_allowed
-
-
-def set_unicode_allowed(val):
-    global unicode_allowed
-    unicode_allowed = val
-
-
 def print_textbox(title, tl, hline, tr, vline, bl, br):
     def write_utf8(s):
         sys.stdout.buffer.write(s.encode('utf-8'))
@@ -103,18 +75,14 @@ def print_textbox(title, tl, hline, tr, vline, bl, br):
 
 
 def print_header(title):
-    global unicode_allowed
-
-    if unicode_allowed:
+    if unicode_allowed():
         print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
     else:
         print_textbox(title, '+', '═', '+', '|', '+', '+')
 
 
 def print_section(title):
-    global unicode_allowed
-
-    if unicode_allowed:
+    if unicode_allowed():
         print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
     else:
         print_textbox(title, '+', '-', '+', '|', '+', '+')

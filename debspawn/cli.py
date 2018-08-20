@@ -20,7 +20,7 @@ import sys
 import logging as log
 from argparse import ArgumentParser
 from .config import GlobalConfig
-from .utils.misc import set_unicode_allowed
+from .utils.env import set_unicode_allowed, set_owning_user
 from .osbase import OSBase
 
 __mainfile = None
@@ -45,6 +45,19 @@ def init_config(options):
         if 'utf-8' not in os.environ.get('LANG', 'utf-8').lower():
             log.warning('Building with unicode support, but your environment does not seem to support unicode.')
         set_unicode_allowed(True)
+
+    if options.owner:
+        info = options.owner.split(':')
+        if len(info) > 2:
+            print('You can only use one colon to split user:group when using the --owner flag.')
+            sys.exit(1)
+        if len(info) == 2:
+            user = info[0]
+            group = info[1]
+        else:
+            user = info[0]
+            group = None
+        set_owning_user(user, group)
 
     return gconf
 
@@ -102,6 +115,11 @@ def command_build(options):
     buildflags = []
     if options.buildflags:
         buildflags = options.buildflags.split(' ')
+
+    if not options.target and os.path.isdir(options.suite):
+        print('A directory is given as parameter, but you are missing a suite parameter to build for.')
+        print('Can not continue.')
+        sys.exit(1)
 
     if not options.target or os.path.isdir(options.target):
         r = build_from_directory(osbase,
@@ -171,6 +189,10 @@ def create_parser(formatter_class=None):
                         help='Enable debug messages.')
     parser.add_argument('--no-unicode', action='store_true', dest='no_unicode',
                         help='Disable unicode support.')
+
+    parser.add_argument('--owner', action='store', dest='owner', default=None,
+                        help=('Set the user name/uid and group/gid separated by a colon '
+                              'whose behalf we are acting.'))
 
     # 'create' command
     sp = subparsers.add_parser('create', help="Create new container image")

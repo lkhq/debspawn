@@ -19,7 +19,8 @@
 
 import subprocess
 import platform
-from .utils.misc import temp_dir, colored_output_allowed, unicode_allowed
+from .utils.env import colored_output_allowed, unicode_allowed
+from .utils.misc import temp_dir
 
 
 def get_nspawn_personality(osbase):

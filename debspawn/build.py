@@ -21,7 +21,8 @@ import os
 import subprocess
 import shutil
 from glob import glob
-from .utils.misc import ensure_root, print_header, print_section, temp_dir, cd
+from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid
+from .utils.misc import print_header, print_section, temp_dir, cd
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
@@ -116,10 +117,13 @@ def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig
 def _retrieve_artifacts(osbase, tmp_dir):
     print_section('Retrieving build artifacts')
 
+    o_uid, o_gid = get_owner_uid_gid()
     acount = 0
     for f in glob(os.path.join(tmp_dir, '*.*')):
         if os.path.isfile(f):
-            shutil.copy2(f, osbase.results_dir)
+            target_fname = os.path.join(osbase.results_dir, os.path.basename(f))
+            shutil.copy2(f, target_fname)
+            os.chown(target_fname, o_uid, o_gid)
             acount += 1
     print('Copied {} files.'.format(acount))
 
@@ -128,10 +132,11 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     print_section('Signing Package')
     changes_basename = '{}_{}_{}.changes'.format(spkg_name, spkg_version, build_arch)
 
-    proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)])
-    if proc.returncode != 0:
-        print('Signing failed.')
-        return False
+    with switch_unprivileged():
+        proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)])
+        if proc.returncode != 0:
+            print('Signing failed.')
+            return False
     return True
 
 
@@ -139,6 +144,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
     ensure_root()
     if not pkg_dir:
         pkg_dir = os.getcwd()
+    pkg_dir = os.path.abspath(pkg_dir)
 
     r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags)
     if not r:
@@ -148,14 +154,15 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
 
     print_section('Creating source package')
     with cd(pkg_dir):
-        pkg_sourcename, pkg_version, dsc_fname = _read_source_package_details()
-        if not pkg_sourcename:
-            return False
+        with switch_unprivileged():
+            pkg_sourcename, pkg_version, dsc_fname = _read_source_package_details()
+            if not pkg_sourcename:
+                return False
 
-        cmd = ['dpkg-buildpackage', '-S', '-d', '--no-sign']
-        proc = subprocess.run(cmd)
-        if proc.returncode != 0:
-            return False
+            cmd = ['dpkg-buildpackage', '-S', '-d', '--no-sign']
+            proc = subprocess.run(cmd)
+            if proc.returncode != 0:
+                return False
 
     print_header('Package build')
     print_build_detail(osbase, pkg_sourcename, pkg_version)
