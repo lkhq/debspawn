@@ -1,0 +1,69 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!ENTITY date        "<date>18 August, 2018</date>">
+
+  <!ENTITY pagename    "debspawn-run">
+  <!ENTITY command     "debspawn run">
+]>
+
+<refentry>
+	<refentryinfo>
+	<title>&command;</title>
+	<copyright>
+		<year>2018</year>
+		<holder>Matthias Klumpp</holder>
+	</copyright>
+	<productname>DebSpawn</productname>
+	&date;
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>&pagename;</refentrytitle>
+		<manvolnum>1</manvolnum>
+	</refmeta>
+	<refnamediv>
+		<refname>&pagename;</refname>
+		<refpurpose>Run arbitrary command in debspawn container session</refpurpose>
+	</refnamediv>
+
+       <refsynopsisdiv>
+	       <cmdsynopsis>
+		       <command>&command;</command>
+		       @RUN_FLAGS_SYNOPSIS@
+		       <arg choice="req">SUITE</arg>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			This subcommand allows you to run arbitrary commands in an ephemeral <command>debspawn</command> container, using
+			the same environment that is normally used for building packages.
+		</para>
+		<para>
+			<command>&command;</command> is explicitly designed to be used by other tools for custom applications, and usually,
+			you will want to use <command>debspawn build</command> instead to build Debian packages.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<variablelist>
+			@RUN_FLAGS_ENTRIES@
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+		<para>debspawn-build(1).</para>
+	</refsect1>
+<refsect1>
+<title>AUTHOR</title>
+<para>
+	This manual page was written by Matthias Klumpp <email>mak@debian.org</email>.
+</para>
+</refsect1>
+</refentry>

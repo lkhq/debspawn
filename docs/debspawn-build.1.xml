@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!ENTITY date        "<date>18 August, 2018</date>">
+
+  <!ENTITY pagename    "debspawn-build">
+  <!ENTITY command     "debspawn build">
+]>
+
+<refentry>
+	<refentryinfo>
+	<title>&command;</title>
+	<copyright>
+		<year>2018</year>
+		<holder>Matthias Klumpp</holder>
+	</copyright>
+	<productname>DebSpawn</productname>
+	&date;
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>&pagename;</refentrytitle>
+		<manvolnum>1</manvolnum>
+	</refmeta>
+	<refnamediv>
+		<refname>&pagename;</refname>
+		<refpurpose>Build Debian package in a container</refpurpose>
+	</refnamediv>
+
+       <refsynopsisdiv>
+	       <cmdsynopsis>
+		       <command>&command;</command>
+		       @BUILD_FLAGS_SYNOPSIS@
+		       <arg choice="req">SUITE</arg>
+		       <arg>DIR|DSC_FILE</arg>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			Build a Debian package from a directory or source package <filename>*.dsc</filename> file.
+			<command>debspawn</command> will create a new container for the respective build using the base image specified,
+			build the package and return build artifacts in the default output directory <filename>/var/lib/debspawn/results/</filename> unless
+			a different location was specified via <option>--results-dir</option>.
+		</para>
+		<para>
+			Packages downloaded prior to the actual build are cached and will be reused on subsequent builds.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<variablelist>
+			@BUILD_FLAGS_ENTRIES@
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>Differences to sbuild</title>
+		<para>
+			On Debian, <command>sbuild</command> is used primarily for package building, which uses different technology.
+			So naturally, the question is whether the sbuild build environments and the <command>debspawn</command> build environments
+			are be identical or at least compatible.
+		</para>
+		<para>
+			Due to the different technology used, there may be subtle differences between <command>sbuild</command> chroots and
+			<command>debspawn</command> containers. The differences should not have any impact on package builds, and any such occurence is
+			highly likely a bug in the package's build process.
+			If you think it is not, please file a bug against Debspawn. We try to be as close to sbuild's default environment as possible, but
+			unfortunately can not make any guarantees.
+		</para>
+		<para>
+			One way the build environment of <command>debspawn</command> differs from Debian's default sbuild setup intentionally is in its consistent
+			use of unicode. By default, debspawn will ensure that unicode is always available and default.
+			If you do not want this behavior, you can pass the <option>--no-unicode</option> flag to <command>&command;</command> to disable unicode in
+			the tool itself and in the build environment.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+		<para>debspawn-update(1), debspawn-create(1), dpkg-buildpackage(1).</para>
+	</refsect1>
+<refsect1>
+<title>AUTHOR</title>
+<para>
+	This manual page was written by Matthias Klumpp <email>mak@debian.org</email>.
+</para>
+</refsect1>
+</refentry>

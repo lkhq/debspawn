@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!ENTITY date        "<date>18 August, 2018</date>">
+
+  <!ENTITY pagename    "debspawn-login">
+  <!ENTITY command     "debspawn login">
+]>
+
+<refentry>
+	<refentryinfo>
+	<title>&command;</title>
+	<copyright>
+		<year>2018</year>
+		<holder>Matthias Klumpp</holder>
+	</copyright>
+	<productname>DebSpawn</productname>
+	&date;
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>&pagename;</refentrytitle>
+		<manvolnum>1</manvolnum>
+	</refmeta>
+	<refnamediv>
+		<refname>&pagename;</refname>
+		<refpurpose>Open interactive session in a container</refpurpose>
+	</refnamediv>
+
+       <refsynopsisdiv>
+	       <cmdsynopsis>
+		       <command>&command;</command>
+		       @LOGIN_FLAGS_SYNOPSIS@
+		       <arg choice="req">SUITE</arg>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			This command lets you get an interactive shell session in a container that is normally used for building.
+			This can be useful to inspect the build environment, or to manually customize the container image for
+			special applications if the <option>--persistent</option> flag is set.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<variablelist>
+			@LOGIN_FLAGS_ENTRIES@
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+		<para>debspawn(1), systemd-nspawn(1).</para>
+	</refsect1>
+<refsect1>
+<title>AUTHOR</title>
+<para>
+	This manual page was written by Matthias Klumpp <email>mak@debian.org</email>.
+</para>
+</refsect1>
+</refentry>

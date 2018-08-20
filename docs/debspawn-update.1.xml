@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!ENTITY date        "<date>18 August, 2018</date>">
+
+  <!ENTITY pagename    "debspawn-update">
+  <!ENTITY command     "debspawn update">
+]>
+
+<refentry>
+	<refentryinfo>
+	<title>&command;</title>
+	<copyright>
+		<year>2018</year>
+		<holder>Matthias Klumpp</holder>
+	</copyright>
+	<productname>DebSpawn</productname>
+	&date;
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>&pagename;</refentrytitle>
+		<manvolnum>1</manvolnum>
+	</refmeta>
+	<refnamediv>
+		<refname>&pagename;</refname>
+		<refpurpose>Update a container image</refpurpose>
+	</refnamediv>
+
+       <refsynopsisdiv>
+	       <cmdsynopsis>
+		       <command>&command;</command>
+		       @UPDATE_FLAGS_SYNOPSIS@
+		       <arg choice="req">SUITE</arg>
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			Update a container base image. This achieves the same thing as running <command>apt update &amp;&amp; apt full-upgrade</command> on the base
+			image and making the changes permanent. Additionally, <command>&command;</command> will prune all caches and ensure all required packages and
+			scripts are installed in the container image.
+		</para>
+		<para>
+			Running <command>&command;</command> on the images that are in use about once a week ensures builds will happen faster, due to less changes
+			that have to be done prior to each build.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<variablelist>
+			@UPDATE_FLAGS_ENTRIES@
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+		<para>debspawn-create(1), debspawn-build(1).</para>
+	</refsect1>
+<refsect1>
+<title>AUTHOR</title>
+<para>
+	This manual page was written by Matthias Klumpp <email>mak@debian.org</email>.
+</para>
+</refsect1>
+</refentry>

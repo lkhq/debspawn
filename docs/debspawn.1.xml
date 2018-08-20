@@ -46,7 +46,17 @@
 		</para>
 		<para>
 			<command>&package;</command> is a tool to build Debian packages in an isolated environment, using nspawn containers.
-			See systemd-nspawn(1) for more information on the used container technology.
+			By using containers, debspawn can isolate builds from the host system much further. It also allows for more advanced features to manage builds,
+			for example setting resource limits for individual builds.
+		</para>
+		<para>
+			Please keep in mind that debspawn is not a security feature! While it provides a lot of isolation from the host system, you should not run arbitrary
+			untrusted code with it. The usual warnings for all container technology apply here.
+			See <command>systemd-nspawn(1)</command> for more information on the container solution debspawn uses.
+		</para>
+		<para>
+			Debspawn also allows to run arbitrary custom commands in its environment. This is useful to execute a variety of non-package build and QA actions in the
+			same environment in which packages are normally built.
 		</para>
 	</refsect1>
 
@@ -63,7 +73,7 @@
 				<term><option>create</option></term>
 				<listitem>
 					<para>
-						Create a new container base image for a specific suite, architecture and variant. A custom mirror can also be
+						Create a new container base image for a specific suite, architecture and variant. A custom mirror location can also be
 						provided. For details, see <command>debspawn-create(1)</command>.
 					</para>
 				</listitem>
@@ -77,6 +87,48 @@
 					<para>
 						Delete a container base image and all data associated with it.
 						For details, see <command>debspawn-delete(1)</command>.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>update</option></term>
+				<listitem>
+					<para>
+						Update a container base image, ensuring all packages are up to date and all
+						required scripts are installed.
+						For details, see <command>debspawn-update(1)</command>.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>build</option></term>
+				<listitem>
+					<para>
+						Build a Debian package in an isolated environment.
+						For details, see <command>debspawn-build(1)</command>.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>login</option></term>
+				<listitem>
+					<para>
+						Get an interactive shell session in a container.
+						For details, see <command>debspawn-login(1)</command>.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>run</option></term>
+				<listitem>
+					<para>
+						Run arbitrary commands in debspawn container session. This is primarily useful
+						for using <command>&package;</command> from another script.
+						For details, see <command>debspawn-run(1)</command>.
 					</para>
 				</listitem>
 			</varlistentry>
@@ -95,7 +147,7 @@
 
 	<refsect1>
 		<title>See Also</title>
-		<para>dpkg-buildpackage(1), systemd-nspawn(1).</para>
+		<para>dpkg-buildpackage(1), systemd-nspawn(1), sbuild(1).</para>
 	</refsect1>
 <refsect1>
 <title>AUTHOR</title>
