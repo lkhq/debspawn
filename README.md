@@ -11,7 +11,7 @@ Please keep in mind that Debspawn is *not* a security feature! While it provides
 host system, you should not run arbitrary untrusted code with it. The usual warnings for all container technology
 apply here.
 
-Debspawn also allows to run arbitrary custom commands in its environment. This is used by the Laniakea[1] Spark workers
+Debspawn also allows one to run arbitrary custom commands in its environment. This is used by the Laniakea[1] Spark workers
 to execute a variety of non-package builds and QA actions in the same environment in which we usually build packages.
 
 Debspawn was built with simplicity in mind. It should both be usable in an automated environment on large build farms,
@@ -30,7 +30,7 @@ See the FAQ below for more details.
 
 Clone the Git repository, install the (build and runtime) dependencies of `debspawn`:
 ```ShellSession
-sudo apt install xsltproc docbook-xsl python3-setuptools zstd systemd-container
+sudo apt install xsltproc docbook-xsl python3-setuptools zstd systemd-container debootstrap
 ```
 
 You can the run `debspawn.py` directly from the Git repository, or choose to install it:
@@ -137,7 +137,7 @@ downloaded packages between runs fully automatically, so packages only get downl
 #### Is the build environment the same as sbuild?
 
 No, unfortunately. Due to the different technology used, there are subtle differences between sbuild chroots and `debspawn` containers.
-The differences should not have any impact on package builds, and any such occurence is highly likely a bug in the package's
+The differences should not have any impact on package builds, and any such occurrence is highly likely a bug in the package's
 build process. If you think it is not, please file a bug against Debspawn. We try to be as close to sbuild's default environment
 as possible.
 
