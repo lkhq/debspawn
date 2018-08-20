@@ -121,6 +121,11 @@ def command_build(options):
         print('Can not continue.')
         sys.exit(1)
 
+    # override globally configured output directory with
+    # a custom one defined on the CLI
+    if options.results_dir:
+        osbase.results_dir = options.results_dir
+
     if not options.target or os.path.isdir(options.target):
         r = build_from_directory(osbase,
                                  options.target,
@@ -222,8 +227,10 @@ def create_parser(formatter_class=None):
                     help='Build only architecture-independent (arch:all) packages.')
     sp.add_argument('--include-orig', action='store_true', dest='include_orig',
                     help='Forces the inclusion of the original source.')
-    sp.add_argument('--buildflags', action='store_true', dest='buildflags',
+    sp.add_argument('--buildflags', action='store', dest='buildflags',
                     help='Set flags passed through to dpkg-buildpackage.')
+    sp.add_argument('--results-dir', action='store', dest='results_dir',
+                    help='Override the configured results directory and return artifacts at a custom location.')
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)

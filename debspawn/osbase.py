@@ -41,6 +41,7 @@ class OSBase:
         self._arch = arch
         self._variant = variant
         self._name = self._make_name()
+        self._results_dir = self._gconf.results_dir
 
         self._aptcache = APTCache(self)
 
@@ -85,9 +86,13 @@ class OSBase:
 
     @property
     def results_dir(self):
-        resdir = self._gconf.results_dir
-        Path(resdir).mkdir(parents=True, exist_ok=True)
-        return resdir
+        Path(self._results_dir).mkdir(parents=True, exist_ok=True)
+        return self._results_dir
+
+    @results_dir.setter
+    def results_dir(self, path):
+        self._results_dir = path
+        Path(self._results_dir).mkdir(exist_ok=True)
 
     def _copy_helper_script(self, osroot_path):
         script_location = os.path.join(osroot_path, 'usr', 'lib', 'debspawn')
