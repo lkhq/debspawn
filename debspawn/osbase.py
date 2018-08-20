@@ -246,7 +246,7 @@ class OSBase:
             self._copy_helper_script(instance_dir)
 
             # run an interactive shell in the new container
-            nspawn_run_persist(self, instance_dir, self.new_nspawn_machine_name(), '/srv')
+            nspawn_run_persist(self, instance_dir, self.new_nspawn_machine_name(), '/srv', verbose=True)
 
             if persistent:
                 print_section('Recreating tarball')

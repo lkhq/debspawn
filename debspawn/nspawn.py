@@ -36,7 +36,7 @@ def get_nspawn_personality(osbase):
     return None
 
 
-def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], tmp_apt_cache_dir=None):
+def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], tmp_apt_cache_dir=None, verbose=False):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -52,7 +52,7 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
         if personality:
             cmd.append('--personality={}'.format(personality))
         cmd.extend(flags)
-        cmd.extend(['-aqD', base_dir])
+        cmd.extend(['-a{}D'.format('' if verbose else 'q'), base_dir])
         cmd.extend(command)
 
         # ensure the temporary apt cache is up-to-date
