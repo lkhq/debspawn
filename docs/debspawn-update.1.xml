@@ -50,6 +50,17 @@
 	</refsect1>
 
 	<refsect1>
+		<title>Examples</title>
+		<para>
+			Updating images is easy, you just pass the same arguments you used for creating them, but use the <command>update</command> subcommand instead:
+		</para>
+		<screen>
+			<prompt>$</prompt> <command>&command;</command> sid
+			<prompt>$</prompt> <command>&command;</command> --arch=i386 cosmic
+		</screen>
+	</refsect1>
+
+	<refsect1>
 		<title>Options</title>
 
 		<variablelist>

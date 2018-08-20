@@ -51,6 +51,26 @@
 	</refsect1>
 
 	<refsect1>
+		<title>Examples</title>
+		<para>
+			You can build a package from its source directory, or just by passing a plain <filename>.dsc</filename> file to <command>&command;</command>.
+			If the result should be automatically signed, the <option>--sign</option> flag needs to be passed too:
+		</para>
+		<screen>
+			<prompt>$</prompt> <command>cd</command> ~/packages/hello
+			<prompt>$</prompt> <command>&command;</command> sid --sign
+
+			<prompt>$</prompt> <command>&command;</command> --arch=i386 cosmic ./hello_2.10-1.dsc
+		</screen>
+		<para>
+			You can also build packages using <command>git-buildpackage</command> and <command>debspawn</command>:
+		</para>
+		<screen>
+			<prompt>$</prompt> <command>gbp buildpackage</command> --git-builder='debspawn build sid --sign'
+		</screen>
+	</refsect1>
+
+	<refsect1>
 		<title>Options</title>
 
 		<variablelist>

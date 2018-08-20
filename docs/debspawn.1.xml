@@ -58,6 +58,9 @@
 			Debspawn also allows to run arbitrary custom commands in its environment. This is useful to execute a variety of non-package build and QA actions in the
 			same environment in which packages are normally built.
 		</para>
+		<para>
+			For more information about the DebSpawn project, you can visit it's <ulink url="https://github.com/lkorigin/debspawn">project page</ulink>.
+		</para>
 	</refsect1>
 
 	<refsect1>

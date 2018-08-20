@@ -45,6 +45,23 @@
 	</refsect1>
 
 	<refsect1>
+		<title>Examples</title>
+		<para>
+			You can easily create images for any suite that has a script in <command>debootstrap</command>. For example, to create a Debian Unstable image for
+			your current machine architecture, you can use:
+		</para>
+		<para>
+			<prompt>$</prompt> <command>&command;</command> sid
+		</para>
+		<para>
+			A more advanced example, for building on Ubuntu 18.10 on the x86 architecture:
+		</para>
+		<para>
+			<prompt>$</prompt> <command>&command;</command> --arch=i386 cosmic
+		</para>
+	</refsect1>
+
+	<refsect1>
 		<title>Options</title>
 
 		<variablelist>
