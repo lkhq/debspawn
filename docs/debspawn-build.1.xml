@@ -87,7 +87,7 @@
 		</para>
 		<para>
 			Due to the different technology used, there may be subtle differences between <command>sbuild</command> chroots and
-			<command>debspawn</command> containers. The differences should not have any impact on package builds, and any such occurence is
+			<command>debspawn</command> containers. The differences should not have any impact on package builds, and any such occurrence is
 			highly likely a bug in the package's build process.
 			If you think it is not, please file a bug against Debspawn. We try to be as close to sbuild's default environment as possible, but
 			unfortunately can not make any guarantees.

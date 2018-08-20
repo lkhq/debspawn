@@ -55,7 +55,7 @@
 			See <command>systemd-nspawn(1)</command> for more information on the container solution debspawn uses.
 		</para>
 		<para>
-			Debspawn also allows to run arbitrary custom commands in its environment. This is useful to execute a variety of non-package build and QA actions in the
+			Debspawn also allows one to run arbitrary custom commands in its environment. This is useful to execute a variety of non-package build and QA actions in the
 			same environment in which packages are normally built.
 		</para>
 		<para>
