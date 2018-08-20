@@ -111,6 +111,16 @@ class OSBase:
     def exists(self):
         return os.path.isfile(self.get_tarball_location())
 
+    def ensure_exists(self):
+        '''
+        Ensure the container image exists, and terminate the
+        program with an error code in case it does not.
+        '''
+        import sys
+        if not self.exists():
+            print('The container image for "{}" does not exist. Please create it first.'.format(self.name))
+            sys.exit(3)
+
     def new_nspawn_machine_name(self):
         import platform
         from random import choices

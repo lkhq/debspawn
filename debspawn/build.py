@@ -142,6 +142,8 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
 
 def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, extra_dpkg_flags=[]):
     ensure_root()
+    osbase.ensure_exists()
+
     if not pkg_dir:
         pkg_dir = os.getcwd()
     pkg_dir = os.path.abspath(pkg_dir)
@@ -195,6 +197,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
 
 def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, extra_dpkg_flags=[]):
     ensure_root()
+    osbase.ensure_exists()
 
     r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags)
     if not r:
