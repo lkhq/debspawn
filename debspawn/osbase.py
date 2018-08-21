@@ -129,7 +129,7 @@ class OSBase:
         nid = ''.join(choices(ascii_lowercase + digits, k=4))
         return '{}-{}-{}'.format(platform.node(), self.name, nid)
 
-    def create(self, mirror=None):
+    def create(self, mirror=None, components=None):
         ''' Create new container base image '''
         ensure_root()
 
@@ -147,6 +147,8 @@ class OSBase:
         cmd = ['debootstrap',
                '--arch={}'.format(self.arch),
                '--include=python3-minimal']
+        if components:
+            cmd.append('--components={}'.format(','.join(components)))
         if self.variant:
             cmd.append('--variant={}'.format(self.variant))
 

@@ -69,8 +69,13 @@ def command_create(options):
         print('Need at least a suite name to bootstrap!')
         sys.exit(1)
     gconf = init_config(options)
-    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-    r = osbase.create(options.mirror)
+
+    components = None
+    if options.components:
+        components = options.components.split(',')
+
+    osbase = OSBase(gconf, options.suite, options.arch, variant=options.variant)
+    r = osbase.create(options.mirror, components)
     if not r:
         sys.exit(2)
 
@@ -204,6 +209,8 @@ def create_parser(formatter_class=None):
     add_container_select_arguments(sp)
     sp.add_argument('--mirror', action='store', dest='mirror', default=None,
                     help='Set a specific mirror to bootstrap from.')
+    sp.add_argument('--components', action='store', dest='components', default=None,
+                    help='A comma-separated list of archive components to enable in the newly created image.')
     sp.set_defaults(func=command_create)
 
     # 'delete' command
