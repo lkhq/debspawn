@@ -48,6 +48,7 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
         cmd = ['systemd-nspawn',
                '--chdir={}'.format(chdir),
                '-M', machine_name,
+               '--link-journal=no',
                '--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir)]
         if personality:
             cmd.append('--personality={}'.format(personality))
@@ -85,7 +86,8 @@ def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flag
 
     cmd = ['systemd-nspawn',
            '--chdir={}'.format(chdir),
-           '-M', machine_name]
+           '-M', machine_name,
+           '--link-journal=no']
     if personality:
         cmd.append('--personality={}'.format(personality))
     cmd.extend(flags)
