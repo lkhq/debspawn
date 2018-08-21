@@ -36,10 +36,10 @@ def cd(where):
 
 @contextmanager
 def temp_dir(basename=None):
-    from random import choices
+    from random import choice
     from string import ascii_lowercase, digits
 
-    rdm_id = ''.join(choices(ascii_lowercase + digits, k=8))
+    rdm_id = ''.join(choice(ascii_lowercase + digits) for _ in range(8))
     if basename:
         dir_name = '{}-{}'.format(basename, rdm_id)
     else:

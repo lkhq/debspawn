@@ -123,10 +123,10 @@ class OSBase:
 
     def new_nspawn_machine_name(self):
         import platform
-        from random import choices
+        from random import choice
         from string import ascii_lowercase, digits
 
-        nid = ''.join(choices(ascii_lowercase + digits, k=4))
+        nid = ''.join(choice(ascii_lowercase + digits) for _ in range(4))
         return '{}-{}-{}'.format(platform.node(), self.name, nid)
 
     def create(self, mirror=None, components=None):

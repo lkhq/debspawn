@@ -36,7 +36,7 @@ class APTCache:
         Merge in packages from a temporary cache
         '''
 
-        from random import choices
+        from random import choice
         from string import ascii_lowercase, digits
 
         Path(self._cache_dir).mkdir(parents=True, exist_ok=True)
@@ -45,7 +45,7 @@ class APTCache:
             pkg_cachepath = os.path.join(self._cache_dir, pkg_basename)
 
             if not os.path.isfile(pkg_cachepath):
-                pkg_tmp_name = pkg_cachepath + '.tmp-' + ''.join(choices(ascii_lowercase + digits, k=8))
+                pkg_tmp_name = pkg_cachepath + '.tmp-' + ''.join(choice(ascii_lowercase + digits) for _ in range(8))
                 shutil.copy2(pkg_fname, pkg_tmp_name)
                 try:
                     os.rename(pkg_tmp_name, pkg_cachepath)
