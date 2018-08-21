@@ -35,7 +35,9 @@ def init_config(options):
     if not __mainfile.startswith('/usr'):
         gconf.dsrun_path = os.path.normpath(os.path.join(__mainfile, '..', 'dsrun', 'dsrun.py'))
     elif __mainfile.startswith('/usr/local'):
-        gconf.dsrun_path = '/usr/local/lib/debspawn/dsrun.py'
+        path = '/usr/local/lib/debspawn/dsrun.py'
+        if os.path.isfile(path):
+            gconf.dsrun_path = path
 
     # check if we are forbidden from using unicode - otherwise we build
     # with unicode enabled by default

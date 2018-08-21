@@ -72,7 +72,7 @@ packages = [
 
 scripts = ['debspawn.py']
 
-data_files = [('lib/debspawn', ['dsrun/dsrun.py'])]
+data_files = [('/usr/lib/debspawn', ['dsrun/dsrun.py'])]
 
 setup(
     name=__appname__,
