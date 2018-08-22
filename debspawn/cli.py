@@ -64,9 +64,17 @@ def init_config(options):
     return gconf
 
 
+def check_print_version(options):
+    if options.show_version:
+        from . import __version__
+        print(__version__)
+        sys.exit(0)
+
+
 def command_create(options):
     ''' Create new container image '''
 
+    check_print_version(options)
     if not options.suite:
         print('Need at least a suite name to bootstrap!')
         sys.exit(1)
@@ -85,6 +93,7 @@ def command_create(options):
 def command_delete(options):
     ''' Delete container image '''
 
+    check_print_version(options)
     if not options.suite:
         print('No suite name was specified!')
         sys.exit(1)
@@ -98,6 +107,7 @@ def command_delete(options):
 def command_update(options):
     ''' Update container image '''
 
+    check_print_version(options)
     if not options.suite:
         print('Need at least a suite name for update!')
         sys.exit(1)
@@ -113,6 +123,7 @@ def command_build(options):
 
     from .build import build_from_directory, build_from_dsc
 
+    check_print_version(options)
     if not options.suite:
         print('Need at least a suite name for building!')
         sys.exit(1)
@@ -156,6 +167,7 @@ def command_build(options):
 def command_login(options):
     ''' Open interactive session in a container '''
 
+    check_print_version(options)
     if not options.suite:
         print('Need at least a suite name!')
         sys.exit(1)
@@ -169,6 +181,7 @@ def command_login(options):
 def command_run(options, custom_command):
     ''' Run arbitrary command in container session '''
 
+    check_print_version(options)
     if not options.suite:
         print('Need at least a suite name!')
         sys.exit(1)
@@ -201,6 +214,8 @@ def create_parser(formatter_class=None):
                         help='Enable debug messages.')
     parser.add_argument('--no-unicode', action='store_true', dest='no_unicode',
                         help='Disable unicode support.')
+    parser.add_argument('--version', action='store_true', dest='show_version',
+                        help='Display the version of debspawn itself.')
 
     parser.add_argument('--owner', action='store', dest='owner', default=None,
                         help=('Set the user name/uid and group/gid separated by a colon '
@@ -292,6 +307,7 @@ def run(mainfile, args):
                 break
 
     args = parser.parse_args(args)
+    check_print_version(args)
     if args.sp_name == 'run':
         if not custom_command:
             custom_command = args.command
