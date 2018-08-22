@@ -315,6 +315,8 @@ class OSBase:
                 print_error('Container setup failed.')
                 return False
 
+            print_section('Running Task')
+
             nspawn_flags = []
             chdir = '/srv'
             if artifacts_dir:
