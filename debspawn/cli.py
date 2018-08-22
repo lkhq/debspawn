@@ -278,7 +278,7 @@ def create_parser(formatter_class=None):
                     help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')
     sp.add_argument('--build-dir', action='store', dest='build_dir', default=None,
                     help='Select a host directory that gets bind mounted to /srv/build.')
-    sp.add_argument('--external-command', action='store_true', dest='external_commad',
+    sp.add_argument('-x', '--external-command', action='store_true', dest='external_commad',
                     help='If set, the command script will be copied from the host to the container and then executed.')
     sp.add_argument('--header', action='store', dest='header', default=None,
                     help='Name of the task that is run, will be printed as header.')
@@ -300,8 +300,8 @@ def run(mainfile, args):
 
     # special case, so 'run' can understand which arguments are for debspawn and which are
     # for the command to be executed
+    custom_command = None
     if args[0] == 'run':
-        custom_command = None
         for i, arg in enumerate(args):
             if arg == '---':
                 if i + 1 == len(args):
