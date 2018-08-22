@@ -306,6 +306,15 @@ class OSBase:
 
                 command[0] = os.path.join('/srv', 'tmp', os.path.basename(host_script))
 
+            r = nspawn_run_helper_persist(self,
+                                          instance_dir,
+                                          machine_name,
+                                          '--prepare-run',
+                                          '/srv')
+            if r != 0:
+                print_error('Container setup failed.')
+                return False
+
             nspawn_flags = []
             chdir = '/srv'
             if artifacts_dir:

@@ -141,6 +141,14 @@ def update_container():
     return True
 
 
+def prepare_run():
+    print_section('Preparing container')
+
+    with eatmydata():
+        run_apt_command('update')
+        run_apt_command('full-upgrade')
+
+
 def prepare_package_build():
     print_section('Preparing container for build')
 
@@ -211,6 +219,8 @@ def main():
                         help='Build a Debian package.')
     parser.add_argument('--buildflags', action='store', dest='buildflags', default=None,
                         help='Flags passed to dpkg-buildpackage.')
+    parser.add_argument('--prepare-run', action='store_true', dest='prepare_run',
+                        help='Prepare container image for generic script run.')
 
     options = parser.parse_args(sys.argv[1:])
 
@@ -235,6 +245,13 @@ def main():
         r = build_package(buildflags)
         if not r:
             return 2
+    elif options.prepare_run:
+        r = prepare_run()
+        if not r:
+            return 2
+    else:
+        print('ERROR: No action specified.')
+        return 1
 
     return 0
 
