@@ -148,6 +148,8 @@ def prepare_run():
         run_apt_command('update')
         run_apt_command('full-upgrade')
 
+    return True
+
 
 def prepare_package_build():
     print_section('Preparing container for build')
