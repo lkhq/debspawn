@@ -27,7 +27,7 @@ from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
 
-def internal_execute_build(osbase, pkg_dir, buildflags):
+def internal_execute_build(osbase, pkg_dir, buildflags=[]):
     if not pkg_dir:
         raise Exception('Package directory is missing!')
 
@@ -45,6 +45,7 @@ def internal_execute_build(osbase, pkg_dir, buildflags):
                                           nspawn_flags,
                                           aptcache_tmp)
             if r != 0:
+                print('ERROR: Build environment setup failed.')
                 return False
 
             # run the actual build. At this point, code is less trusted, and we disable network access.
@@ -97,7 +98,7 @@ def _read_source_package_details():
     return pkg_sourcename, pkg_version, dsc_fname
 
 
-def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig=False, extra_flags=[]):
+def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig=False, maintainer=None, extra_flags=[]):
     if build_arch_only and build_indep_only:
         print('Can not build only arch-indep and only arch-specific packages at the same time. Nothing would get built. Please check your flags.')
         return False, []
@@ -109,6 +110,8 @@ def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig
         buildflags.append('-A')
     if include_orig:
         buildflags.append('-sa')
+    if maintainer:
+        buildflags.extend(['-e', maintainer])
     buildflags.extend(extra_flags)
 
     return True, buildflags
@@ -140,7 +143,7 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     return True
 
 
-def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, extra_dpkg_flags=[]):
+def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -148,7 +151,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
         pkg_dir = os.getcwd()
     pkg_dir = os.path.abspath(pkg_dir)
 
-    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags)
+    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags, maintainer)
     if not r:
         return False
 
@@ -177,7 +180,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
             if proc.returncode != 0:
                 return False
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, maintainer, buildflags)
         if not ret:
             return False
 
@@ -195,11 +198,11 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
     return True
 
 
-def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, extra_dpkg_flags=[]):
+def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
-    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags)
+    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags, maintainer)
     if not r:
         return False
 
@@ -230,7 +233,7 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_i
             print_header('Package build')
             print_build_detail(osbase, pkg_sourcename, pkg_version)
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, maintainer, buildflags)
         if not ret:
             return False
 

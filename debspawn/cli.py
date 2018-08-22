@@ -151,6 +151,7 @@ def command_build(options):
                                  build_arch_only=options.arch_only,
                                  build_indep_only=options.indep_only,
                                  include_orig=options.include_orig,
+                                 maintainer=options.maintainer,
                                  extra_dpkg_flags=buildflags)
     else:
         r = build_from_dsc(osbase,
@@ -159,6 +160,7 @@ def command_build(options):
                            build_arch_only=options.arch_only,
                            build_indep_only=options.indep_only,
                            include_orig=options.include_orig,
+                           maintainer=options.maintainer,
                            extra_dpkg_flags=buildflags)
     if not r:
         sys.exit(2)
@@ -255,6 +257,9 @@ def create_parser(formatter_class=None):
                     help='Set flags passed through to dpkg-buildpackage.')
     sp.add_argument('--results-dir', action='store', dest='results_dir',
                     help='Override the configured results directory and return artifacts at a custom location.')
+    sp.add_argument('--maintainer', action='store', dest='maintainer',
+                    help='Set the name and email address of the maintainer for this upload, rather than using ' +
+                         'the information from the source tree\'s changelog.')
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)
