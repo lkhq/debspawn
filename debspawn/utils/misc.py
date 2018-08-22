@@ -88,6 +88,24 @@ def print_section(title):
         print_textbox(title, '+', '-', '+', '|', '+', '+')
 
 
+def print_info(*arg):
+    '''
+    Prints an information message and ensures that it shows up on
+    stdout immediately.
+    '''
+    print(*arg)
+    sys.stdout.flush()
+
+
+def print_error(*arg):
+    '''
+    Prints an information message and ensures that it shows up on
+    stdout immediately.
+    '''
+    print('ERROR:', *arg, file=sys.stderr)
+    sys.stderr.flush()
+
+
 def format_filesize(num, suffix='B'):
     for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:

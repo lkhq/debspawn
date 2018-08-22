@@ -23,7 +23,7 @@ import shutil
 from pathlib import Path
 from contextlib import contextmanager
 from .utils.env import ensure_root
-from .utils.misc import temp_dir, print_header, print_section, format_filesize
+from .utils.misc import temp_dir, print_header, print_section, format_filesize, print_info, print_error
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
 from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
@@ -118,7 +118,7 @@ class OSBase:
         '''
         import sys
         if not self.exists():
-            print('ERROR: The container image for "{}" does not exist. Please create it first.'.format(self.name))
+            print_error('The container image for "{}" does not exist. Please create it first.'.format(self.name))
             sys.exit(3)
 
     def new_nspawn_machine_name(self):
@@ -134,7 +134,7 @@ class OSBase:
         ensure_root()
 
         if self.exists():
-            print('This configuration has already been created. You can only delete or update it.')
+            print_error('This configuration has already been created. You can only delete or update it.')
             return False
 
         # ensure image location exists
@@ -172,7 +172,7 @@ class OSBase:
             print_section('Creating Tarball')
             compress_directory(tdir, self.get_tarball_location())
 
-        print('Done.')
+        print_info('Done.')
         return True
 
     def delete(self):
@@ -180,21 +180,21 @@ class OSBase:
         ensure_root()
 
         if not self.exists():
-            print('Can not delete "{}": The configuration does not exist.'.format(self.name))
+            print_error('Can not delete "{}": The configuration does not exist.'.format(self.name))
             return False
 
         print_header('Removing base image {}'.format(self.name))
 
         print_section('Deleting cache')
         cache_size = self._aptcache.clear()
-        print('Removed {} cached packages.'.format(cache_size))
+        print_info('Removed {} cached packages.'.format(cache_size))
         self._aptcache.delete()
-        print('Cache directory removed.')
+        print_info('Cache directory removed.')
 
         print_section('Deleting base tarball')
         os.remove(self.get_tarball_location())
 
-        print('Done.')
+        print_info('Done.')
         return True
 
     @contextmanager
@@ -214,14 +214,14 @@ class OSBase:
         os.remove(tarball_name_old)
 
         tar_size = os.path.getsize(self.get_tarball_location())
-        print('New compressed tarball size is {}'.format(format_filesize(tar_size)))
+        print_info('New compressed tarball size is {}'.format(format_filesize(tar_size)))
 
     def update(self):
         ''' Update container base image '''
         ensure_root()
 
         if not self.exists():
-            print('Can not update "{}": The configuration does not exist.'.format(self.name))
+            print_error('Can not update "{}": The configuration does not exist.'.format(self.name))
             return False
 
         print_header('Updating container')
@@ -239,9 +239,9 @@ class OSBase:
 
         print_section('Cleaning up cache')
         cache_size = self._aptcache.clear()
-        print('Removed {} cached packages.'.format(cache_size))
+        print_info('Removed {} cached packages.'.format(cache_size))
 
-        print('Done.')
+        print_error('Done.')
         return True
 
     def login(self, persistent=False):
@@ -249,7 +249,7 @@ class OSBase:
         ensure_root()
 
         if not self.exists():
-            print('Can not enter "{}": The configuration does not exist.'.format(self.name))
+            print_info('Can not enter "{}": The configuration does not exist.'.format(self.name))
             return False
 
         print_header('Login (persistent changes) for {}'.format(self.name) if persistent else 'Login for {}'.format(self.name))
@@ -264,9 +264,9 @@ class OSBase:
                 print_section('Recreating tarball')
                 self.make_instance_permanent(instance_dir)
             else:
-                print('Changes discarded.')
+                print_info('Changes discarded.')
 
-        print('Done.')
+        print_info('Done.')
         return True
 
     def run(self, command, build_dir, artifacts_dir, copy_command=False, header_msg=None):
@@ -274,11 +274,11 @@ class OSBase:
         ensure_root()
 
         if not self.exists():
-            print('Can not run command in "{}": The base image does not exist.'.format(self.name))
+            print_error('Can not run command in "{}": The base image does not exist.'.format(self.name))
             return False
 
         if len(command) <= 0:
-            print('No command was given. Can not continue.')
+            print_error('No command was given. Can not continue.')
             return False
 
         if header_msg:
@@ -292,7 +292,7 @@ class OSBase:
                 # copy the script from the host into our container and execute it there
                 host_script = os.path.abspath(command[0])
                 if not os.path.isfile(host_script):
-                    print('Unable to find script "{}", can not copy it to the container. Exiting.'.format(host_script))
+                    print_error('Unable to find script "{}", can not copy it to the container. Exiting.'.format(host_script))
                     return False
 
                 script_location = os.path.join(instance_dir, 'srv', 'tmp')
@@ -318,5 +318,5 @@ class OSBase:
             if r != 0:
                 return False
 
-        print('Done.')
+        print_info('Done.')
         return True

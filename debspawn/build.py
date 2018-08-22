@@ -22,7 +22,7 @@ import subprocess
 import shutil
 from glob import glob
 from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid
-from .utils.misc import print_header, print_section, temp_dir, cd
+from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
@@ -45,7 +45,7 @@ def internal_execute_build(osbase, pkg_dir, buildflags=[]):
                                           nspawn_flags,
                                           aptcache_tmp)
             if r != 0:
-                print('ERROR: Build environment setup failed.')
+                print_error('Build environment setup failed.')
                 return False
 
             # run the actual build. At this point, code is less trusted, and we disable network access.
@@ -69,11 +69,11 @@ def internal_execute_build(osbase, pkg_dir, buildflags=[]):
 
 
 def print_build_detail(osbase, pkgname, version):
-    print('Package: {}'.format(pkgname))
-    print('Version: {}'.format(version))
-    print('Distribution: {}'.format(osbase.suite))
-    print('Architecture: {}'.format(osbase.arch))
-    print()
+    print_info('Package: {}'.format(pkgname))
+    print_info('Version: {}'.format(version))
+    print_info('Distribution: {}'.format(osbase.suite))
+    print_info('Architecture: {}'.format(osbase.arch))
+    print_info()
 
 
 def _read_source_package_details():
@@ -90,7 +90,7 @@ def _read_source_package_details():
             pkg_version = line[9:].strip()
 
     if not pkg_sourcename or not pkg_version:
-        print('Unable to determine source package name or source package version. Can not continue.')
+        print_error('Unable to determine source package name or source package version. Can not continue.')
         return None, None, None
 
     dsc_fname = '{}_{}.dsc'.format(pkg_sourcename, pkg_version)
@@ -100,7 +100,7 @@ def _read_source_package_details():
 
 def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig=False, maintainer=None, extra_flags=[]):
     if build_arch_only and build_indep_only:
-        print('Can not build only arch-indep and only arch-specific packages at the same time. Nothing would get built. Please check your flags.')
+        print_error('Can not build only arch-indep and only arch-specific packages at the same time. Nothing would get built. Please check your flags.')
         return False, []
 
     buildflags = []
@@ -129,7 +129,7 @@ def _retrieve_artifacts(osbase, tmp_dir):
             shutil.copy2(f, target_fname)
             os.chown(target_fname, o_uid, o_gid)
             acount += 1
-    print('Copied {} files.'.format(acount))
+    print_info('Copied {} files.'.format(acount))
 
 
 def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
@@ -139,7 +139,7 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     with switch_unprivileged():
         proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)])
         if proc.returncode != 0:
-            print('Signing failed.')
+            print_error('Signing failed.')
             return False
     return True
 
@@ -194,7 +194,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
         if not r:
             return False
 
-    print('Done.')
+    print_info('Done.')
 
     return True
 
@@ -223,7 +223,7 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_i
                     pkg_srcdir = f
                     break
             if not pkg_srcdir:
-                print('Unable to find source directory of extracted package.')
+                print_error('Unable to find source directory of extracted package.')
                 return False
 
             with cd(pkg_srcdir):
@@ -247,6 +247,6 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_i
         if not r:
             return False
 
-    print('Done.')
+    print_info('Done.')
 
     return True
