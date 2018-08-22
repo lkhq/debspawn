@@ -258,8 +258,8 @@ def create_parser(formatter_class=None):
     sp.add_argument('--results-dir', action='store', dest='results_dir',
                     help='Override the configured results directory and return artifacts at a custom location.')
     sp.add_argument('--maintainer', action='store', dest='maintainer',
-                    help='Set the name and email address of the maintainer for this upload, rather than using ' +
-                         'the information from the source tree\'s changelog.')
+                    help='Set the name and email address of the maintainer for this package and upload, rather than using ' +
+                         'rather than using the information from the source tree\'s control file or changelog.')
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)

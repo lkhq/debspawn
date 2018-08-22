@@ -111,7 +111,8 @@ def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig
     if include_orig:
         buildflags.append('-sa')
     if maintainer:
-        buildflags.extend(['-e', maintainer])
+        buildflags.append('-m\'{}\''.format(maintainer))
+        buildflags.append('-e\'{}\''.format(maintainer))
     buildflags.extend(extra_flags)
 
     return True, buildflags
@@ -151,7 +152,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
         pkg_dir = os.getcwd()
     pkg_dir = os.path.abspath(pkg_dir)
 
-    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags, maintainer)
+    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, maintainer, extra_dpkg_flags)
     if not r:
         return False
 
@@ -180,7 +181,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
             if proc.returncode != 0:
                 return False
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, maintainer, buildflags)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
         if not ret:
             return False
 
@@ -202,7 +203,7 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_i
     ensure_root()
     osbase.ensure_exists()
 
-    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, extra_dpkg_flags, maintainer)
+    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, maintainer, extra_dpkg_flags)
     if not r:
         return False
 
@@ -233,7 +234,7 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_i
             print_header('Package build')
             print_build_detail(osbase, pkg_sourcename, pkg_version)
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, maintainer, buildflags)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
         if not ret:
             return False
 

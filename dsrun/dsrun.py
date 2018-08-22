@@ -21,6 +21,7 @@
 import os
 import sys
 import pwd
+import shlex
 import subprocess
 from contextlib import contextmanager
 from argparse import ArgumentParser
@@ -230,7 +231,7 @@ def main():
     elif options.build_run:
         buildflags = []
         if options.buildflags:
-            buildflags = options.buildflags.split(' ')
+            buildflags = shlex.split(options.buildflags)
         r = build_package(buildflags)
         if not r:
             return 2

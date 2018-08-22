@@ -146,7 +146,7 @@ class OSBase:
             print('variant: {}'.format(self.variant))
         cmd = ['debootstrap',
                '--arch={}'.format(self.arch),
-               '--include=python3-minimal']
+               '--include=python3']
         if components:
             cmd.append('--components={}'.format(','.join(components)))
         if self.variant:
