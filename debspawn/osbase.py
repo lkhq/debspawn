@@ -118,7 +118,7 @@ class OSBase:
         '''
         import sys
         if not self.exists():
-            print('The container image for "{}" does not exist. Please create it first.'.format(self.name))
+            print('ERROR: The container image for "{}" does not exist. Please create it first.'.format(self.name))
             sys.exit(3)
 
     def new_nspawn_machine_name(self):
