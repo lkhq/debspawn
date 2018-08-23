@@ -155,6 +155,7 @@ def _print_system_info():
     from . import __version__
     from .utils.misc import current_time_string
     print_info('debspawn {version} on {host} at {time}'.format(version=__version__, host=platform.node(), time=current_time_string()))
+    print_info()
 
 
 def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
