@@ -18,7 +18,7 @@
 import os
 import sys
 import logging as log
-from argparse import ArgumentParser
+from argparse import ArgumentParser, HelpFormatter
 from .config import GlobalConfig
 from .utils.env import set_unicode_allowed, set_owning_user
 from .osbase import OSBase
@@ -148,8 +148,7 @@ def command_build(options):
         r = build_from_directory(osbase,
                                  options.target,
                                  sign=options.sign,
-                                 build_arch_only=options.arch_only,
-                                 build_indep_only=options.indep_only,
+                                 build_only=options.build_only,
                                  include_orig=options.include_orig,
                                  maintainer=options.maintainer,
                                  extra_dpkg_flags=buildflags)
@@ -157,8 +156,7 @@ def command_build(options):
         r = build_from_dsc(osbase,
                            options.target,
                            sign=options.sign,
-                           build_arch_only=options.arch_only,
-                           build_indep_only=options.indep_only,
+                           build_only=options.build_only,
                            include_orig=options.include_orig,
                            maintainer=options.maintainer,
                            extra_dpkg_flags=buildflags)
@@ -194,6 +192,15 @@ def command_run(options, custom_command):
         sys.exit(2)
 
 
+class CustomArgparseFormatter(HelpFormatter):
+
+    def _split_lines(self, text, width):
+        print(text)
+        if text.startswith('CF|'):
+            return text[3:].splitlines()
+        return HelpFormatter._split_lines(self, text, width)
+
+
 def add_container_select_arguments(parser):
     parser.add_argument('--variant', action='store', dest='variant', default=None,
                         help='Set the bootstrap script variant.')
@@ -206,7 +213,10 @@ def add_container_select_arguments(parser):
 def create_parser(formatter_class=None):
     ''' Create debspawn CLI argument parser '''
 
-    parser = ArgumentParser(description='Build in nspawn containers')
+    if not formatter_class:
+        formatter_class = CustomArgparseFormatter
+
+    parser = ArgumentParser(description='Build in nspawn containers', formatter_class=formatter_class)
     subparsers = parser.add_subparsers(dest='sp_name', title='subcommands')
 
     # generic arguments
@@ -224,7 +234,7 @@ def create_parser(formatter_class=None):
                               'whose behalf we are acting.'))
 
     # 'create' command
-    sp = subparsers.add_parser('create', help="Create new container image")
+    sp = subparsers.add_parser('create', help='Create new container image')
     add_container_select_arguments(sp)
     sp.add_argument('--mirror', action='store', dest='mirror', default=None,
                     help='Set a specific mirror to bootstrap from.')
@@ -233,24 +243,26 @@ def create_parser(formatter_class=None):
     sp.set_defaults(func=command_create)
 
     # 'delete' command
-    sp = subparsers.add_parser('delete', help="Remove a container image")
+    sp = subparsers.add_parser('delete', help='Remove a container image')
     add_container_select_arguments(sp)
     sp.set_defaults(func=command_delete)
 
     # 'update' command
-    sp = subparsers.add_parser('update', help="Update a container image")
+    sp = subparsers.add_parser('update', help='Update a container image')
     add_container_select_arguments(sp)
     sp.set_defaults(func=command_update)
 
     # 'build' command
-    sp = subparsers.add_parser('build', help="Build a package in an isolated environment")
+    sp = subparsers.add_parser('build', help='Build a package in an isolated environment', formatter_class=formatter_class)
     add_container_select_arguments(sp)
     sp.add_argument('-s', '--sign', action='store_true', dest='sign',
                     help='Sign the resulting package.')
-    sp.add_argument('--arch-only', action='store_true', dest='arch_only',
-                    help='Build only architecture-specific packages.')
-    sp.add_argument('--indep-only', action='store_true', dest='indep_only',
-                    help='Build only architecture-independent (arch:all) packages.')
+    sp.add_argument('--only', choices=['binary', 'arch', 'indep', 'source'], dest='build_only',
+                    help='CF|Select only a specific set of packages to be built. Choices are:\n' +
+                         'binary: Build only binary packages, no source files are to be built and/or distributed.\n' +
+                         'arch: Build only architecture-specific binary packages.\n' +
+                         'indep: Build only architecture-independent (arch:all) binary packages.\n' +
+                         'source: Do a source-only build, no binary packages are made.')
     sp.add_argument('--include-orig', action='store_true', dest='include_orig',
                     help='Forces the inclusion of the original source.')
     sp.add_argument('--buildflags', action='store', dest='buildflags',
@@ -265,14 +277,14 @@ def create_parser(formatter_class=None):
     sp.set_defaults(func=command_build)
 
     # 'login' command
-    sp = subparsers.add_parser('login', help="Open interactive session in a container")
+    sp = subparsers.add_parser('login', help='Open interactive session in a container')
     add_container_select_arguments(sp)
     sp.add_argument('--persistent', action='store_true', dest='persistent',
                     help='Make changes done in the session persistent.')
     sp.set_defaults(func=command_login)
 
     # 'run' command
-    sp = subparsers.add_parser('run', help="Run arbitrary command in an ephemeral container")
+    sp = subparsers.add_parser('run', help='Run arbitrary command in an ephemeral container')
     add_container_select_arguments(sp)
     sp.add_argument('--artifacts-out', action='store', dest='artifacts_dir', default=None,
                     help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')

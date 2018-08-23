@@ -38,6 +38,13 @@ class DocbookEditor:
                 desc_text = item.help
             desc_text = xml_escape(desc_text)
 
+            if desc_text.startswith('CF|'):
+                desc_text = desc_text[3:]
+                desc_text = desc_text.replace('binary:', '<option>binary</option>:', 1)
+                desc_text = desc_text.replace('arch:', '<option>arch</option>:', 1)
+                desc_text = desc_text.replace('indep:', '<option>indep</option>:', 1)
+                desc_text = desc_text.replace('source:', '<option>source</option>:', 1)
+
             flags_entries += '''<varlistentry>
                                   <term>{}</term>
                                   <listitem>

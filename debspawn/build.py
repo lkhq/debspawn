@@ -98,16 +98,22 @@ def _read_source_package_details():
     return pkg_sourcename, pkg_version, dsc_fname
 
 
-def _get_build_flags(build_arch_only=False, build_indep_only=False, include_orig=False, maintainer=None, extra_flags=[]):
-    if build_arch_only and build_indep_only:
-        print_error('Can not build only arch-indep and only arch-specific packages at the same time. Nothing would get built. Please check your flags.')
-        return False, []
-
+def _get_build_flags(build_only=None, include_orig=False, maintainer=None, extra_flags=[]):
     buildflags = []
-    if build_arch_only:
-        buildflags.append('-B')
-    if build_indep_only:
-        buildflags.append('-A')
+
+    if build_only:
+        if build_only == 'binary':
+            buildflags.append('-b')
+        elif build_only == 'arch':
+            buildflags.append('-B')
+        elif build_only == 'indep':
+            buildflags.append('-A')
+        elif build_only == 'source':
+            buildflags.append('-S')
+        else:
+            print_error('Invalid build-only flag "{}". Can not continue.'.format(build_only))
+            return False, []
+
     if include_orig:
         buildflags.append('-sa')
     if maintainer:
@@ -144,7 +150,7 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     return True
 
 
-def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
+def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -152,7 +158,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
         pkg_dir = os.getcwd()
     pkg_dir = os.path.abspath(pkg_dir)
 
-    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, maintainer, extra_dpkg_flags)
+    r, buildflags = _get_build_flags(build_only, include_orig, maintainer, extra_dpkg_flags)
     if not r:
         return False
 
@@ -199,11 +205,11 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_arch_only=False, bui
     return True
 
 
-def build_from_dsc(osbase, dsc_fname, sign=False, build_arch_only=False, build_indep_only=False, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
+def build_from_dsc(osbase, dsc_fname, sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
-    r, buildflags = _get_build_flags(build_arch_only, build_indep_only, include_orig, maintainer, extra_dpkg_flags)
+    r, buildflags = _get_build_flags(build_only, include_orig, maintainer, extra_dpkg_flags)
     if not r:
         return False
 
