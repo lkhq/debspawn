@@ -112,3 +112,11 @@ def format_filesize(num, suffix='B'):
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+def current_time_string():
+    ''' Get the current time as human-readable string. '''
+
+    from datetime import datetime, timezone
+    utc_dt = datetime.now(timezone.utc)
+    return utc_dt.astimezone().strftime('%Y-%m-%d %H:%M:%S UTC%z')

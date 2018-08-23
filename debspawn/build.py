@@ -20,6 +20,7 @@
 import os
 import subprocess
 import shutil
+import platform
 from glob import glob
 from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid
 from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error
@@ -150,6 +151,12 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     return True
 
 
+def _print_system_info():
+    from . import __version__
+    from .utils.misc import current_time_string
+    print_info('debspawn {version} on {host} at {time}'.format(version=__version__, host=platform.node(), time=current_time_string()))
+
+
 def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
@@ -162,6 +169,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_o
     if not r:
         return False
 
+    _print_system_info()
     print_header('Package build (from directory)')
 
     print_section('Creating source package')
@@ -212,6 +220,8 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_only=None, include_orig=
     r, buildflags = _get_build_flags(build_only, include_orig, maintainer, extra_dpkg_flags)
     if not r:
         return False
+
+    _print_system_info()
 
     dsc_fname = os.path.abspath(os.path.normpath(dsc_fname))
     tmp_prefix = os.path.basename(dsc_fname).replace('.dsc', '').replace(' ', '-')
