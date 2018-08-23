@@ -199,6 +199,7 @@ def setup_environment(use_color=True, use_unicode=True):
     os.environ['HOME'] = '/nonexistent'
 
     os.environ['TERM'] = 'xterm-256color' if use_color else 'xterm-mono'
+    os.environ['SHELL'] = '/bin/sh'
 
     del os.environ['LOGNAME']
 
