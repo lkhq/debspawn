@@ -61,7 +61,7 @@ def run_apt_command(cmd):
     env = {'DEBIAN_FRONTEND': 'noninteractive'}
     apt_cmd = ['apt-get',
                '-uyq',
-               '-o Dpkg::Options::="--force-confold"']
+               '-o Dpkg::Options::="--force-confnew"']
     apt_cmd.extend(cmd)
 
     run_command(apt_cmd, env)
