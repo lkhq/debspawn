@@ -241,7 +241,7 @@ class OSBase:
         cache_size = self._aptcache.clear()
         print_info('Removed {} cached packages.'.format(cache_size))
 
-        print_error('Done.')
+        print_info('Done.')
         return True
 
     def login(self, persistent=False):
