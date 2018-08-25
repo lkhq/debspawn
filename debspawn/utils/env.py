@@ -137,3 +137,36 @@ def unicode_allowed():
 def set_unicode_allowed(val):
     global _unicode_allowed
     _unicode_allowed = val
+
+
+def get_free_space(path):
+    '''
+    Return free space of :path
+    '''
+    stat = os.statvfs(path)
+    # get free space in MiB.
+    free_space = float(stat.f_bsize * stat.f_bavail)
+    return free_space
+
+
+def get_tree_size(path):
+    '''
+    Return total size of files in path and subdirs. If
+    is_dir() or stat() fails, print an error message to stderr
+    and assume zero size (for example, file has been deleted).
+    '''
+    total = 0
+    for entry in os.scandir(path):
+        try:
+            is_dir = entry.is_dir(follow_symlinks=False)
+        except OSError as error:
+            print('Error calling is_dir():', error, file=sys.stderr)
+            continue
+        if is_dir:
+            total += get_tree_size(entry.path)
+        else:
+            try:
+                total += entry.stat(follow_symlinks=False).st_size
+            except OSError as error:
+                print('Error calling stat():', error, file=sys.stderr)
+    return total

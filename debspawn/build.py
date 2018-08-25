@@ -22,8 +22,8 @@ import subprocess
 import shutil
 import platform
 from glob import glob
-from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid
-from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error
+from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_free_space, get_tree_size
+from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error, format_filesize
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
@@ -33,9 +33,22 @@ def internal_execute_build(osbase, pkg_dir, buildflags=[]):
         raise Exception('Package directory is missing!')
 
     with osbase.new_instance() as (instance_dir, machine_name):
+        # first, check basic requirements
+
+        # instance dir and pkg dir are both temporary directories, so they
+        # will be on the same filesystem configured as workspace for debspawn.
+        # therefore we only check on directory.
+        free_space = get_free_space(instance_dir)
+        print_info('Free space in workspace: {}'.format(format_filesize(free_space)))
+
+        # check for at least 512MiB - this is a ridiculously small amount, so the build will likely fail.
+        # but with even less, even attempting a build is pointless.
+        if (free_space / 2048) < 512:
+            print_error('Not enough free space available in workspace.')
+            return 8
+
         # prepare the build. At this point, we only run trusted code and the container
         # has network access
-
         with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
             nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
             r = nspawn_run_helper_persist(osbase,
@@ -65,6 +78,9 @@ def internal_execute_build(osbase, pkg_dir, buildflags=[]):
                                           aptcache_tmp)
             if r != 0:
                 return False
+
+            build_dir_size = get_tree_size(pkg_dir)
+            print_info('This build required {} of dedicated disk space.'.format(format_filesize(build_dir_size)))
 
     return True
 
