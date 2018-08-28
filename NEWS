@@ -1,3 +1,23 @@
+Version 0.2.0
+~~~~~~~~~~~~~~
+Released: 2018-08-28
+
+Features:
+ * Allow specifying enabled archive components at image creation time
+ * Support printing the program version to stdout
+ * Allow diverting the maintainer address
+ * Prepare container for arbitrary run action similarly to package build
+ * Support more build-only choices
+ * Print some basic system info to the log
+ * Log some basic disk space stats before/after build
+
+Bugfixes:
+ * random.choices is only available since Python 3.6, replace it
+ * Enforce dsrun to be installed in a location were we can find it
+ * Ensure we don't try to link journals
+ * Force new configuration by default, not old one
+ * Set environment shell
+
 Version 0.1.0
 ~~~~~~~~~~~~~~
 Released: 2018-08-20
