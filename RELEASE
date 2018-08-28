@@ -2,10 +2,10 @@ DebSpawn Release Notes
 
 1. Write NEWS entries for DebSpawn in the same format as usual.
 
-git shortlog v0.1.0.. | grep -i -v trivial | grep -v Merge > NEWS.new
+git shortlog v0.2.0.. | grep -i -v trivial | grep -v Merge > NEWS.new
 
 --------------------------------------------------------------------------------
-Version 0.2.0
+Version 0.2.1
 ~~~~~~~~~~~~~~
 Released: 2018-xx-xx
 
@@ -18,12 +18,12 @@ Bugfixes:
 
 2. Commit changes in Git:
 
-git commit -a -m "Release version 0.2.0"
-git tag -s -f -m "Release 0.2.0" v0.2.0 <gpg password>
+git commit -a -m "Release version 0.2.1"
+git tag -s -f -m "Release 0.2.1" v0.2.1 <gpg password>
 git push --tags
 git push
 
-3. Do post release version bump in meson.build, RELEASE
+3. Do post release version bump in `debspawn/__init__.py`
 
 4. Commit trivial changes:
 
