@@ -173,7 +173,7 @@ def command_login(options):
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-    r = osbase.login(options.persistent)
+    r = osbase.login(options.persistent, options.capability)
     if not r:
         sys.exit(2)
 
@@ -187,7 +187,12 @@ def command_run(options, custom_command):
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-    r = osbase.run(custom_command, options.build_dir, options.artifacts_dir, options.external_commad, options.header)
+    r = osbase.run(custom_command,
+                   options.build_dir,
+                   options.artifacts_dir,
+                   options.external_commad,
+                   options.header,
+                   capability=options.capability)
     if not r:
         sys.exit(2)
 
@@ -281,6 +286,8 @@ def create_parser(formatter_class=None):
     add_container_select_arguments(sp)
     sp.add_argument('--persistent', action='store_true', dest='persistent',
                     help='Make changes done in the session persistent.')
+    sp.add_argument('--capability', action='store', dest='capability',
+                    help='List one or more additional capabilities to grant the container. Takes a comma-separated list of capability names.')
     sp.set_defaults(func=command_login)
 
     # 'run' command
@@ -294,6 +301,8 @@ def create_parser(formatter_class=None):
                     help='If set, the command script will be copied from the host to the container and then executed.')
     sp.add_argument('--header', action='store', dest='header', default=None,
                     help='Name of the task that is run, will be printed as header.')
+    sp.add_argument('--capability', action='store', dest='capability',
+                    help='List one or more additional capabilities to grant the container. Takes a comma-separated list of capability names.')
     sp.add_argument('command', action='store', nargs='*', default=None,
                     help='The command to run.')
 

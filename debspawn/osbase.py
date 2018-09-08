@@ -244,7 +244,7 @@ class OSBase:
         print_info('Done.')
         return True
 
-    def login(self, persistent=False):
+    def login(self, persistent=False, capability=None):
         ''' Interactive shell login into the container '''
         ensure_root()
 
@@ -257,8 +257,12 @@ class OSBase:
             # ensure helper script runner exists and is up to date
             self._copy_helper_script(instance_dir)
 
+            extra_flags = []
+            if capability:
+                extra_flags.extend(['--capability', capability])
+
             # run an interactive shell in the new container
-            nspawn_run_persist(self, instance_dir, self.new_nspawn_machine_name(), '/srv', verbose=True)
+            nspawn_run_persist(self, instance_dir, self.new_nspawn_machine_name(), '/srv', verbose=True, flags=extra_flags)
 
             if persistent:
                 print_section('Recreating tarball')
@@ -269,7 +273,7 @@ class OSBase:
         print_info('Done.')
         return True
 
-    def run(self, command, build_dir, artifacts_dir, copy_command=False, header_msg=None):
+    def run(self, command, build_dir, artifacts_dir, copy_command=False, header_msg=None, capability=None):
         ''' Run an arbitrary command or script in the container '''
         ensure_root()
 
@@ -324,6 +328,9 @@ class OSBase:
             if build_dir:
                 nspawn_flags.extend(['--bind={}:/srv/build/'.format(os.path.normpath(build_dir))])
                 chdir = '/srv/build'
+
+            if capability:
+                nspawn_flags.extend(['--capability', capability])
 
             r = nspawn_run_persist(self, instance_dir, machine_name, chdir, command, nspawn_flags)
             if r != 0:
