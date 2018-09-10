@@ -17,10 +17,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import subprocess
 import platform
 from .utils.env import colored_output_allowed, unicode_allowed
-from .utils.misc import temp_dir
+from .utils.misc import temp_dir, print_error, print_info
+from .utils.command import safe_run
 
 
 def get_nspawn_personality(osbase):
@@ -36,7 +38,80 @@ def get_nspawn_personality(osbase):
     return None
 
 
-def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], tmp_apt_cache_dir=None, verbose=False):
+def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
+    '''
+    Execute systemd-nspawn with the given parameters.
+    Mess around with cgroups if necessary.
+    '''
+    import sys
+    import time
+
+    capabilities = []
+    full_dev_access = False
+    for perm in allow_permissions:
+        perm = perm.lower()
+        if perm.startswith('cap_'):
+            capabilities.append(perm.upper())
+        elif perm == 'full-dev-access':
+            full_dev_access = True
+        else:
+            print_info('Unknown allowed permission: {}'.format(perm))
+
+    if (capabilities or full_dev_access) and not osbase.global_config.allow_unsafe_perms:
+        print_error('Configuration does not permit usage of additional and potentially dangerous additional permissions. Exiting.')
+        sys.exit(9)
+
+    cmd = ['systemd-nspawn']
+    cmd.extend(['-M', machine_name])
+    if full_dev_access:
+        cmd.extend(['--bind', '/dev'])
+    if capabilities:
+        cmd.extend(['--capability', ','.join(capabilities)])
+    cmd.extend(parameters)
+
+    if not full_dev_access:
+        proc = subprocess.run(cmd)
+        return proc.returncode
+    else:
+        out, _, _ = safe_run(['systemd-escape', machine_name])
+        escaped_full_machine_name = out.strip()
+
+        pid = os.fork()
+        if pid == 0:
+            # child process - edit the cgroup to allow full access to all
+            # devices. Hopefully there won't be too much need for this awful code.
+            parent_pid = os.getppid()
+            print_info('/!\ Giving container access to all host devices.')
+
+            syscg_devices_allow = '/sys/fs/cgroup/devices/machine.slice/machine-{}.scope/devices.allow'.format(escaped_full_machine_name)
+            tries = 0
+            while not os.path.exists(syscg_devices_allow):
+                time.sleep(0.5)
+                tries += 1
+                if tries > 40:
+                    break
+
+                # check if our parent process has died - this is very prone to race conditions, but
+                # the best simple way to perform this check. The Linux kernel has neat features to
+                # make this easier though.
+                if os.getppid() != parent_pid:
+                    os._exit(0)
+
+            if not os.path.isfile(syscg_devices_allow):
+                print_error('Unable to give container full read/write permissions on host /dev!')
+                os._exit(0)
+            with open(syscg_devices_allow, 'w') as sys_f:
+                sys_f.write('c *:* rwm\n')  # full access to character devices
+                sys_f.flush()
+                sys_f.write('b *:* rwm\n')  # full access to block devices
+                sys_f.flush()
+            os._exit(0)
+        else:
+            proc = subprocess.run(cmd)
+            return proc.returncode
+
+
+def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], tmp_apt_cache_dir=None, allowed=[], verbose=False):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -45,38 +120,36 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
     personality = get_nspawn_personality(osbase)
 
     def run_nspawn_with_aptcache(aptcache_tmp_dir):
-        cmd = ['systemd-nspawn',
-               '--chdir={}'.format(chdir),
-               '-M', machine_name,
-               '--link-journal=no',
-               '--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir)]
+        params = ['--chdir={}'.format(chdir),
+                  '--link-journal=no',
+                  '--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir)]
         if personality:
-            cmd.append('--personality={}'.format(personality))
-        cmd.extend(flags)
-        cmd.extend(['-a{}D'.format('' if verbose else 'q'), base_dir])
-        cmd.extend(command)
+            params.append('--personality={}'.format(personality))
+        params.extend(flags)
+        params.extend(['-a{}D'.format('' if verbose else 'q'), base_dir])
+        params.extend(command)
 
         # ensure the temporary apt cache is up-to-date
         osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
 
         # run command in container
-        proc = subprocess.run(cmd)
+        ret = _execute_sdnspawn(osbase, params, machine_name, allowed)
 
         # archive APT cache, so future runs of this command are faster
         osbase.aptcache.merge_from_dir(aptcache_tmp_dir)
 
-        return proc
+        return ret
 
     if tmp_apt_cache_dir:
-        proc = run_nspawn_with_aptcache(tmp_apt_cache_dir)
+        ret = run_nspawn_with_aptcache(tmp_apt_cache_dir)
     else:
         with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
-            proc = run_nspawn_with_aptcache(aptcache_tmp)
+            ret = run_nspawn_with_aptcache(aptcache_tmp)
 
-    return proc.returncode
+    return ret
 
 
-def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flags=[]):
+def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flags=[], allowed=[]):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -84,18 +157,15 @@ def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flag
 
     personality = get_nspawn_personality(osbase)
 
-    cmd = ['systemd-nspawn',
-           '--chdir={}'.format(chdir),
-           '-M', machine_name,
-           '--link-journal=no']
+    params = ['--chdir={}'.format(chdir),
+              '--link-journal=no']
     if personality:
-        cmd.append('--personality={}'.format(personality))
-    cmd.extend(flags)
-    cmd.extend(['-aqxD', base_dir])
-    cmd.extend(command)
+        params.append('--personality={}'.format(personality))
+    params.extend(flags)
+    params.extend(['-aqxD', base_dir])
+    params.extend(command)
 
-    proc = subprocess.run(cmd)
-    return proc.returncode
+    return _execute_sdnspawn(osbase, params, machine_name, allowed)
 
 
 def nspawn_make_helper_cmd(flags):
@@ -112,11 +182,11 @@ def nspawn_make_helper_cmd(flags):
     return cmd
 
 
-def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[]):
+def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[], allowed=[]):
     cmd = nspawn_make_helper_cmd(helper_flags)
-    return nspawn_run_ephemeral(base_dir, machine_name, chdir, cmd, nspawn_flags)
+    return nspawn_run_ephemeral(base_dir, machine_name, chdir, cmd, nspawn_flags, allowed)
 
 
-def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[], tmp_apt_cache_dir=None):
+def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[], tmp_apt_cache_dir=None, allowed=[]):
     cmd = nspawn_make_helper_cmd(helper_flags)
-    return nspawn_run_persist(osbase, base_dir, machine_name, chdir, cmd, nspawn_flags, tmp_apt_cache_dir)
+    return nspawn_run_persist(osbase, base_dir, machine_name, chdir, cmd, nspawn_flags, tmp_apt_cache_dir, allowed)

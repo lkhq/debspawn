@@ -35,10 +35,12 @@ class GlobalConfig:
             with open(fname) as json_file:
                 jdata = json.load(json_file)
 
+        self._dsrun_path = '/usr/lib/debspawn/dsrun.py'
+
         self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
         self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
         self._aptcache_dir = jdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
-        self._dsrun_path = '/usr/lib/debspawn/dsrun.py'
+        self._allow_unsafe_perms = jdata.get('AllowUnsafePermissions', False)
 
     @property
     def dsrun_path(self) -> str:
@@ -59,3 +61,7 @@ class GlobalConfig:
     @property
     def aptcache_dir(self) -> str:
         return self._aptcache_dir
+
+    @property
+    def allow_unsafe_perms(self) -> bool:
+        return self._allow_unsafe_perms
