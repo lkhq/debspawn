@@ -197,7 +197,7 @@ class OSBase:
                         return False
 
                 if not components:
-                    components = ['main'] # FIXME: We should really be more clever here, e.g. depend on python-apt and parse sources.list properly
+                    components = ['main']  # FIXME: We should really be more clever here, e.g. depend on python-apt and parse sources.list properly
                 with open(sourceslist_fname, 'a') as f:
                     f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror, suite=self.suite, components=' '.join(components)))
 
