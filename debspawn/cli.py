@@ -84,7 +84,7 @@ def command_create(options):
     if options.components:
         components = options.components.split(',')
 
-    osbase = OSBase(gconf, options.suite, options.arch, variant=options.variant)
+    osbase = OSBase(gconf, options.suite, options.arch, variant=options.variant, base_suite=options.base_suite)
     r = osbase.create(options.mirror, components)
     if not r:
         sys.exit(2)
@@ -254,6 +254,8 @@ def create_parser(formatter_class=None):
                     help='Set a specific mirror to bootstrap from.')
     sp.add_argument('--components', action='store', dest='components', default=None,
                     help='A comma-separated list of archive components to enable in the newly created image.')
+    sp.add_argument('--base-suite', action='store', dest='base_suite', default=None,
+                    help='A full suite that forms the base of the selected partial suite (e.g. for -updates and -backports).')
     sp.set_defaults(func=command_create)
 
     # 'delete' command

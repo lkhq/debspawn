@@ -35,9 +35,10 @@ class OSBase:
     Describes an OS base registered with debspawn
     '''
 
-    def __init__(self, gconf, suite, arch, variant=None):
+    def __init__(self, gconf, suite, arch, variant=None, base_suite=None):
         self._gconf = gconf
         self._suite = suite
+        self._base_suite = base_suite
         self._arch = arch
         self._variant = variant
         self._name = self._make_name()
@@ -69,6 +70,10 @@ class OSBase:
         return self._suite
 
     @property
+    def base_suite(self) -> str:
+        return self._base_suite
+
+    @property
     def arch(self) -> str:
         return self._arch
 
@@ -83,6 +88,10 @@ class OSBase:
     @property
     def aptcache(self):
         return self._aptcache
+
+    @property
+    def has_base_suite(self) -> bool:
+        return True if self.base_suite and self.base_suite != self.suite else False
 
     @property
     def results_dir(self):
@@ -153,7 +162,11 @@ class OSBase:
             cmd.append('--variant={}'.format(self.variant))
 
         with temp_dir() as tdir:
-            cmd.extend([self.suite, tdir])
+            bootstrap_suite = self.suite
+            if self.has_base_suite:
+                bootstrap_suite = self.base_suite
+            cmd.extend([bootstrap_suite, tdir])
+            print('Bootstrap suite: {}'.format(bootstrap_suite))
             if mirror:
                 cmd.append(mirror)
 
@@ -164,6 +177,29 @@ class OSBase:
 
             # create helper script runner
             self._copy_helper_script(tdir)
+
+            # if we bootstrapped the base suite, add the primary suite to
+            # sources.list now
+            if self.has_base_suite:
+                import re
+
+                sourceslist_fname = os.path.join(tdir, 'etc', 'apt', 'sources.list')
+                if not mirror:
+                    with open(sourceslist_fname, 'r') as f:
+                        contents = f.read()
+                        matches = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', contents)
+                        if not matches:
+                            print_error('Unable to detect default APT repository URL (no regex matches).')
+                            return False
+                        mirror = matches[0]
+                    if not mirror:
+                        print_error('Unable to detect default APT repository URL.')
+                        return False
+
+                if not components:
+                    components = ['main'] # FIXME: We should really be more clever here, e.g. depend on python-apt and parse sources.list properly
+                with open(sourceslist_fname, 'a') as f:
+                    f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror, suite=self.suite, components=' '.join(components)))
 
             print_section('Configure')
             if nspawn_run_helper_persist(self, tdir, self.new_nspawn_machine_name(), '--update') != 0:
