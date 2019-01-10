@@ -275,10 +275,10 @@ def create_parser(formatter_class=None):
                     help='Sign the resulting package.')
     sp.add_argument('--only', choices=['binary', 'arch', 'indep', 'source'], dest='build_only',
                     help=('CF|Select only a specific set of packages to be built. Choices are:\n'
-                         'binary: Build only binary packages, no source files are to be built and/or distributed.\n'
-                         'arch: Build only architecture-specific binary packages.\n'
-                         'indep: Build only architecture-independent (arch:all) binary packages.\n'
-                         'source: Do a source-only build, no binary packages are made.'))
+                          'binary: Build only binary packages, no source files are to be built and/or distributed.\n'
+                          'arch: Build only architecture-specific binary packages.\n'
+                          'indep: Build only architecture-independent (arch:all) binary packages.\n'
+                          'source: Do a source-only build, no binary packages are made.'))
     sp.add_argument('--include-orig', action='store_true', dest='include_orig',
                     help='Forces the inclusion of the original source.')
     sp.add_argument('--buildflags', action='store', dest='buildflags',
@@ -287,7 +287,7 @@ def create_parser(formatter_class=None):
                     help='Override the configured results directory and return artifacts at a custom location.')
     sp.add_argument('--maintainer', action='store', dest='maintainer',
                     help=('Set the name and email address of the maintainer for this package and upload, rather than using '
-                         'rather than using the information from the source tree\'s control file or changelog.'))
+                          'rather than using the information from the source tree\'s control file or changelog.'))
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)
