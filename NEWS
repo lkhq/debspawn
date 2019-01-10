@@ -1,3 +1,12 @@
+Version 0.2.1
+~~~~~~~~~~~~~~
+Released: 2019-01-10
+
+Features:
+ * Allow giving the container extra capabilities easily for custom commands
+ * Allow giving the container permission to access the host's /dev
+ * Allow creating an image with a suite and base-suite
+
 Version 0.2.0
 ~~~~~~~~~~~~~~
 Released: 2018-08-28
