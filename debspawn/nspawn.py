@@ -81,7 +81,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
             # child process - edit the cgroup to allow full access to all
             # devices. Hopefully there won't be too much need for this awful code.
             parent_pid = os.getppid()
-            print_info('/!\ Giving container access to all host devices.')
+            print_info('/!\\ Giving container access to all host devices.')
 
             syscg_devices_allow = '/sys/fs/cgroup/devices/machine.slice/machine-{}.scope/devices.allow'.format(escaped_full_machine_name)
             tries = 0

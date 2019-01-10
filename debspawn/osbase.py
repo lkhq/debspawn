@@ -187,7 +187,7 @@ class OSBase:
                 if not mirror:
                     with open(sourceslist_fname, 'r') as f:
                         contents = f.read()
-                        matches = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', contents)
+                        matches = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', contents)
                         if not matches:
                             print_error('Unable to detect default APT repository URL (no regex matches).')
                             return False
