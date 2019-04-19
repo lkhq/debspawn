@@ -326,8 +326,10 @@ class OSBase:
             print_header(header_msg)
 
         # ensure we have absolute paths
-        build_dir = os.path.abspath(build_dir)
-        artifacts_dir = os.path.abspath(artifacts_dir)
+        if build_dir:
+            build_dir = os.path.abspath(build_dir)
+        if artifacts_dir:
+            artifacts_dir = os.path.abspath(artifacts_dir)
 
         with self.new_instance() as (instance_dir, machine_name):
             # ensure helper script runner exists and is up to date
