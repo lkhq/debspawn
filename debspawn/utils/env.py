@@ -143,7 +143,8 @@ def get_free_space(path):
     '''
     Return free space of :path
     '''
-    stat = os.statvfs(path)
+    real_path = os.path.realpath(path)
+    stat = os.statvfs(real_path)
     # get free space in MiB.
     free_space = float(stat.f_bsize * stat.f_bavail)
     return free_space
