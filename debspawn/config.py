@@ -23,45 +23,61 @@ import os
 
 class GlobalConfig:
     '''
-    Global configuration affecting all of DebSpawn.
+    Global configuration singleton affecting all of DebSpawn.
     '''
 
-    def load(self, fname=None):
-        if not fname:
-            fname = '/etc/debspawn/global.json'
+    _instance = None
 
-        jdata = {}
-        if os.path.isfile(fname):
-            with open(fname) as json_file:
-                jdata = json.load(json_file)
+    class __GlobalConfig:
+        def load(self, fname=None):
+            if not fname:
+                fname = '/etc/debspawn/global.json'
 
-        self._dsrun_path = '/usr/lib/debspawn/dsrun.py'
+            jdata = {}
+            if os.path.isfile(fname):
+                with open(fname) as json_file:
+                    jdata = json.load(json_file)
 
-        self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
-        self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
-        self._aptcache_dir = jdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
-        self._allow_unsafe_perms = jdata.get('AllowUnsafePermissions', False)
+            self._dsrun_path = '/usr/lib/debspawn/dsrun.py'
 
-    @property
-    def dsrun_path(self) -> str:
-        return self._dsrun_path
+            self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
+            self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
+            self._aptcache_dir = jdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
+            self._temp_dir = jdata.get('TempDir', '/var/tmp/debspawn/')
+            self._allow_unsafe_perms = jdata.get('AllowUnsafePermissions', False)
 
-    @dsrun_path.setter
-    def dsrun_path(self, v) -> str:
-        self._dsrun_path = v
+        @property
+        def dsrun_path(self) -> str:
+            return self._dsrun_path
 
-    @property
-    def osroots_dir(self) -> str:
-        return self._osroots_dir
+        @dsrun_path.setter
+        def dsrun_path(self, v) -> str:
+            self._dsrun_path = v
 
-    @property
-    def results_dir(self) -> str:
-        return self._results_dir
+        @property
+        def osroots_dir(self) -> str:
+            return self._osroots_dir
 
-    @property
-    def aptcache_dir(self) -> str:
-        return self._aptcache_dir
+        @property
+        def results_dir(self) -> str:
+            return self._results_dir
 
-    @property
-    def allow_unsafe_perms(self) -> bool:
-        return self._allow_unsafe_perms
+        @property
+        def aptcache_dir(self) -> str:
+            return self._aptcache_dir
+
+        @property
+        def temp_dir(self) -> str:
+            return self._temp_dir
+
+        @property
+        def allow_unsafe_perms(self) -> bool:
+            return self._allow_unsafe_perms
+
+    def __init__(self, fname=None):
+        if not GlobalConfig._instance:
+            GlobalConfig._instance = GlobalConfig.__GlobalConfig()
+            GlobalConfig._instance.load(fname)
+
+    def __getattr__(self, name):
+        return getattr(self._instance, name)

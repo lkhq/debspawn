@@ -23,6 +23,7 @@ import shutil
 from pathlib import Path
 from contextlib import contextmanager
 from .env import unicode_allowed
+from ..config import GlobalConfig
 
 
 @contextmanager
@@ -45,7 +46,11 @@ def temp_dir(basename=None):
     else:
         dir_name = rdm_id
 
-    tmp_path = os.path.join('/var/tmp/debspawn/', dir_name)
+    temp_basedir = GlobalConfig().temp_dir
+    if not temp_basedir:
+        temp_basedir = '/var/tmp/debspawn/'
+
+    tmp_path = os.path.join(temp_basedir, dir_name)
     Path(tmp_path).mkdir(parents=True, exist_ok=True)
 
     try:
