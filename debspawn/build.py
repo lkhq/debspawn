@@ -110,7 +110,10 @@ def _read_source_package_details():
         print_error('Unable to determine source package name or source package version. Can not continue.')
         return None, None, None
 
-    dsc_fname = '{}_{}.dsc'.format(pkg_sourcename, pkg_version)
+    pkg_version_dsc = pkg_version
+    if ':' in pkg_version_dsc:
+        pkg_version_dsc = pkg_version_dsc.split(':', 1)[1]
+    dsc_fname = '{}_{}.dsc'.format(pkg_sourcename, pkg_version_dsc)
 
     return pkg_sourcename, pkg_version, dsc_fname
 
