@@ -125,3 +125,12 @@ def current_time_string():
     from datetime import datetime, timezone
     utc_dt = datetime.now(timezone.utc)
     return utc_dt.astimezone().strftime('%Y-%m-%d %H:%M:%S UTC%z')
+
+
+def version_noepoch(version):
+    ''' Return version from :version without epoch. '''
+
+    version_noe = version
+    if ':' in version_noe:
+        version_noe = version_noe.split(':', 1)[1]
+    return version_noe

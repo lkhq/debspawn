@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2018-2019 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -23,7 +23,8 @@ import shutil
 import platform
 from glob import glob
 from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_free_space, get_tree_size
-from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error, format_filesize
+from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error, \
+    format_filesize, version_noepoch
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
@@ -110,9 +111,7 @@ def _read_source_package_details():
         print_error('Unable to determine source package name or source package version. Can not continue.')
         return None, None, None
 
-    pkg_version_dsc = pkg_version
-    if ':' in pkg_version_dsc:
-        pkg_version_dsc = pkg_version_dsc.split(':', 1)[1]
+    pkg_version_dsc = version_noepoch(pkg_version)
     dsc_fname = '{}_{}.dsc'.format(pkg_sourcename, pkg_version_dsc)
 
     return pkg_sourcename, pkg_version, dsc_fname
@@ -160,7 +159,8 @@ def _retrieve_artifacts(osbase, tmp_dir):
 
 def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     print_section('Signing Package')
-    changes_basename = '{}_{}_{}.changes'.format(spkg_name, spkg_version, build_arch)
+    spkg_version_noepoch = version_noepoch(spkg_version)
+    changes_basename = '{}_{}_{}.changes'.format(spkg_name, spkg_version_noepoch, build_arch)
 
     with switch_unprivileged():
         proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)])
