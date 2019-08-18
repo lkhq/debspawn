@@ -90,9 +90,11 @@ def ensure_root():
 @contextmanager
 def switch_unprivileged():
     '''
-    Run the next actions as the unprivileged user
-    that we are running for.
+    Run actions using the unprivileged user ID
+    on the behalf of which we are running.
+    This is NOT a security feature!
     '''
+    import pwd
 
     global _owner_uid
     global _owner_gid
@@ -106,15 +108,20 @@ def switch_unprivileged():
     else:
         orig_egid = os.getegid()
         orig_euid = os.geteuid()
+        orig_home = os.environ.get('HOME')
+        if not orig_home:
+            orig_home = pwd.getpwuid(os.getuid()).pw_dir
 
         try:
             os.setegid(_owner_gid)
             os.seteuid(_owner_uid)
+            os.environ['HOME'] = pwd.getpwuid(_owner_uid).pw_dir
 
             yield
         finally:
             os.setegid(orig_egid)
             os.seteuid(orig_euid)
+            os.environ['HOME'] = orig_home
 
 
 def get_owner_uid_gid():
