@@ -84,8 +84,19 @@ def command_create(options):
     if options.components:
         components = options.components.split(',')
 
-    osbase = OSBase(gconf, options.suite, options.arch, variant=options.variant, base_suite=options.base_suite)
-    r = osbase.create(options.mirror, components)
+    extra_suites = []
+    if options.extra_suites:
+        extra_suites = options.extra_suites.strip().split(' ')
+
+    osbase = OSBase(gconf,
+                    options.suite,
+                    options.arch,
+                    variant=options.variant,
+                    base_suite=options.base_suite)
+    r = osbase.create(options.mirror,
+                      components,
+                      extra_suites,
+                      options.extra_source_lines)
     if not r:
         sys.exit(2)
 
@@ -256,6 +267,10 @@ def create_parser(formatter_class=None):
                     help='A comma-separated list of archive components to enable in the newly created image.')
     sp.add_argument('--base-suite', action='store', dest='base_suite', default=None,
                     help='A full suite that forms the base of the selected partial suite (e.g. for -updates and -backports).')
+    sp.add_argument('--extra-suites', action='store', dest='extra_suites', default=None,
+                    help='Space-separated list of additional suites that should also be added to the sources.list file.')
+    sp.add_argument('--extra-sourceslist-lines', action='store', dest='extra_source_lines', default=None,
+                    help='Lines that should be added to the build environments source.list verbatim. Separate lines by linebreaks.')
     sp.set_defaults(func=command_create)
 
     # 'delete' command

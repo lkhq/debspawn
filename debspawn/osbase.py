@@ -138,7 +138,7 @@ class OSBase:
         nid = ''.join(choice(ascii_lowercase + digits) for _ in range(4))
         return '{}-{}-{}'.format(platform.node(), self.name, nid)
 
-    def create(self, mirror=None, components=None):
+    def create(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None):
         ''' Create new container base image '''
         ensure_root()
 
@@ -167,6 +167,12 @@ class OSBase:
                 bootstrap_suite = self.base_suite
             cmd.extend([bootstrap_suite, tdir])
             print('Bootstrap suite: {}'.format(bootstrap_suite))
+            if extra_suites:
+                print('Additional suites: {}'.format(', '.join(extra_suites)))
+            if extra_source_lines:
+                print('Custom sources.list lines will be added:')
+                for line in extra_source_lines.split('\\n'):
+                    print('    {}'.format(line))
             if mirror:
                 cmd.append(mirror)
 
@@ -200,6 +206,19 @@ class OSBase:
                     components = ['main']  # FIXME: We should really be more clever here, e.g. depend on python-apt and parse sources.list properly
                 with open(sourceslist_fname, 'a') as f:
                     f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror, suite=self.suite, components=' '.join(components)))
+
+                    if extra_suites:
+                        f.write('\n')
+                    for esuite in extra_suites:
+                        if esuite == self.suite or esuite == bootstrap_suite:
+                            # don't add existing suites multiple times
+                            continue
+                        f.write('deb {mirror} {esuite} {components}\n'.format(mirror=mirror, esuite=esuite, components=' '.join(components)))
+
+                    if extra_source_lines:
+                        f.write('\n')
+                        for line in extra_source_lines.split('\\n'):
+                            f.write('{}\n'.format(line.strip()))
 
             print_section('Configure')
             if nspawn_run_helper_persist(self, tdir, self.new_nspawn_machine_name(), '--update') != 0:
