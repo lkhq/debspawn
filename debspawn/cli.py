@@ -283,7 +283,7 @@ def create_parser(formatter_class=None):
     sp.set_defaults(func=command_update)
 
     # 'build' command
-    sp = subparsers.add_parser('build', help='Build a package in an isolated environment', formatter_class=formatter_class)
+    sp = subparsers.add_parser('build', help='Build a package in an isolated environment', formatter_class=formatter_class, aliases=['b'])
     add_container_select_arguments(sp)
     sp.add_argument('-s', '--sign', action='store_true', dest='sign',
                     help='Sign the resulting package.')
