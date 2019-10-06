@@ -220,7 +220,6 @@ def command_run(options, custom_command):
 class CustomArgparseFormatter(HelpFormatter):
 
     def _split_lines(self, text, width):
-        print(text)
         if text.startswith('CF|'):
             return text[3:].splitlines()
         return HelpFormatter._split_lines(self, text, width)
