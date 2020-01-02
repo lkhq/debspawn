@@ -151,7 +151,7 @@ def prepare_run():
     return True
 
 
-def prepare_package_build():
+def prepare_package_build(arch_only=False):
     print_section('Preparing container for build')
 
     with eatmydata():
@@ -170,7 +170,11 @@ def prepare_package_build():
 
     print_section('Installing package build-dependencies')
     with eatmydata():
-        run_apt_command(['build-dep', './'])
+        cmd = ['build-dep']
+        if arch_only:
+            cmd.append('--arch-only')
+        cmd.append('./')
+        run_apt_command(cmd)
 
     return True
 
@@ -216,6 +220,8 @@ def main():
                         help='Disable terminal colors.')
     parser.add_argument('--no-unicode', action='store_true', dest='no_unicode',
                         help='Disable unicode support.')
+    parser.add_argument('--arch-only', action='store_true', dest='arch_only', default=None,
+                        help='Only get arch-dependent packages (used when satisfying build dependencies).')
     parser.add_argument('--build-prepare', action='store_true', dest='build_prepare',
                         help='Prepare building a Debian package.')
     parser.add_argument('--build-run', action='store_true', dest='build_run',
@@ -238,7 +244,7 @@ def main():
         if not r:
             return 2
     elif options.build_prepare:
-        r = prepare_package_build()
+        r = prepare_package_build(options.arch_only)
         if not r:
             return 2
     elif options.build_run:

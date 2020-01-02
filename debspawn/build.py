@@ -29,7 +29,8 @@ from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
 
-def internal_execute_build(osbase, pkg_dir, buildflags=[]):
+def internal_execute_build(osbase, pkg_dir, build_only=None, buildflags=[]):
+    assert isinstance(build_only, str)
     if not pkg_dir:
         raise Exception('Package directory is missing!')
 
@@ -52,10 +53,13 @@ def internal_execute_build(osbase, pkg_dir, buildflags=[]):
         # has network access
         with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
             nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
+            prep_flags = ['--build-prepare']
+            if build_only == 'arch':
+                prep_flags.append('--arch-only')
             r = nspawn_run_helper_persist(osbase,
                                           instance_dir,
                                           machine_name,
-                                          '--build-prepare',
+                                          prep_flags,
                                           '/srv',
                                           nspawn_flags,
                                           aptcache_tmp)
@@ -215,7 +219,7 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_o
             if proc.returncode != 0:
                 return False
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, build_only, buildflags)
         if not ret:
             return False
 
@@ -270,7 +274,7 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_only=None, include_orig=
             print_header('Package build')
             print_build_detail(osbase, pkg_sourcename, pkg_version)
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, buildflags)
+        ret = internal_execute_build(osbase, pkg_tmp_dir, build_only, buildflags)
         if not ret:
             return False
 
