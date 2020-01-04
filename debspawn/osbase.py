@@ -136,7 +136,17 @@ class OSBase:
         from string import ascii_lowercase, digits
 
         nid = ''.join(choice(ascii_lowercase + digits) for _ in range(4))
-        return '{}-{}-{}'.format(platform.node(), self.name, nid)
+
+        # on Linux, the maximum hostname length is 64, so we simple set this as general default for
+        # debspawn here.
+        # shorten the hostname part or replace the suffix, depending on what is longer.
+        # This should only ever matter if the hostname of the system already is incredibly long
+        uniq_suffix = '{}-{}'.format(self.name, nid)
+        if len(uniq_suffix) > 48:
+            uniq_suffix = ''.join(choice(ascii_lowercase + digits) for _ in range(12))
+        node_name_prefix = platform.node()[:63 - len(uniq_suffix)]
+
+        return '{}-{}'.format(node_name_prefix, uniq_suffix)
 
     def create(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None):
         ''' Create new container base image '''
