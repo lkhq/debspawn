@@ -5,10 +5,14 @@ dist: bionic
 
 addons:
   apt:
+    update: true
     packages:
     - xsltproc
     - docbook-xsl
     - docbook-xml
+    - zstd
+    - systemd-container
+    - debootstrap
 
 python:
   - "3.7"
