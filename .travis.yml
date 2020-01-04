@@ -1,7 +1,7 @@
 # Travis CI config for Debspawn
 
 language: python
-dist: trusty
+dist: bionic
 
 addons:
   apt:
@@ -11,8 +11,8 @@ addons:
     - docbook-xml
 
 python:
-  - "3.5"
-  - "3.6"
+  - "3.7"
+  - "3.8"
   - "nightly"
 
 matrix:
@@ -26,4 +26,4 @@ script:
   - ./setup.py build
   - ./setup.py install --root=/tmp
   - rm -rf build/
-  - flake8 --ignore E501 ./
+  - flake8 ./
