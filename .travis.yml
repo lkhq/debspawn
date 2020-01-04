@@ -2,6 +2,7 @@
 
 language: python
 dist: bionic
+sudo: required
 
 addons:
   apt:
@@ -24,10 +25,11 @@ matrix:
     - python: "nightly"
 
 install:
- - pip install flake8
+ - pip install flake8 pytest
 
 script:
   - ./setup.py build
   - ./setup.py install --root=/tmp
+  - sudo $(which python3) -m pytest
   - rm -rf build/
   - flake8 ./
