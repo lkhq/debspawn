@@ -29,8 +29,8 @@ from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
 
-def internal_execute_build(osbase, pkg_dir, build_only=None, buildflags=[]):
-    assert isinstance(build_only, str)
+def internal_execute_build(osbase, pkg_dir, build_only=None, *, buildflags=[]):
+    assert not build_only or isinstance(build_only, str)
     if not pkg_dir:
         raise Exception('Package directory is missing!')
 
@@ -181,7 +181,8 @@ def _print_system_info():
     print_info()
 
 
-def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
+def build_from_directory(osbase, pkg_dir, *,
+                         sign=False, build_only=None, include_orig=False, maintainer=None, clean_source=False, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -203,7 +204,12 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_o
             if not pkg_sourcename:
                 return False
 
-            cmd = ['dpkg-buildpackage', '-S', '-d', '--no-sign']
+            cmd = ['dpkg-buildpackage', '-S', '--no-sign']
+            # d/rules clean requires build dependencies installed if run on the host
+            # we avoid that by default, unless explicitly requested
+            if not clean_source:
+                cmd.append('-nc')
+
             proc = subprocess.run(cmd)
             if proc.returncode != 0:
                 return False
@@ -219,7 +225,10 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_o
             if proc.returncode != 0:
                 return False
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, build_only, buildflags)
+        ret = internal_execute_build(osbase,
+                                     pkg_tmp_dir,
+                                     build_only,
+                                     buildflags=buildflags)
         if not ret:
             return False
 
@@ -237,7 +246,8 @@ def build_from_directory(osbase, pkg_dir, sign=False, build_only=None, include_o
     return True
 
 
-def build_from_dsc(osbase, dsc_fname, sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
+def build_from_dsc(osbase, dsc_fname, *,
+                   sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -274,7 +284,10 @@ def build_from_dsc(osbase, dsc_fname, sign=False, build_only=None, include_orig=
             print_header('Package build')
             print_build_detail(osbase, pkg_sourcename, pkg_version)
 
-        ret = internal_execute_build(osbase, pkg_tmp_dir, build_only, buildflags)
+        ret = internal_execute_build(osbase,
+                                     pkg_tmp_dir,
+                                     build_only,
+                                     buildflags=buildflags)
         if not ret:
             return False
 

@@ -162,6 +162,7 @@ def command_build(options):
                                  build_only=options.build_only,
                                  include_orig=options.include_orig,
                                  maintainer=options.maintainer,
+                                 clean_source=options.clean_source,
                                  extra_dpkg_flags=buildflags)
     else:
         r = build_from_dsc(osbase,
@@ -304,6 +305,9 @@ def create_parser(formatter_class=None):
                           'the information from the source tree\'s control file or changelog.'))
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
+    sp.add_argument('--clean-source', action='store_true', dest='clean_source',
+                    help=('Run the d/rules clean target outside of the container. This means the package build dependencies need to be '
+                          'installed on the host system when building from a source directory.'))
     sp.set_defaults(func=command_build)
 
     # 'login' command
