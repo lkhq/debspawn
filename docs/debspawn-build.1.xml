@@ -48,6 +48,13 @@
 		<para>
 			Packages downloaded prior to the actual build are cached and will be reused on subsequent builds.
 		</para>
+		<para>
+			You can inject packages into the build environment that are not available in the preconfigured APT repositories by
+			placing them in <filename>/var/lib/debspawn/injected-pkgs/${container-name}</filename>, or in
+			<filename>/var/lib/debspawn/injected-pkgs/</filename> to make a package available in all environments.
+			Internally, <command>debspawn</command> will build a transient package repository with the respective packages and
+			add it as a package source for APT.
+		</para>
 	</refsect1>
 
 	<refsect1>
