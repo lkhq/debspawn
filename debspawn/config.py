@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2018-2020 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -17,8 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
 import os
+import sys
+import json
 
 
 class GlobalConfig:
@@ -36,7 +37,11 @@ class GlobalConfig:
             jdata = {}
             if os.path.isfile(fname):
                 with open(fname) as json_file:
-                    jdata = json.load(json_file)
+                    try:
+                        jdata = json.load(json_file)
+                    except json.JSONDecodeError as e:
+                        print('Unable to parse global configuration (global.json): {}'.format(str(e)), file=sys.stderr)
+                        sys.exit(8)
 
             self._dsrun_path = '/usr/lib/debspawn/dsrun.py'
 
