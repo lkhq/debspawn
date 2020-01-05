@@ -20,17 +20,16 @@
 from debspawn.osbase import OSBase
 
 
-def test_container_create(gconfig):
-    components = ['main', 'contrib', 'non-free']
-    extra_suites = []
+def test_container_create_delete(gconfig, testing_container):
+    # the "default" container is created by a fixture.
+    # what we actually want to do here in future is create and
+    # delete containers with special settings
+    pass
 
-    osbase = OSBase(gconfig,
-                    'testing',
-                    'amd64',
-                    variant='minbase',
-                    base_suite=None)
-    r = osbase.create(None,
-                      components,
-                      extra_suites,
-                      None)
-    assert r
+
+def test_container_update(gconfig, testing_container):
+    ''' Update a container '''
+
+    suite, arch, variant = testing_container
+    osbase = OSBase(gconfig, suite, arch, variant)
+    assert osbase.update()

@@ -44,9 +44,9 @@ def gconfig():
     shutil.rmtree(test_tmp_dir, ignore_errors=True)
     os.makedirs(test_tmp_dir)
 
-    gconf._osroots_dir = os.path.join(test_tmp_dir, 'containers/')
-    gconf._results_dir = os.path.join(test_tmp_dir, 'results/')
-    gconf._aptcache_dir = os.path.join(test_tmp_dir, 'aptcache/')
+    gconf._instance._osroots_dir = os.path.join(test_tmp_dir, 'containers/')
+    gconf._instance._results_dir = os.path.join(test_tmp_dir, 'results/')
+    gconf._instance._aptcache_dir = os.path.join(test_tmp_dir, 'aptcache/')
 
     return gconf
 
@@ -60,3 +60,46 @@ def ensure_root():
     if os.geteuid() != 0:
         print('The testsuite has to be run with superuser permissions in order to create nspawn instances.')
         sys.exit(1)
+
+
+@pytest.fixture(scope='session')
+def build_arch():
+    '''
+    Retrieve the current architecture we should build packages for.
+    '''
+    from debspawn.utils.command import safe_run
+
+    out, _, ret = safe_run(['dpkg-architecture', '-q', 'DEB_BUILD_ARCH'])
+    assert ret == 0
+
+    arch = out.strip()
+    if not arch:
+        arch = 'amd64'  # assume arm64 as default
+
+    return arch
+
+
+@pytest.fixture(scope='session')
+def testing_container(gconfig, build_arch):
+    '''
+    Create a container for Debian testing used for default tests
+    '''
+    from debspawn.osbase import OSBase
+
+    suite = 'testing'
+    variant = 'minbase'
+    components = ['main', 'contrib', 'non-free']
+    extra_suites = []
+
+    osbase = OSBase(gconfig,
+                    suite,
+                    build_arch,
+                    variant=variant,
+                    base_suite=None)
+    r = osbase.create(None,
+                      components,
+                      extra_suites,
+                      None)
+    assert r
+
+    return (suite, build_arch, variant)
