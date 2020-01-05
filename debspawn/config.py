@@ -48,6 +48,7 @@ class GlobalConfig:
             self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
             self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
             self._aptcache_dir = jdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
+            self._injected_pkgs_dir = jdata.get('InjectedPkgsDir', '/var/lib/debspawn/injected-pkgs/')
             self._temp_dir = jdata.get('TempDir', '/var/tmp/debspawn/')
             self._allow_unsafe_perms = jdata.get('AllowUnsafePermissions', False)
 
@@ -70,6 +71,10 @@ class GlobalConfig:
         @property
         def aptcache_dir(self) -> str:
             return self._aptcache_dir
+
+        @property
+        def injected_pkgs_dir(self) -> str:
+            return self._injected_pkgs_dir
 
         @property
         def temp_dir(self) -> str:

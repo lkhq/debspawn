@@ -47,6 +47,7 @@ def gconfig():
     gconf._instance._osroots_dir = os.path.join(test_tmp_dir, 'containers/')
     gconf._instance._results_dir = os.path.join(test_tmp_dir, 'results/')
     gconf._instance._aptcache_dir = os.path.join(test_tmp_dir, 'aptcache/')
+    gconf._instance._injected_pkgs_dir = os.path.join(test_tmp_dir, 'injected-pkgs/')
 
     return gconf
 

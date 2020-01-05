@@ -28,7 +28,14 @@ from argparse import ArgumentParser
 from glob import glob
 
 
+# the user performing builds in the container
 BUILD_USER = 'builder'
+
+# the directory where we build a package
+BUILD_DIR = '/srv/build'
+
+# additional packages to be used when building
+EXTRAPKG_DIR = '/srv/extra-packages'
 
 
 #
@@ -162,9 +169,37 @@ def prepare_package_build(arch_only=False, qa_lintian=False):
 
         # if we want to run Lintian later, we need to make sure it is installed
         if qa_lintian:
+            print('Lintian check requested, installing Lintian.')
             run_apt_command(['install', 'lintian'])
 
-    os.chdir('/srv/build')
+        # check if we have extra packages to register with APT
+        if os.path.exists(EXTRAPKG_DIR) and os.path.isdir(EXTRAPKG_DIR):
+            if os.listdir(EXTRAPKG_DIR):
+                run_apt_command(['install', '--no-install-recommends', 'apt-utils'])
+                print()
+                print('Using injected packages as additional APT package source.')
+
+                os.chdir(EXTRAPKG_DIR)
+                with open(os.path.join(EXTRAPKG_DIR, 'Packages'), 'wt') as f:
+                    proc = subprocess.Popen(['apt-ftparchive',
+                                             'packages',
+                                             '.'],
+                                            cwd=EXTRAPKG_DIR,
+                                            stdout=f)
+                    ret = proc.wait()
+                    if ret != 0:
+                        print('ERROR: Unable to generate temporary APT repository for injected packages.')
+                        sys.exit(2)
+
+                with open('/etc/apt/sources.list', 'a') as f:
+                    f.write('deb [trusted=yes] file://{} ./\n'.format(EXTRAPKG_DIR))
+
+                # make APT aware of the new packages, update base packages if needed
+                run_apt_command('update')
+                run_apt_command('full-upgrade')
+
+    # ensure we are in our build directory at this point
+    os.chdir(BUILD_DIR)
 
     run_command('chown -R {} /srv/build'.format(BUILD_USER))
     for f in glob('./*'):
@@ -186,7 +221,7 @@ def prepare_package_build(arch_only=False, qa_lintian=False):
 def build_package(buildflags=None):
     print_section('Build')
 
-    os.chdir('/srv/build')
+    os.chdir(BUILD_DIR)
     for f in glob('./*'):
         if os.path.isdir(f):
             os.chdir(f)
@@ -204,7 +239,7 @@ def build_package(buildflags=None):
 
 def run_qatasks(qa_lintian=True):
     ''' Run QA tasks on a built package immediately after build (currently Lintian) '''
-    os.chdir('/srv/build')
+    os.chdir(BUILD_DIR)
     for f in glob('./*'):
         if os.path.isdir(f):
             os.chdir(f)

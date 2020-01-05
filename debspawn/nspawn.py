@@ -111,7 +111,8 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
             return proc.returncode
 
 
-def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], tmp_apt_cache_dir=None, allowed=[], verbose=False):
+def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], *,
+                       tmp_apt_cache_dir=None, pkginjector=None, allowed=[], verbose=False):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -123,6 +124,9 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
         params = ['--chdir={}'.format(chdir),
                   '--link-journal=no',
                   '--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir)]
+        if pkginjector and pkginjector.instance_repo_dir:
+            params.append('--bind={}:/srv/extra-packages/'.format(pkginjector.instance_repo_dir))
+
         if personality:
             params.append('--personality={}'.format(personality))
         params.extend(flags)
@@ -182,11 +186,25 @@ def nspawn_make_helper_cmd(flags):
     return cmd
 
 
-def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[], allowed=[]):
+def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *, nspawn_flags=[], allowed=[]):
     cmd = nspawn_make_helper_cmd(helper_flags)
-    return nspawn_run_ephemeral(base_dir, machine_name, chdir, cmd, nspawn_flags, allowed)
+    return nspawn_run_ephemeral(base_dir,
+                                machine_name,
+                                chdir,
+                                cmd,
+                                nspawn_flags,
+                                allowed)
 
 
-def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', nspawn_flags=[], tmp_apt_cache_dir=None, allowed=[]):
+def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *,
+                              nspawn_flags=[], tmp_apt_cache_dir=None, pkginjector=None, allowed=[]):
     cmd = nspawn_make_helper_cmd(helper_flags)
-    return nspawn_run_persist(osbase, base_dir, machine_name, chdir, cmd, nspawn_flags, tmp_apt_cache_dir, allowed)
+    return nspawn_run_persist(osbase,
+                              base_dir,
+                              machine_name,
+                              chdir,
+                              cmd,
+                              nspawn_flags,
+                              tmp_apt_cache_dir=tmp_apt_cache_dir,
+                              pkginjector=pkginjector,
+                              allowed=allowed)

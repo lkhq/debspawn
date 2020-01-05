@@ -27,6 +27,7 @@ from .utils.misc import print_header, print_section, temp_dir, cd, print_info, p
     format_filesize, version_noepoch
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
+from .injectpkg import PackageInjector
 
 
 def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False, buildflags=[]):
@@ -41,6 +42,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
         # will be on the same filesystem configured as workspace for debspawn.
         # therefore we only check on directory.
         free_space = get_free_space(instance_dir)
+        print()
         print_info('Free space in workspace: {}'.format(format_filesize(free_space)))
 
         # check for at least 512MiB - this is a ridiculously small amount, so the build will likely fail.
@@ -51,7 +53,13 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
 
         # prepare the build. At this point, we only run trusted code and the container
         # has network access
-        with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
+        with temp_dir('pkgsync-' + machine_name) as pkgsync_tmp:
+            # create temporary locations set up and APT cache sharing and package injection
+            aptcache_tmp = os.path.join(pkgsync_tmp, 'aptcache')
+            pkginjector = PackageInjector(osbase)
+            if pkginjector.has_injectables():
+                pkginjector.create_instance_repo(os.path.join(pkgsync_tmp, 'pkginject'))
+
             # set up the build environment
             nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
             prep_flags = ['--build-prepare']
@@ -65,8 +73,9 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                                           machine_name,
                                           prep_flags,
                                           '/srv',
-                                          nspawn_flags,
-                                          aptcache_tmp)
+                                          nspawn_flags=nspawn_flags,
+                                          tmp_apt_cache_dir=aptcache_tmp,
+                                          pkginjector=pkginjector)
             if r != 0:
                 print_error('Build environment setup failed.')
                 return False
@@ -83,8 +92,9 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                                           machine_name,
                                           helper_flags,
                                           '/srv',
-                                          nspawn_flags,
-                                          aptcache_tmp)
+                                          nspawn_flags=nspawn_flags,
+                                          tmp_apt_cache_dir=aptcache_tmp,
+                                          pkginjector=pkginjector)
             if r != 0:
                 return False
 
@@ -98,8 +108,9 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                                               machine_name,
                                               ['--run-qa', '--lintian'],
                                               '/srv',
-                                              nspawn_flags,
-                                              aptcache_tmp)
+                                              nspawn_flags=nspawn_flags,
+                                              tmp_apt_cache_dir=aptcache_tmp,
+                                              pkginjector=pkginjector)
                 if r != 0:
                     print_error('QA failed.')
                     return False
