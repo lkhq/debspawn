@@ -86,7 +86,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                             '--private-network']
             helper_flags = ['--build-run']
             if buildflags:
-                helper_flags.append('--buildflags={}'.format(' '.join(buildflags)))
+                helper_flags.append('--buildflags={}'.format(';'.join(buildflags)))
             r = nspawn_run_helper_persist(osbase,
                                           instance_dir,
                                           machine_name,
@@ -154,6 +154,7 @@ def _read_source_package_details():
 
 
 def _get_build_flags(build_only=None, include_orig=False, maintainer=None, extra_flags=[]):
+    import shlex
     buildflags = []
 
     if build_only:
@@ -172,9 +173,10 @@ def _get_build_flags(build_only=None, include_orig=False, maintainer=None, extra
     if include_orig:
         buildflags.append('-sa')
     if maintainer:
-        buildflags.append('-m\'{}\''.format(maintainer))
-        buildflags.append('-e\'{}\''.format(maintainer))
-    buildflags.extend(extra_flags)
+        buildflags.append('-m{}'.format(maintainer.replace(';', ',')))
+        buildflags.append('-e{}'.format(maintainer.replace(';', ',')))
+    for flag_raw in extra_flags:
+        buildflags.extend(shlex.split(flag_raw))
 
     return True, buildflags
 

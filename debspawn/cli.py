@@ -145,7 +145,7 @@ def command_build(options):
 
     buildflags = []
     if options.buildflags:
-        buildflags = options.buildflags.split(' ')
+        buildflags = options.buildflags.split(';')
 
     if not options.target and os.path.isdir(options.suite):
         print('A directory is given as parameter, but you are missing a suite parameter to build for.')
@@ -301,7 +301,7 @@ def create_parser(formatter_class=None):
     sp.add_argument('--include-orig', action='store_true', dest='include_orig',
                     help='Forces the inclusion of the original source.')
     sp.add_argument('--buildflags', action='store', dest='buildflags',
-                    help='Set flags passed through to dpkg-buildpackage.')
+                    help='Set flags passed through to dpkg-buildpackage as semicolon-separated list.')
     sp.add_argument('--results-dir', action='store', dest='results_dir',
                     help='Override the configured results directory and return artifacts at a custom location.')
     sp.add_argument('--maintainer', action='store', dest='maintainer',

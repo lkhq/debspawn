@@ -1,14 +1,25 @@
-#!/usr/bin/env python3
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2018-2020 Matthias Klumpp <matthias@tenstral.net>
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
+# IMPORTANT: This file is placed within a debspawn container.
+# The containers only contain a minimal set of packages, and only a reduced
+# installation of Python is available via the python3-minimal package.
+# This file must be self-contained and only depend on modules available
+# in that Python installation.
+# It must also not depend on any Python 3 feature introduced after version 3.5.
+# See /usr/share/doc/python3.*-minimal/README.Debian for a list of permitted
+# modules.
+# Additionally, the CLI API of this file should remain as stable as possible,
+# to not introduce odd behavior if a container wasn't updated and is used with
+# a newer debspawn version.
+
 import os
 import sys
 import pwd
-import shlex
 import subprocess
 from contextlib import contextmanager
 from argparse import ArgumentParser
@@ -310,7 +321,7 @@ def main():
     elif options.build_run:
         buildflags = []
         if options.buildflags:
-            buildflags = shlex.split(options.buildflags)
+            buildflags = [s.strip('\'" ') for s in options.buildflags.split(';')]
         r = build_package(buildflags)
         if not r:
             return 2
