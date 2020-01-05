@@ -18,6 +18,7 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import pytest
 
 
@@ -48,3 +49,14 @@ def gconfig():
     gconf._aptcache_dir = os.path.join(test_tmp_dir, 'aptcache/')
 
     return gconf
+
+
+@pytest.fixture(scope='session', autouse=True)
+def ensure_root():
+    '''
+    Ensure we run with superuser permissions.
+    '''
+
+    if os.geteuid() != 0:
+        print('The testsuite has to be run with superuser permissions in order to create nspawn instances.')
+        sys.exit(1)
