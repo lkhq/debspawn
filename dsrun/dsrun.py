@@ -151,7 +151,7 @@ def prepare_run():
     return True
 
 
-def prepare_package_build(arch_only=False):
+def prepare_package_build(arch_only=False, qa_lintian=False):
     print_section('Preparing container for build')
 
     with eatmydata():
@@ -159,6 +159,10 @@ def prepare_package_build(arch_only=False):
         run_apt_command('full-upgrade')
         run_apt_command(['install', '--no-install-recommends',
                          'build-essential', 'dpkg-dev', 'fakeroot'])
+
+        # if we want to run Lintian later, we need to make sure it is installed
+        if qa_lintian:
+            run_apt_command(['install', 'lintian'])
 
     os.chdir('/srv/build')
 
@@ -194,7 +198,37 @@ def build_package(buildflags=None):
     run_command(cmd)
 
     # run_command will exit the whole program if the command failed,
-    # so we can return True here
+    # so we can return True here (everything went fine if we are here)
+    return True
+
+
+def run_qatasks(qa_lintian=True):
+    ''' Run QA tasks on a built package immediately after build (currently Lintian) '''
+    os.chdir('/srv/build')
+    for f in glob('./*'):
+        if os.path.isdir(f):
+            os.chdir(f)
+            break
+
+    if qa_lintian:
+        print_section('QA: Lintian')
+
+        # ensure Lintian is really installed
+        run_apt_command(['install', 'lintian'])
+
+        # drop privileges
+        pw = pwd.getpwnam(BUILD_USER)
+        os.seteuid(pw.pw_uid)
+
+        cmd = ['lintian',
+               '-I',  # infos by default
+               '--pedantic',  # pedantic hints by default,
+               '--no-tag-display-limit'  # display all tags found (even if that may be a lot occasionally)
+               ]
+        run_command(cmd)
+
+    # run_command will exit the whole program if the command failed,
+    # so we can return True here (everything went fine if we are here)
     return True
 
 
@@ -226,10 +260,14 @@ def main():
                         help='Prepare building a Debian package.')
     parser.add_argument('--build-run', action='store_true', dest='build_run',
                         help='Build a Debian package.')
+    parser.add_argument('--lintian', action='store_true', dest='qa_lintian',
+                        help='Run Lintian on the generated package.')
     parser.add_argument('--buildflags', action='store', dest='buildflags', default=None,
                         help='Flags passed to dpkg-buildpackage.')
     parser.add_argument('--prepare-run', action='store_true', dest='prepare_run',
                         help='Prepare container image for generic script run.')
+    parser.add_argument('--run-qa', action='store_true', dest='run_qatasks',
+                        help='Run QA tasks (only Lintian currently) against a package.')
 
     options = parser.parse_args(sys.argv[1:])
 
@@ -244,7 +282,7 @@ def main():
         if not r:
             return 2
     elif options.build_prepare:
-        r = prepare_package_build(options.arch_only)
+        r = prepare_package_build(options.arch_only, options.qa_lintian)
         if not r:
             return 2
     elif options.build_run:
@@ -256,6 +294,10 @@ def main():
             return 2
     elif options.prepare_run:
         r = prepare_run()
+        if not r:
+            return 2
+    elif options.run_qatasks:
+        r = run_qatasks(qa_lintian=options.qa_lintian)
         if not r:
             return 2
     else:

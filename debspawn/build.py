@@ -29,7 +29,7 @@ from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist
 
 
-def internal_execute_build(osbase, pkg_dir, build_only=None, *, buildflags=[]):
+def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False, buildflags=[]):
     assert not build_only or isinstance(build_only, str)
     if not pkg_dir:
         raise Exception('Package directory is missing!')
@@ -52,10 +52,14 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, buildflags=[]):
         # prepare the build. At this point, we only run trusted code and the container
         # has network access
         with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
+            # set up the build environment
             nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
             prep_flags = ['--build-prepare']
             if build_only == 'arch':
                 prep_flags.append('--arch-only')
+            if qa_lintian:
+                # install Lintian from the start, if we run it later
+                prep_flags.append('--lintian')
             r = nspawn_run_helper_persist(osbase,
                                           instance_dir,
                                           machine_name,
@@ -83,6 +87,23 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, buildflags=[]):
                                           aptcache_tmp)
             if r != 0:
                 return False
+
+            if qa_lintian:
+                # running Lintian was requested, so do so.
+                # we use Lintian from the container, so we validate with the validator from
+                # the OS the package was actually built against
+                nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
+                r = nspawn_run_helper_persist(osbase,
+                                              instance_dir,
+                                              machine_name,
+                                              ['--run-qa', '--lintian'],
+                                              '/srv',
+                                              nspawn_flags,
+                                              aptcache_tmp)
+                if r != 0:
+                    print_error('QA failed.')
+                    return False
+                print()  # extra blank line after Lintian output
 
             build_dir_size = get_tree_size(pkg_dir)
             print_info('This build required {} of dedicated disk space.'.format(format_filesize(build_dir_size)))
@@ -182,7 +203,8 @@ def _print_system_info():
 
 
 def build_from_directory(osbase, pkg_dir, *,
-                         sign=False, build_only=None, include_orig=False, maintainer=None, clean_source=False, extra_dpkg_flags=[]):
+                         sign=False, build_only=None, include_orig=False, maintainer=None,
+                         clean_source=False, qa_lintian=False, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -228,6 +250,7 @@ def build_from_directory(osbase, pkg_dir, *,
         ret = internal_execute_build(osbase,
                                      pkg_tmp_dir,
                                      build_only,
+                                     qa_lintian=qa_lintian,
                                      buildflags=buildflags)
         if not ret:
             return False
@@ -247,7 +270,8 @@ def build_from_directory(osbase, pkg_dir, *,
 
 
 def build_from_dsc(osbase, dsc_fname, *,
-                   sign=False, build_only=None, include_orig=False, maintainer=None, extra_dpkg_flags=[]):
+                   sign=False, build_only=None, include_orig=False, maintainer=None,
+                   qa_lintian=False, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -287,6 +311,7 @@ def build_from_dsc(osbase, dsc_fname, *,
         ret = internal_execute_build(osbase,
                                      pkg_tmp_dir,
                                      build_only,
+                                     qa_lintian=qa_lintian,
                                      buildflags=buildflags)
         if not ret:
             return False

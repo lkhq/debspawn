@@ -163,6 +163,7 @@ def command_build(options):
                                  include_orig=options.include_orig,
                                  maintainer=options.maintainer,
                                  clean_source=options.clean_source,
+                                 qa_lintian=options.lintian,
                                  extra_dpkg_flags=buildflags)
     else:
         r = build_from_dsc(osbase,
@@ -171,6 +172,7 @@ def command_build(options):
                            build_only=options.build_only,
                            include_orig=options.include_orig,
                            maintainer=options.maintainer,
+                           qa_lintian=options.lintian,
                            extra_dpkg_flags=buildflags)
     if not r:
         sys.exit(2)
@@ -303,11 +305,13 @@ def create_parser(formatter_class=None):
     sp.add_argument('--maintainer', action='store', dest='maintainer',
                     help=('Set the name and email address of the maintainer for this package and upload, rather than using '
                           'the information from the source tree\'s control file or changelog.'))
-    sp.add_argument('target', action='store', nargs='?', default=None,
-                    help='The source package file or source directory to build.')
     sp.add_argument('--clean-source', action='store_true', dest='clean_source',
                     help=('Run the d/rules clean target outside of the container. This means the package build dependencies need to be '
                           'installed on the host system when building from a source directory.'))
+    sp.add_argument('--lintian', action='store_true', dest='lintian',
+                    help='Run the Lintian static analysis tool for Debian packages after the package is built.')
+    sp.add_argument('target', action='store', nargs='?', default=None,
+                    help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)
 
     # 'login' command
