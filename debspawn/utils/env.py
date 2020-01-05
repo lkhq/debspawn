@@ -80,8 +80,24 @@ def ensure_root():
             args.append('--owner={}:{}'.format(uid, gid))
         args.extend(sys.argv[1:])
 
+    def filter_env_far(result, name):
+        value = os.environ.get(name)
+        if not value:
+            return
+        result.append('{}={}'.format(name, shlex.quote(value)))
+
     if shutil.which('sudo'):
-        os.execvp("sudo", ["sudo"] + args)
+        # Filter "good" environment variables that we want to have after running sudo.
+        # Most of those are standard variables affecting debsign bahevior later, in case
+        # the user has requested signing
+        import shlex
+        env = []
+        filter_env_far(env, 'DEBEMAIL')
+        filter_env_far(env, 'DEBFULLNAME')
+        filter_env_far(env, 'GPGKEY')
+        filter_env_far(env, 'GPG_AGENT_INFO')
+
+        os.execvp("sudo", ["sudo"] + env + args)
     else:
         print('This command needs to be run as root.')
         sys.exit(1)
