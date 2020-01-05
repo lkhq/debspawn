@@ -21,6 +21,7 @@ import os
 import shutil
 from pathlib import Path
 from glob import glob
+from .utils.misc import hardlink_or_copy
 
 
 class APTCache:
@@ -66,7 +67,7 @@ class APTCache:
             pkg_cachepath = os.path.join(tmp_cache_dir, os.path.basename(pkg_fname))
 
             if not os.path.isfile(pkg_cachepath):
-                shutil.copy2(pkg_fname, pkg_cachepath)
+                hardlink_or_copy(pkg_fname, pkg_cachepath)
 
     def clear(self):
         '''

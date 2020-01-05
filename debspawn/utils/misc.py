@@ -134,3 +134,12 @@ def version_noepoch(version):
     if ':' in version_noe:
         version_noe = version_noe.split(':', 1)[1]
     return version_noe
+
+
+def hardlink_or_copy(src, dst):
+    ''' Hardlink a file :src to :dst or copy the file in case linking is not possible '''
+
+    try:
+        os.link(src, dst)
+    except (PermissionError, OSError):
+        shutil.copy2(src, dst)
