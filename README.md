@@ -162,7 +162,9 @@ without Laniakea automation.
 #### This tool is really fast! What is the secret?
 
 Surprisingly, building packages with `debspawn` is often a bit faster than using `pbuilder` and `sbuild` with their default settings.
-There is nothing special going on here (unless you are on a filesystem that supports copy-on-write), the speed gain comes almost
-exclusively from the internal use of the Zstandard compression algorithm for base images. Zstd allows for fast decompression of the bases,
-which is exactly why it was chosen (LZ4 would be even faster, but Zstd actually is a good compromise here). This shaves off a few seconds of time
-for each build that is used on base image decompression.
+The speed gain comes in large part from the internal use of the Zstandard compression algorithm for base images. Zstd allows for fast
+decompression of the tarballs, which is exactly why it was chosen (LZ4 would be even faster, but Zstd actually is a good compromise between
+compression ration and speed). This shaves off a few seconds of time for each build that is used on base image decompression.
+Additionally, Debspawn uses `eatmydata` to disable fsync & co. by default in a few places, improving the time it takes to set up the build environment
+by quite a bit as well.
+If you want, you can configure other tools to make use of the same methods (eatmydata & zstd) as well and see if they run faster.
