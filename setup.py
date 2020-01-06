@@ -11,6 +11,7 @@ from setuptools.command.install_scripts import install_scripts as install_script
 from subprocess import check_call
 from docs.assemble_man import generate_docbook_pages
 
+
 class install_scripts(install_scripts_orig):
 
     def _create_manpage(self, xml_src, out_dir):
@@ -45,11 +46,12 @@ class install_scripts(install_scripts_orig):
         if self.dry_run:
             return
 
-        if not '--single-version-externally-managed' in sys.argv:
+        if '--single-version-externally-managed' not in sys.argv:
             print()
             print('Attempting to install Debspawn as binary distribution may not yield a working installation.', file=sys.stderr)
             print('We require a file to be installed in a system location, and manual pages are in an external location as well.', file=sys.stderr)
-            print('Currently, no workarounds for this issue have been implemented in Debspawn itself, so please run setup.py with `--single-version-externally-managed`.', file=sys.stderr)
+            print(('Currently, no workarounds for this issue have been implemented in Debspawn itself, so please run setup.py with '
+                   '`--single-version-externally-managed`.'), file=sys.stderr)
             print('If you are using pip, try `sudo pip3 install --no-binary debspawn .`', file=sys.stderr)
             sys.exit(1)
 
