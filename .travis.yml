@@ -29,7 +29,7 @@ install:
 
 script:
   - ./setup.py build
-  - ./setup.py install --root=/tmp
+  - ./setup.py install --single-version-externally-managed --root=/tmp
   - sudo $(which python3) -m pytest
   - rm -rf build/
   - flake8 ./

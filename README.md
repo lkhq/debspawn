@@ -28,6 +28,16 @@ See the FAQ below for more details.
 
 ### Installing Debspawn
 
+#### Via the Debian package
+
+On Debian/Ubuntu, simply run
+```ShellSession
+sudo apt install debspawn
+```
+to start using Debspawn.
+
+#### Via the Git repository
+
 Clone the Git repository, install the (build and runtime) dependencies of `debspawn`:
 ```ShellSession
 sudo apt install xsltproc docbook-xsl python3-setuptools zstd systemd-container debootstrap
@@ -35,7 +45,7 @@ sudo apt install xsltproc docbook-xsl python3-setuptools zstd systemd-container 
 
 You can the run `debspawn.py` directly from the Git repository, or choose to install it:
 ```ShellSession
-sudo pip3 install .
+sudo pip3 install --no-binary debspawn .
 ```
 
 Debspawn requires at least Python 3.5. We try to keep the dependency footprint of this tool as

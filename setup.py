@@ -11,13 +11,13 @@ from setuptools.command.install_scripts import install_scripts as install_script
 from subprocess import check_call
 from docs.assemble_man import generate_docbook_pages
 
-
 class install_scripts(install_scripts_orig):
 
     def _create_manpage(self, xml_src, out_dir):
         man_name = os.path.splitext(os.path.basename(xml_src))[0]
         out_fname = os.path.join(out_dir, man_name)
 
+        print('Generating manual page {}'.format(man_name))
         check_call(['xsltproc',
                     '--nonet',
                     '--stringparam', 'man.output.quietly', '1',
@@ -26,6 +26,7 @@ class install_scripts(install_scripts_orig):
                     '-o', out_fname,
                     'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
                     xml_src])
+        return out_fname
 
     def run(self):
         if platform.system() == 'Windows':
@@ -35,8 +36,24 @@ class install_scripts(install_scripts_orig):
         if not self.skip_build:
             self.run_command('build_scripts')
         self.outfiles = []
-        if not self.dry_run:
-            self.mkpath(self.install_dir)
+
+        # check for xsltproc, we need it to build manual pages
+        if not shutil.which('xsltproc'):
+            print('The "xsltproc" binary was not found. Please install it to continue!')
+            sys.exit(1)
+
+        if self.dry_run:
+            return
+
+        if not '--single-version-externally-managed' in sys.argv:
+            print()
+            print('Attempting to install Debspawn as binary distribution may not yield a working installation.', file=sys.stderr)
+            print('We require a file to be installed in a system location, and manual pages are in an external location as well.', file=sys.stderr)
+            print('Currently, no workarounds for this issue have been implemented in Debspawn itself, so please run setup.py with `--single-version-externally-managed`.', file=sys.stderr)
+            print('If you are using pip, try `sudo pip3 install --no-binary debspawn .`', file=sys.stderr)
+            sys.exit(1)
+
+        self.mkpath(self.install_dir)
 
         # We want the files to be installed without a suffix on Unix
         for infile in self.get_inputs():
@@ -48,17 +65,21 @@ class install_scripts(install_scripts_orig):
             self.copy_file(in_built, outfile)
             self.outfiles.append(outfile)
 
-        # handle generation of manual pages
-        if not shutil.which('xsltproc'):
-            print('The "xsltproc" binary was not found. Please install it to continue!')
-            sys.exit(1)
+        data_dir = os.path.normpath(os.path.join(self.install_dir, '..', 'lib', 'debspawn'))
+        os.makedirs(data_dir, exist_ok=True)
+        self.outfiles.append(data_dir)
 
+        # install dsrun helper to the right place
+        dsrun_dest = os.path.join(data_dir, 'dsrun.py')
+        self.copy_file('dsrun/dsrun.py', dsrun_dest)
+        self.outfiles.append(dsrun_dest)
+
+        # handle generation of manual pages
         man_dir = os.path.normpath(os.path.join(self.install_dir, '..', 'share', 'man', 'man1'))
-        if not self.dry_run:
-            self.mkpath(man_dir)
-            pages = generate_docbook_pages(self.build_dir)
-            for page in pages:
-                self._create_manpage(page, man_dir)
+        self.mkpath(man_dir)
+        pages = generate_docbook_pages(self.build_dir)
+        for page in pages:
+            self.outfiles.append(self._create_manpage(page, man_dir))
 
 
 cmdclass = {
@@ -72,8 +93,6 @@ packages = [
 
 scripts = ['debspawn.py']
 
-data_files = [('/usr/lib/debspawn', ['dsrun/dsrun.py'])]
-
 setup(
     name=__appname__,
     version=__version__,
@@ -85,9 +104,9 @@ setup(
 
     python_requires='>=3.5',
     platforms=['any'],
+    zip_safe=False,
 
     packages=packages,
-    data_files=data_files,
     cmdclass=cmdclass,
     scripts=scripts,
 )
