@@ -280,7 +280,7 @@ def main():
         print('This helper script must be run in a systemd-nspawn container.')
         return 1
 
-    parser = ArgumentParser(description='DebSpawn helper script')
+    parser = ArgumentParser(description='Debspawn helper script')
     parser.add_argument('--update', action='store_true', dest='update',
                         help='Initialize the container.')
     parser.add_argument('--no-color', action='store_true', dest='no_color',

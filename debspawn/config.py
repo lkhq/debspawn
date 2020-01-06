@@ -24,7 +24,7 @@ import json
 
 class GlobalConfig:
     '''
-    Global configuration singleton affecting all of DebSpawn.
+    Global configuration singleton affecting all of Debspawn.
     '''
 
     _instance = None

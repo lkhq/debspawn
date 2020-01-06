@@ -1,4 +1,4 @@
-# DebSpawn
+# Debspawn
 
 [![Build Status](https://travis-ci.org/lkorigin/debspawn.svg?branch=master)](https://travis-ci.org/lkorigin/debspawn)
 
