@@ -47,6 +47,7 @@ You can the run `debspawn.py` directly from the Git repository, or choose to ins
 ```bash
 sudo pip3 install --no-binary debspawn .
 ```
+(or use `sudo python3 setup.py install --single-version-externally-managed --root=/` to install without pip)
 
 Debspawn requires at least Python 3.5. We try to keep the dependency footprint of this tool as
 small as possible, so it is not planned to raise that requirement or add any more dependencies
