@@ -158,8 +158,11 @@ the `--no-unicode` flag to `debspawn` to disable unicode in the tool itself and 
 
 #### Will this replace sbuild?
 
-Not in the foreseeable future. Sbuild is a proven tool that works well for Debian and supports other OSes than Linux, while `debspawn` is Linux-only,
+Not in the foreseeable future on Debian itself.
+Sbuild is a proven tool that works well for Debian and supports other OSes than Linux, while `debspawn` is Linux-only,
 a thing that will not change.
+However, Laniakea-using derivatives such as PureOS use the tool for building all packages and for constructing other build
+environments to e.g. build disk images.
 
 
 #### What is the relation of this project with Laniakea?
