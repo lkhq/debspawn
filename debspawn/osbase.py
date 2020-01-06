@@ -477,6 +477,8 @@ def print_container_base_image_info(gconf):
             with open(config_fname, 'rt') as f:
                 cdata = json.loads(f.read())
             for key, value in cdata.items():
+                if type(value) is list:
+                    value = '; '.join(value)
                 print('{} = {}'.format(key, value))
 
         tar_size = os.path.getsize(tar_fname)
