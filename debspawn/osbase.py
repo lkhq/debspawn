@@ -18,6 +18,7 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import json
 import subprocess
 import shutil
 from pathlib import Path
@@ -117,6 +118,9 @@ class OSBase:
     def get_tarball_location(self):
         return os.path.join(self._gconf.osroots_dir, '{}.tar.zst'.format(self.name))
 
+    def get_config_location(self):
+        return os.path.join(self._gconf.osroots_dir, '{}.json'.format(self.name))
+
     def exists(self):
         return os.path.isfile(self.get_tarball_location())
 
@@ -147,6 +151,28 @@ class OSBase:
         node_name_prefix = platform.node()[:63 - len(uniq_suffix)]
 
         return '{}-{}'.format(node_name_prefix, uniq_suffix)
+
+    def _write_config_json(self, mirror, components, extra_suites, extra_source_lines):
+        '''
+        Create configuration file for this container base image
+        '''
+
+        print_info('Saving configuration settings.')
+        data = {'Suite': self.suite,
+                'Architecture': self.arch}
+        if self.variant:
+            data['Variant'] = self.variant
+        if mirror:
+            data['Mirror'] = mirror
+        if components:
+            data['Components'] = components
+        if extra_suites:
+            data['ExtraSuites'] = extra_suites
+        if extra_source_lines:
+            data['ExtraSourceLines'] = extra_source_lines
+
+        with open(self.get_config_location(), 'wt') as f:
+            f.write(json.dumps(data, sort_keys=True, indent=4))
 
     def create(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None):
         ''' Create new container base image '''
@@ -237,6 +263,10 @@ class OSBase:
             print_section('Creating Tarball')
             compress_directory(tdir, self.get_tarball_location())
 
+        # store configuration settings, so we can later recreate this tarball
+        # or just display information about it
+        self._write_config_json(mirror, components, extra_suites, extra_source_lines)
+
         print_info('Done.')
         return True
 
@@ -258,6 +288,11 @@ class OSBase:
 
         print_section('Deleting base tarball')
         os.remove(self.get_tarball_location())
+
+        config_fname = self.get_config_location()
+        if os.path.isfile(config_fname):
+            print_section('Deleting configuration manifest')
+            os.remove(config_fname)
 
         print_info('Done.')
         return True
@@ -413,3 +448,38 @@ class OSBase:
 
         print_info('Done.')
         return True
+
+
+def print_container_base_image_info(gconf):
+    '''
+    Search for all available container base images and list information
+    about them.
+    '''
+    from glob import glob
+
+    osroots_dir = gconf.osroots_dir
+    tar_files = []
+    if os.path.isdir(osroots_dir):
+        tar_files = list(glob(os.path.join(osroots_dir, '*.tar.zst')))
+    if not tar_files:
+        print_info('No container base images have been found!')
+        return False
+    tar_files_len = len(tar_files)
+
+    for i, tar_fname in enumerate(tar_files):
+        img_basepath = os.path.splitext(os.path.splitext(tar_fname)[0])[0]
+        config_fname = img_basepath + '.json'
+        imgid = os.path.basename(img_basepath)
+        print('[{}]'.format(imgid))
+
+        # read configuration data if it exists
+        if os.path.isfile(config_fname):
+            with open(config_fname, 'rt') as f:
+                cdata = json.loads(f.read())
+            for key, value in cdata.items():
+                print('{} = {}'.format(key, value))
+
+        tar_size = os.path.getsize(tar_fname)
+        print('Size = {}'.format(format_filesize(tar_size)))
+        if i != tar_files_len - 1:
+            print()

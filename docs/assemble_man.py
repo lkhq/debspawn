@@ -87,6 +87,8 @@ def generate_docbook_pages(build_dir):
         editor.register_command_flag_synopsis(sp._get_optional_actions(), command)
         template_fname = 'docs/debspawn-{}.1.xml'.format(command)
         if not os.path.isfile(template_fname):
+            if command in ['ls', 'b']:
+                continue  # the ls and b shorthands need to manual page
             print('Manual page template {} is missing! Skipping it.'.format(template_fname))
             continue
 

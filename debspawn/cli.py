@@ -131,6 +131,16 @@ def command_update(options):
         sys.exit(2)
 
 
+def command_list(options):
+    ''' List container images '''
+
+    from .osbase import print_container_base_image_info
+
+    check_print_version(options)
+    gconf = init_config(options)
+    print_container_base_image_info(gconf)
+
+
 def command_build(options):
     ''' Build a package in a new volatile container '''
 
@@ -286,6 +296,10 @@ def create_parser(formatter_class=None):
     sp = subparsers.add_parser('update', help='Update a container image')
     add_container_select_arguments(sp)
     sp.set_defaults(func=command_update)
+
+    # 'list' command
+    sp = subparsers.add_parser('list', help='List available container images', aliases=['ls'])
+    sp.set_defaults(func=command_list)
 
     # 'build' command
     sp = subparsers.add_parser('build', help='Build a package in an isolated environment', formatter_class=formatter_class, aliases=['b'])
