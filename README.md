@@ -31,7 +31,7 @@ See the FAQ below for more details.
 #### Via the Debian package
 
 On Debian/Ubuntu, simply run
-```ShellSession
+```bash
 sudo apt install debspawn
 ```
 to start using Debspawn.
@@ -39,12 +39,12 @@ to start using Debspawn.
 #### Via the Git repository
 
 Clone the Git repository, install the (build and runtime) dependencies of `debspawn`:
-```ShellSession
+```bash
 sudo apt install xsltproc docbook-xsl python3-setuptools zstd systemd-container debootstrap
 ```
 
 You can the run `debspawn.py` directly from the Git repository, or choose to install it:
-```ShellSession
+```bash
 sudo pip3 install --no-binary debspawn .
 ```
 
@@ -61,13 +61,13 @@ If it can not obtain privileges, `debspawn` will exit with the appropriate error
 ### Creating a new image
 
 You can easily create images for any suite that has a script in `debootstrap`. For Debian Unstable for example:
-```ShellSession
+```bash
 $ debspawn create sid
 ```
 This will create a Debian Sid (unstable) image for the current system architecture.
 
 To create an image for testing Ubuntu builds:
-```ShellSession
+```bash
 $ debspawn create --arch=i386 cosmic
 ```
 This creates an `i386` image for Ubuntu 18.10. If you want to use a different mirror than set by default, pass it with the `--mirror` option.
@@ -75,7 +75,7 @@ This creates an `i386` image for Ubuntu 18.10. If you want to use a different mi
 ### Refreshing an image
 
 Just run `debspawn update` and give the details of the base image that should be updated:
-```ShellSession
+```bash
 $ debspawn update sid
 $ debspawn update --arch=i386 cosmic
 ```
@@ -86,7 +86,7 @@ This will update the base image contents and perform other maintenance actions.
 
 You can build a package from its source directory, or just by passing a plain `.dsc` file to `debspawn`. If the result should
 be automatically signed, the `--sign` flag needs to be passed too:
-```ShellSession
+```bash
 $ cd ~/packages/hello
 $ debspawn build sid --sign
 
@@ -98,7 +98,7 @@ Build results are by default returned in `/var/lib/debspawn/results/`
 ### Building a package - with git-buildpackage
 
 You can use a command like this to build your project with gbp and Debspawn:
-```ShellSession
+```bash
 $ gbp buildpackage --git-builder='debspawn build sid --sign'
 ```
 
@@ -106,7 +106,7 @@ $ gbp buildpackage --git-builder='debspawn build sid --sign'
 
 If you want to, you can log into the container environment and either play around in
 ephemeral mode with no persistent changes, or pass `--persistent` to `debspawn` so all changes are permanently saved:
-```ShellSession
+```bash
 $ debspawn login sid
 
 # Attention! This may alter the build environment!
@@ -118,7 +118,7 @@ $ debspawn login --persistent sid
 At some point, you may want to permanently remove a container image again, for example because the
 release it was built for went end of life.
 This is easily done as well:
-```ShellSession
+```bash
 $ debspawn delete sid
 $ debspawn delete --arch=i386 cosmic
 ```
