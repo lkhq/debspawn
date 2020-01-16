@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-# IMPORTANT: This file is placed within a debspawn container.
+# IMPORTANT: This file is placed within a Debspawn container.
 # The containers only contain a minimal set of packages, and only a reduced
 # installation of Python is available via the python3-minimal package.
 # This file must be self-contained and only depend on modules available

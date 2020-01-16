@@ -67,15 +67,6 @@ class install_scripts(install_scripts_orig):
             self.copy_file(in_built, outfile)
             self.outfiles.append(outfile)
 
-        data_dir = os.path.normpath(os.path.join(self.install_dir, '..', 'lib', 'debspawn'))
-        os.makedirs(data_dir, exist_ok=True)
-        self.outfiles.append(data_dir)
-
-        # install dsrun helper to the right place
-        dsrun_dest = os.path.join(data_dir, 'dsrun.py')
-        self.copy_file('dsrun/dsrun.py', dsrun_dest)
-        self.outfiles.append(dsrun_dest)
-
         # handle generation of manual pages
         man_dir = os.path.normpath(os.path.join(self.install_dir, '..', 'share', 'man', 'man1'))
         self.mkpath(man_dir)
@@ -93,6 +84,8 @@ packages = [
     'debspawn.utils',
 ]
 
+package_data = {'': ['debspawn/dsrun']}
+
 scripts = ['debspawn.py']
 
 setup(
@@ -107,8 +100,10 @@ setup(
     python_requires='>=3.5',
     platforms=['any'],
     zip_safe=False,
+    include_package_data=True,
 
     packages=packages,
     cmdclass=cmdclass,
-    scripts=scripts,
+    package_data=package_data,
+    scripts=scripts
 )

@@ -25,21 +25,13 @@ from .config import GlobalConfig
 from .utils.env import set_unicode_allowed, set_owning_user
 from .osbase import OSBase
 
-__mainfile = None
-
 
 def init_config(options):
-    global __mainfile
-
+    '''
+    Create a new :GlobalConfig from command-line options.
+    '''
     gconf = GlobalConfig()
     gconf.load(options.config)
-
-    if not __mainfile.startswith('/usr'):
-        gconf.dsrun_path = os.path.normpath(os.path.join(__mainfile, '..', 'dsrun', 'dsrun.py'))
-    elif __mainfile.startswith('/usr/local'):
-        path = '/usr/local/lib/debspawn/dsrun.py'
-        if os.path.isfile(path):
-            gconf.dsrun_path = path
 
     # check if we are forbidden from using unicode - otherwise we build
     # with unicode enabled by default
@@ -362,9 +354,6 @@ def run(mainfile, args):
     if len(args) == 0:
         print('Need a subcommand to proceed!')
         sys.exit(1)
-
-    global __mainfile
-    __mainfile = mainfile
 
     parser = create_parser()
 

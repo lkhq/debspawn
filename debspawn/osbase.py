@@ -107,7 +107,7 @@ class OSBase:
     def _copy_helper_script(self, osroot_path):
         script_location = os.path.join(osroot_path, 'usr', 'lib', 'debspawn')
         Path(script_location).mkdir(parents=True, exist_ok=True)
-        script_fname = os.path.join(script_location, 'dsrun.py')
+        script_fname = os.path.join(script_location, 'dsrun')
 
         if os.path.isfile(script_fname):
             os.remove(script_fname)

@@ -22,6 +22,14 @@ import sys
 import json
 
 
+thisfile = __file__
+if not os.path.isabs(thisfile):
+    thisfile = os.path.normpath(os.path.join(os.getcwd(), thisfile))
+
+
+__all__ = ['GlobalConfig']
+
+
 class GlobalConfig:
     '''
     Global configuration singleton affecting all of Debspawn.
@@ -43,7 +51,10 @@ class GlobalConfig:
                         print('Unable to parse global configuration (global.json): {}'.format(str(e)), file=sys.stderr)
                         sys.exit(8)
 
-            self._dsrun_path = '/usr/lib/debspawn/dsrun.py'
+            self._dsrun_path = os.path.normpath(os.path.join(thisfile, '..', 'dsrun'))
+            if not os.path.isfile(self._dsrun_path):
+                print('Debspawn is not set up properly: Unable to find file "{}". Can not continue.'.format(self._dsrun_path), file=sys.stderr)
+                sys.exit(4)
 
             self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
             self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')

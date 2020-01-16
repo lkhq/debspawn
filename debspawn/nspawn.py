@@ -176,7 +176,7 @@ def nspawn_make_helper_cmd(flags):
     if isinstance(flags, str):
         flags = flags.split(' ')
 
-    cmd = ['/usr/lib/debspawn/dsrun.py']
+    cmd = ['/usr/lib/debspawn/dsrun']
     if not colored_output_allowed():
         cmd.append('--no-color')
     if not unicode_allowed():

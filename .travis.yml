@@ -33,3 +33,4 @@ script:
   - sudo $(which python3) -m pytest
   - rm -rf build/
   - flake8 ./
+  - flake8 debspawn/dsrun
