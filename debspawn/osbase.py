@@ -175,6 +175,19 @@ class OSBase:
         with open(self.get_config_location(), 'wt') as f:
             f.write(json.dumps(data, sort_keys=True, indent=4))
 
+    def _clear_image_tree(self, image_dir):
+        ''' Clear files from a directory tree that we don't want in the tarball. '''
+
+        if os.path.ismount(image_dir):
+            print_warn('Preparing OS tree for compression, but /dev is still mounted.')
+            return
+
+        for sdir, _, files in os.walk(os.path.join(image_dir, 'dev')):
+            for f in files:
+                fname = os.path.join(sdir, f)
+                if os.path.lexists(fname) and not os.path.isdir(fname) and not os.path.ismount(fname):
+                    os.remove(fname)
+
     def create(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None):
         ''' Create new container base image '''
         ensure_root()
@@ -262,6 +275,7 @@ class OSBase:
                 return False
 
             print_section('Creating Tarball')
+            self._clear_image_tree(tdir)
             compress_directory(tdir, self.get_tarball_location())
 
         # store configuration settings, so we can later recreate this tarball
@@ -306,6 +320,9 @@ class OSBase:
 
     def make_instance_permanent(self, instance_dir):
         ''' Add changes done in the current instance to the main tarball of this OS tree, replacing it. '''
+
+        # remove unwanted files from the tarball
+        self._clear_image_tree(instance_dir)
 
         tarball_name = self.get_tarball_location()
         tarball_name_old = '{}.old'.format(tarball_name)
