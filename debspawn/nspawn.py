@@ -18,11 +18,9 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import subprocess
 import platform
+from .utils import temp_dir, print_error, print_warn, print_info, safe_run, run_forwarded
 from .utils.env import colored_output_allowed, unicode_allowed
-from .utils.misc import temp_dir, print_error, print_info
-from .utils.command import safe_run
 
 
 def get_nspawn_personality(osbase):
@@ -70,7 +68,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
     cmd.extend(parameters)
 
     if not full_dev_access:
-        proc = subprocess.run(cmd)
+        proc = run_forwarded(cmd)
         return proc.returncode
     else:
         out, _, _ = safe_run(['systemd-escape', machine_name])
@@ -81,7 +79,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
             # child process - edit the cgroup to allow full access to all
             # devices. Hopefully there won't be too much need for this awful code.
             parent_pid = os.getppid()
-            print_info('/!\\ Giving container access to all host devices.')
+            print_warn('Giving container access to all host devices.')
 
             syscg_devices_allow = '/sys/fs/cgroup/devices/machine.slice/machine-{}.scope/devices.allow'.format(escaped_full_machine_name)
             tries = 0
@@ -107,7 +105,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
                 sys_f.flush()
             os._exit(0)
         else:
-            proc = subprocess.run(cmd)
+            proc = run_forwarded(cmd)
             return proc.returncode
 
 

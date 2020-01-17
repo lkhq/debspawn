@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 from glob import glob
 from contextlib import contextmanager
-from .utils.misc import hardlink_or_copy, temp_dir, print_info
+from .utils import hardlink_or_copy, temp_dir, print_info
 
 
 class PackageInjector:

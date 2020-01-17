@@ -169,6 +169,7 @@ def command_build(options):
                                  clean_source=options.clean_source,
                                  qa_lintian=options.lintian,
                                  interact=options.interact,
+                                 log_build=not options.no_buildlog,
                                  extra_dpkg_flags=buildflags)
     else:
         r = build_from_dsc(osbase,
@@ -179,6 +180,7 @@ def command_build(options):
                            maintainer=options.maintainer,
                            qa_lintian=options.lintian,
                            interact=options.interact,
+                           log_build=not options.no_buildlog,
                            extra_dpkg_flags=buildflags)
     if not r:
         sys.exit(2)
@@ -320,6 +322,8 @@ def create_parser(formatter_class=None):
                           'installed on the host system when building from a source directory.'))
     sp.add_argument('--lintian', action='store_true', dest='lintian',
                     help='Run the Lintian static analysis tool for Debian packages after the package is built.')
+    sp.add_argument('--no-buildlog', action='store_true', dest='no_buildlog',
+                    help='Do not write a build log.')
     sp.add_argument('-i', '--interact', action='store_true', dest='interact',
                     help='Run an interactive shell in the build environment after build.')
     sp.add_argument('target', action='store', nargs='?', default=None,

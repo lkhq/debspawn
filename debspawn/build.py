@@ -23,8 +23,9 @@ import shutil
 import platform
 from glob import glob
 from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_free_space, get_tree_size
-from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error, \
-    format_filesize, version_noepoch
+from .utils.misc import temp_dir, cd, format_filesize, version_noepoch
+from .utils.log import print_header, print_section, print_info, print_error, \
+    capture_console_output, save_captured_console_output
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
 from .injectpkg import PackageInjector
@@ -89,7 +90,6 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
         # will be on the same filesystem configured as workspace for debspawn.
         # therefore we only check on directory.
         free_space = get_free_space(instance_dir)
-        print()
         print_info('Free space in workspace: {}'.format(format_filesize(free_space)))
 
         # check for at least 512MiB - this is a ridiculously small amount, so the build will likely fail.
@@ -273,14 +273,17 @@ def _print_system_info():
     from . import __version__
     from .utils.misc import current_time_string
     print_info('debspawn {version} on {host} at {time}'.format(version=__version__, host=platform.node(), time=current_time_string()))
-    print_info()
 
 
 def build_from_directory(osbase, pkg_dir, *,
                          sign=False, build_only=None, include_orig=False, maintainer=None,
-                         clean_source=False, qa_lintian=False, interact=False, extra_dpkg_flags=[]):
+                         clean_source=False, qa_lintian=False, interact=False, log_build=True, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
+
+    # capture console output if we should log the build
+    if log_build:
+        capture_console_output()
 
     if not pkg_dir:
         pkg_dir = os.getcwd()
@@ -334,6 +337,10 @@ def build_from_directory(osbase, pkg_dir, *,
         # copy build results
         _retrieve_artifacts(osbase, pkg_tmp_dir)
 
+    # save buildlog, if we generated one
+    log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename, version_noepoch(pkg_version), osbase.arch))
+    save_captured_console_output(log_fname)
+
     # sign the resulting package
     if sign:
         r = _sign_result(osbase.results_dir, pkg_sourcename, pkg_version, osbase.arch)
@@ -347,9 +354,13 @@ def build_from_directory(osbase, pkg_dir, *,
 
 def build_from_dsc(osbase, dsc_fname, *,
                    sign=False, build_only=None, include_orig=False, maintainer=None,
-                   qa_lintian=False, interact=False, extra_dpkg_flags=[]):
+                   qa_lintian=False, interact=False, log_build=True, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
+
+    # capture console output if we should log the build
+    if log_build:
+        capture_console_output()
 
     r, buildflags = _get_build_flags(build_only, include_orig, maintainer, extra_dpkg_flags)
     if not r:
@@ -395,6 +406,10 @@ def build_from_dsc(osbase, dsc_fname, *,
 
         # copy build results
         _retrieve_artifacts(osbase, pkg_tmp_dir)
+
+    # save buildlog, if we generated one
+    log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename, version_noepoch(pkg_version), osbase.arch))
+    save_captured_console_output(log_fname)
 
     # sign the resulting package
     if sign:

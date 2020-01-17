@@ -18,11 +18,9 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import shutil
 from pathlib import Path
 from contextlib import contextmanager
-from .env import unicode_allowed
 from ..config import GlobalConfig
 
 
@@ -57,58 +55,6 @@ def temp_dir(basename=None):
         yield tmp_path
     finally:
         shutil.rmtree(tmp_path)
-
-
-def print_textbox(title, tl, hline, tr, vline, bl, br):
-    def write_utf8(s):
-        sys.stdout.buffer.write(s.encode('utf-8'))
-
-    tlen = len(title)
-    write_utf8('\n{}'.format(tl))
-    write_utf8(hline * (10 + tlen))
-    write_utf8('{}\n'.format(tr))
-
-    write_utf8('{}  {}'.format(vline, title))
-    write_utf8(' ' * 8)
-    write_utf8('{}\n'.format(vline))
-
-    write_utf8(bl)
-    write_utf8(hline * (10 + tlen))
-    write_utf8('{}\n'.format(br))
-
-    sys.stdout.flush()
-
-
-def print_header(title):
-    if unicode_allowed():
-        print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
-    else:
-        print_textbox(title, '+', '═', '+', '|', '+', '+')
-
-
-def print_section(title):
-    if unicode_allowed():
-        print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
-    else:
-        print_textbox(title, '+', '-', '+', '|', '+', '+')
-
-
-def print_info(*arg):
-    '''
-    Prints an information message and ensures that it shows up on
-    stdout immediately.
-    '''
-    print(*arg)
-    sys.stdout.flush()
-
-
-def print_error(*arg):
-    '''
-    Prints an information message and ensures that it shows up on
-    stdout immediately.
-    '''
-    print('ERROR:', *arg, file=sys.stderr)
-    sys.stderr.flush()
 
 
 def format_filesize(num, suffix='B'):

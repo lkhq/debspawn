@@ -18,8 +18,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import shlex
 import subprocess
+from .log import TwoStreamLogger
 
 
 class SubprocessError(Exception):
@@ -70,3 +72,24 @@ def safe_run(cmd, input=None, expected=0):
         raise SubprocessError(out, err, ret, cmd)
 
     return out, err, ret
+
+
+def run_forwarded(command):
+    '''
+    Run a command, forwarding all output to the current stdout as well as to
+    our build-logger in case we have one set previously.
+    '''
+    if not isinstance(command, list):
+        command = shlex.split(command)
+
+    if isinstance(sys.stdout, TwoStreamLogger):
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # ensure output is written to our file as well as stdout (as sys.stdout may be a redirect)
+        while True:
+            line = proc.stdout.readline()
+            if proc.poll() is not None:
+                break
+            sys.stdout.write(str(line, 'utf-8', 'replace'))
+        return proc
+    else:
+        return subprocess.run(command)
