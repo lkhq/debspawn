@@ -56,4 +56,4 @@ def decompress_tarball(tarname, dirname):
     out, err, ret = run_command(cmd)
 
     if ret != 0:
-        raise Exception('Unable to create tarball "{}":\n{}{}'.format(tarname, out, err))
+        raise Exception('Unable to decompress tarball "{}":\n{}{}'.format(tarname, out, err))
