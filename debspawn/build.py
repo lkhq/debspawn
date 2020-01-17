@@ -26,14 +26,61 @@ from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_
 from .utils.misc import print_header, print_section, temp_dir, cd, print_info, print_error, \
     format_filesize, version_noepoch
 from .utils.command import safe_run
-from .nspawn import nspawn_run_helper_persist
+from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
 from .injectpkg import PackageInjector
 
 
-def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False, buildflags=[]):
+def interact_with_build_environment(osbase, instance_dir, machine_name, *,
+                                    pkg_dir_root, source_pkg_dir, aptcache_tmp, pkginjector, prev_exitcode):
+    ''' Launch an interactive shell in the build environment '''
+
+    # find the right directory to switch to
+    pkg_dir = pkg_dir_root
+    for f in glob(os.path.join(pkg_dir, '*')):
+        if os.path.isdir(f):
+            pkg_dir = f
+            break
+
+    print()
+    print_info('Launching interactive shell in build environment.')
+    if prev_exitcode != 0:
+        print_error('The previous build step failed with exit code {}'.format(prev_exitcode))
+    else:
+        print_info('The previous build step was successful.')
+    print_info('Temporary location of package files on the host:\n  => file://{}'.format(pkg_dir))
+    print_info('Hit CTL+D to exit the interactive shell.')
+    print()
+
+    nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir_root)]
+    nspawn_run_persist(osbase,
+                       instance_dir,
+                       machine_name,
+                       chdir=os.path.join('/srv/build', os.path.basename(pkg_dir)),
+                       flags=nspawn_flags,
+                       tmp_apt_cache_dir=aptcache_tmp,
+                       pkginjector=pkginjector,
+                       verbose=True)
+
+    if source_pkg_dir:
+        copy_changes = input('Should changes to the debian/ directory be copied back to the host? [y/N]: ')
+        if copy_changes == 'y' or copy_changes == 'Y':
+            copy_changes = True
+        else:
+            copy_changes = False
+        # TODO: Actually merge changes
+        if copy_changes:
+            print_info('Copying back changes')
+    else:
+        print_info('Can not copy back changes as original package directory is unknown.')
+
+
+def internal_execute_build(osbase, pkg_dir, build_only=None, *,
+                           qa_lintian=False, interact=False, source_pkg_dir=None, buildflags=[]):
+    ''' Perform the actual build on an extracted package directory '''
     assert not build_only or isinstance(build_only, str)
     if not pkg_dir:
         raise Exception('Package directory is missing!')
+    pkg_dir = os.path.normpath(pkg_dir)
 
     with osbase.new_instance() as (instance_dir, machine_name):
         # first, check basic requirements
@@ -61,7 +108,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                 pkginjector.create_instance_repo(os.path.join(pkgsync_tmp, 'pkginject'))
 
             # set up the build environment
-            nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
+            nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir)]
             prep_flags = ['--build-prepare']
             if build_only == 'arch':
                 prep_flags.append('--arch-only')
@@ -81,7 +128,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                 return False
 
             # run the actual build. At this point, code is less trusted, and we disable network access.
-            nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir)),
+            nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir),
                             '-u', 'builder',
                             '--private-network']
             helper_flags = ['--build-run']
@@ -95,14 +142,15 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                                           nspawn_flags=nspawn_flags,
                                           tmp_apt_cache_dir=aptcache_tmp,
                                           pkginjector=pkginjector)
-            if r != 0:
+            # exit, unless we are in interactive mode
+            if r != 0 and not interact:
                 return False
 
-            if qa_lintian:
+            if qa_lintian and r == 0:
                 # running Lintian was requested, so do so.
                 # we use Lintian from the container, so we validate with the validator from
                 # the OS the package was actually built against
-                nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(pkg_dir))]
+                nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir)]
                 r = nspawn_run_helper_persist(osbase,
                                               instance_dir,
                                               machine_name,
@@ -115,6 +163,19 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *, qa_lintian=False
                     print_error('QA failed.')
                     return False
                 print()  # extra blank line after Lintian output
+
+            if interact:
+                interact_with_build_environment(osbase,
+                                                instance_dir,
+                                                machine_name,
+                                                pkg_dir_root=pkg_dir,
+                                                source_pkg_dir=source_pkg_dir,
+                                                aptcache_tmp=aptcache_tmp,
+                                                pkginjector=pkginjector,
+                                                prev_exitcode=r)
+                # exit with status of previous exist code
+                if r != 0:
+                    return False
 
             build_dir_size = get_tree_size(pkg_dir)
             print_info('This build required {} of dedicated disk space.'.format(format_filesize(build_dir_size)))
@@ -217,7 +278,7 @@ def _print_system_info():
 
 def build_from_directory(osbase, pkg_dir, *,
                          sign=False, build_only=None, include_orig=False, maintainer=None,
-                         clean_source=False, qa_lintian=False, extra_dpkg_flags=[]):
+                         clean_source=False, qa_lintian=False, interact=False, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -264,6 +325,8 @@ def build_from_directory(osbase, pkg_dir, *,
                                      pkg_tmp_dir,
                                      build_only,
                                      qa_lintian=qa_lintian,
+                                     interact=interact,
+                                     source_pkg_dir=pkg_dir,
                                      buildflags=buildflags)
         if not ret:
             return False
@@ -284,7 +347,7 @@ def build_from_directory(osbase, pkg_dir, *,
 
 def build_from_dsc(osbase, dsc_fname, *,
                    sign=False, build_only=None, include_orig=False, maintainer=None,
-                   qa_lintian=False, extra_dpkg_flags=[]):
+                   qa_lintian=False, interact=False, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
 
@@ -325,6 +388,7 @@ def build_from_dsc(osbase, dsc_fname, *,
                                      pkg_tmp_dir,
                                      build_only,
                                      qa_lintian=qa_lintian,
+                                     interact=interact,
                                      buildflags=buildflags)
         if not ret:
             return False
