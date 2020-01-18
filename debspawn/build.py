@@ -24,7 +24,7 @@ import platform
 from glob import glob
 from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_free_space, get_tree_size
 from .utils.misc import temp_dir, cd, format_filesize, version_noepoch
-from .utils.log import print_header, print_section, print_info, print_error, \
+from .utils.log import print_header, print_section, print_info, print_warn, print_error, \
     capture_console_output, save_captured_console_output
 from .utils.command import safe_run
 from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
@@ -45,11 +45,11 @@ def interact_with_build_environment(osbase, instance_dir, machine_name, *,
     print()
     print_info('Launching interactive shell in build environment.')
     if prev_exitcode != 0:
-        print_error('The previous build step failed with exit code {}'.format(prev_exitcode))
+        print_info('The previous build step failed with exit code {}'.format(prev_exitcode))
     else:
         print_info('The previous build step was successful.')
     print_info('Temporary location of package files on the host:\n  => file://{}'.format(pkg_dir))
-    print_info('Hit CTL+D to exit the interactive shell.')
+    print_info('Press CTL+D to exit the interactive shell.')
     print()
 
     nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir_root)]
@@ -63,14 +63,79 @@ def interact_with_build_environment(osbase, instance_dir, machine_name, *,
                        verbose=True)
 
     if source_pkg_dir:
-        copy_changes = input('Should changes to the debian/ directory be copied back to the host? [y/N]: ')
-        if copy_changes == 'y' or copy_changes == 'Y':
-            copy_changes = True
-        else:
-            copy_changes = False
-        # TODO: Actually merge changes
+        print()
+        while True:
+            copy_changes = input(('Should changes to the debian/ directory be copied back to the host?\n'
+                                  'This will OVERRIDE all changes made on files on the host. [y/N]: '))
+            if copy_changes == 'y' or copy_changes == 'Y':
+                copy_changes = True
+                break
+            elif copy_changes == 'n' or copy_changes == 'N':
+                copy_changes = False
+                break
+            elif not copy_changes:
+                copy_changes = False
+                break
+
         if copy_changes:
-            print_info('Copying back changes')
+            print_info('Cleaning up...')
+            # clean the source tree. we intentionally ignore errors here.
+            nspawn_run_persist(osbase,
+                               instance_dir,
+                               machine_name,
+                               chdir=os.path.join('/srv/build', os.path.basename(pkg_dir)),
+                               flags=nspawn_flags,
+                               command=['dpkg-buildpackage', '-T', 'clean'],
+                               tmp_apt_cache_dir=aptcache_tmp,
+                               pkginjector=pkginjector)
+
+            print()
+            print_info('Copying back changes...')
+            known_files = {}
+            dest_debian_dir = os.path.join(source_pkg_dir, 'debian')
+            src_debian_dir = os.path.join(pkg_dir, 'debian')
+
+            # get uid/gid of the user who invoked us
+            o_uid, o_gid = get_owner_uid_gid()
+
+            # collect list of existing packages
+            for sdir, _, files in os.walk(dest_debian_dir):
+                for f in files:
+                    fname = os.path.join(sdir, f)
+                    known_files[os.path.relpath(fname, dest_debian_dir)] = fname
+
+            # walk through the source files, copying everything to the destination
+            for sdir, _, files in os.walk(src_debian_dir):
+                for f in files:
+                    fname = os.path.join(sdir, f)
+                    rel_fname = os.path.relpath(fname, src_debian_dir)
+                    dest_fname = os.path.normpath(os.path.join(dest_debian_dir, rel_fname))
+                    dest_dir = os.path.dirname(dest_fname)
+                    if rel_fname in known_files:
+                        del known_files[rel_fname]
+
+                    if os.path.isdir(fname):
+                        print('New dir: {}'.format(rel_fname))
+                        with switch_unprivileged():
+                            os.makedirs(dest_fname, exist_ok=True)
+                        continue
+                    if not os.path.isdir(dest_dir):
+                        print('New dir: {}'.format(os.path.relpath(dest_dir, dest_debian_dir)))
+                        with switch_unprivileged():
+                            os.makedirs(dest_dir, exist_ok=True)
+
+                    print('Copy: {}'.format(rel_fname))
+                    shutil.copy2(fname,
+                                 dest_fname,
+                                 follow_symlinks=False)
+                    os.chown(dest_fname, o_uid, o_gid, follow_symlinks=False)
+
+            for rel_fname, fname in known_files.items():
+                print('Delete: {}'.format(rel_fname))
+                os.remove(fname)
+            print()
+        else:
+            print_info('Discarding build environment.')
     else:
         print_info('Can not copy back changes as original package directory is unknown.')
 
@@ -251,7 +316,7 @@ def _retrieve_artifacts(osbase, tmp_dir):
         if os.path.isfile(f):
             target_fname = os.path.join(osbase.results_dir, os.path.basename(f))
             shutil.copy2(f, target_fname)
-            os.chown(target_fname, o_uid, o_gid)
+            os.chown(target_fname, o_uid, o_gid, follow_symlinks=False)
             acount += 1
     print_info('Copied {} files.'.format(acount))
 
