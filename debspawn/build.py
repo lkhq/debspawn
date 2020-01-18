@@ -346,6 +346,11 @@ def build_from_directory(osbase, pkg_dir, *,
     ensure_root()
     osbase.ensure_exists()
 
+    if interact and log_build:
+        print_warn('Configuration issue: Build log and interactive mode can not be enabled at the same time. Disabling build log.')
+        print()
+        log_build = False
+
     # capture console output if we should log the build
     if log_build:
         capture_console_output()
@@ -434,6 +439,11 @@ def build_from_dsc(osbase, dsc_fname, *,
                    qa_lintian=False, interact=False, log_build=True, extra_dpkg_flags=[]):
     ensure_root()
     osbase.ensure_exists()
+
+    if interact and log_build:
+        print_warn('Configuration issue: Build log and interactive mode can not be enabled at the same time. Disabling build log.')
+        print()
+        log_build = False
 
     # capture console output if we should log the build
     if log_build:

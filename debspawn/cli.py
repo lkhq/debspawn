@@ -325,7 +325,7 @@ def create_parser(formatter_class=None):
     sp.add_argument('--no-buildlog', action='store_true', dest='no_buildlog',
                     help='Do not write a build log.')
     sp.add_argument('-i', '--interact', action='store_true', dest='interact',
-                    help='Run an interactive shell in the build environment after build.')
+                    help='Run an interactive shell in the build environment after build. This implies `--no-buildlog` and disables the log.')
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)
