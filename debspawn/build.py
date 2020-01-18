@@ -364,6 +364,10 @@ def build_from_directory(osbase, pkg_dir, *,
     print_section('Creating source package')
     with cd(pkg_dir):
         with switch_unprivileged():
+            deb_files_fname = os.path.join(pkg_dir, 'debian', 'files')
+            if os.path.isfile(deb_files_fname):
+                deb_files_fname = None  # the file already existed, we don't need to clean it up later
+
             pkg_sourcename, pkg_version, dsc_fname = _read_source_package_details()
             if not pkg_sourcename:
                 return False
@@ -377,6 +381,14 @@ def build_from_directory(osbase, pkg_dir, *,
             proc = subprocess.run(cmd)
             if proc.returncode != 0:
                 return False
+
+            # remove d/files file that was created when generating the source package.
+            # we only clean up the file if it didn't exist prior to us running the command.
+            if deb_files_fname:
+                try:
+                    os.remove(deb_files_fname)
+                except OSError:
+                    pass
 
     print_header('Package build')
     print_build_detail(osbase, pkg_sourcename, pkg_version)
