@@ -24,6 +24,16 @@ import shutil
 from .env import unicode_allowed
 
 
+def console_supports_color():
+    '''
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+    '''
+
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    return 'ANSICON' in os.environ or is_a_tty
+
+
 def print_textbox(title, tl, hline, tr, vline, bl, br):
     def write_utf8(s):
         sys.stdout.buffer.write(s.encode('utf-8'))
@@ -72,7 +82,10 @@ def print_warn(*arg):
     Prints an information message and ensures that it shows up on
     stdout immediately.
     '''
-    print('/!\\', *arg)
+    if console_supports_color():
+        print('\033[93m/!\\\033[0m', *arg)
+    else:
+        print('/!\\', *arg)
     sys.stdout.flush()
 
 
@@ -81,7 +94,10 @@ def print_error(*arg):
     Prints an information message and ensures that it shows up on
     stdout immediately.
     '''
-    print('ERROR:', *arg, file=sys.stderr)
+    if console_supports_color():
+        print('\033[91mERROR:\033[0m', *arg, file=sys.stderr)
+    else:
+        print('ERROR:', *arg, file=sys.stderr)
     sys.stderr.flush()
 
 
@@ -122,6 +138,9 @@ class TwoStreamLogger:
     def copy_to(self, fname):
         self.flush()
         shutil.copy(self._fstream.name, fname)
+
+    def isatty(self):
+        return self._cstream.isatty()
 
 
 def capture_console_output():
