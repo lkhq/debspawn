@@ -25,7 +25,7 @@
 	</refmeta>
 	<refnamediv>
 		<refname>&pagename;</refname>
-		<refpurpose>Run arbitrary command in debspawn container session</refpurpose>
+		<refpurpose>Run arbitrary commands in debspawn container session</refpurpose>
 	</refnamediv>
 
        <refsynopsisdiv>

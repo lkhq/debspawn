@@ -25,7 +25,7 @@
 	</refmeta>
 	<refnamediv>
 		<refname>&pagename;</refname>
-		<refpurpose>Open interactive session in a container</refpurpose>
+		<refpurpose>Open interactive shell session in a container</refpurpose>
 	</refnamediv>
 
        <refsynopsisdiv>
@@ -39,7 +39,7 @@
 	<refsect1>
 		<title>Description</title>
 		<para>
-			This command lets you get an interactive shell session in a container that is normally used for building.
+			This command enters an interactive shell session in a container that is normally used for building.
 			This can be useful to inspect the build environment, or to manually customize the container image for
 			special applications if the <option>--persistent</option> flag is set.
 		</para>

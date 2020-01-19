@@ -25,7 +25,7 @@
 	</refmeta>
 	<refnamediv>
 		<refname>&pagename;</refname>
-		<refpurpose>Build Debian package in a container</refpurpose>
+		<refpurpose>Build Debian packages in a container</refpurpose>
 	</refnamediv>
 
        <refsynopsisdiv>
@@ -43,10 +43,10 @@
 			Build a Debian package from a directory or source package <filename>*.dsc</filename> file.
 			<command>debspawn</command> will create a new container for the respective build using the base image specified,
 			build the package and return build artifacts in the default output directory <filename>/var/lib/debspawn/results/</filename> unless
-			a different location was specified via <option>--results-dir</option>.
+			a different location was specified via the <option>--results-dir</option> flag.
 		</para>
 		<para>
-			Packages downloaded prior to the actual build are cached and will be reused on subsequent builds.
+			Downloaded packages that are build dependencies are cached and will be reused on subsequent builds if possible.
 		</para>
 		<para>
 			You can inject packages into the build environment that are not available in the preconfigured APT repositories by
@@ -54,6 +54,13 @@
 			<filename>/var/lib/debspawn/injected-pkgs/</filename> to make a package available in all environments.
 			Internally, <command>debspawn</command> will build a transient package repository with the respective packages and
 			add it as a package source for APT.
+		</para>
+		<para>
+			If you want to debug the package build process, you can pass the <option>--interact</option> flag to <command>debspawn</command>. This
+			will open an interactive root shell in the build environment post-build, no matter whether the build failed or succeeded.
+			After investigating the issue / building the package manually, the shell can be exited and the user is asked whether <command>debspawn</command>
+			should copy back the changes made in the packages' <filename>debian/</filename> directory to the host to make them permanent.
+			Please keep in mind that while interactive mode is enabled, no build log can be created.
 		</para>
 	</refsect1>
 
@@ -70,10 +77,17 @@
 			<prompt>$</prompt> <command>&command;</command> --arch=i386 cosmic ./hello_2.10-1.dsc
 		</screen>
 		<para>
-			You can also build packages using <command>git-buildpackage</command> and <command>debspawn</command>:
+			You can also build packages using <command>git-buildpackage</command> and <command>debspawn</command>. In this case the <option>--lintian</option>
+			flag is also used to perform a Lintian static analysis check in the container after build:
 		</para>
 		<screen>
-			<prompt>$</prompt> <command>gbp buildpackage</command> --git-builder='debspawn build sid --sign'
+			<prompt>$</prompt> <command>gbp buildpackage</command> --git-builder='debspawn b sid --lintian --sign'
+		</screen>
+		<para>
+			To debug a build issue interactively, the <option>--interact</option> flag can be used:
+		</para>
+		<screen>
+			<prompt>$</prompt> <command>&command;</command> sid --interact
 		</screen>
 	</refsect1>
 
@@ -88,7 +102,7 @@
 	<refsect1>
 		<title>Differences to sbuild</title>
 		<para>
-			On Debian, <command>sbuild</command> is used primarily for package building, which uses different technology.
+			On Debian, <command>sbuild</command> is the primary tool used for package building, which uses different technology.
 			So naturally, the question is whether the sbuild build environments and the <command>debspawn</command> build environments
 			are be identical or at least compatible.
 		</para>
@@ -100,8 +114,8 @@
 			unfortunately can not make any guarantees.
 		</para>
 		<para>
-			One way the build environment of <command>debspawn</command> differs from Debian's default sbuild setup intentionally is in its consistent
-			use of unicode. By default, debspawn will ensure that unicode is always available and default.
+			One way the build environment of <command>debspawn</command> differs from Debian's default <command>sbuild</command> setup intentionally is
+			in its consistent use of unicode. By default, <command>debspawn</command> will ensure that unicode is always available and enabled.
 			If you do not want this behavior, you can pass the <option>--no-unicode</option> flag to <command>&command;</command> to disable unicode in
 			the tool itself and in the build environment.
 		</para>

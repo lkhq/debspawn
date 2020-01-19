@@ -46,20 +46,20 @@
 		</para>
 		<para>
 			<command>&package;</command> is a tool to build Debian packages in an isolated environment, using nspawn containers.
-			By using containers, debspawn can isolate builds from the host system much further. It also allows for more advanced features to manage builds,
-			for example setting resource limits for individual builds.
+			By using containers, Debspawn can isolate builds from the host system much better than a regular chroot could.
+			It also allows for more advanced features to manage builds, for example setting resource limits for individual builds.
 		</para>
 		<para>
-			Please keep in mind that debspawn is not a security feature! While it provides a lot of isolation from the host system, you should not run arbitrary
-			untrusted code with it. The usual warnings for all container technology apply here.
-			See <command>systemd-nspawn(1)</command> for more information on the container solution debspawn uses.
+			Please keep in mind that Debspawn is not a security feature! While it provides a lot of isolation from the host system, you should not run arbitrary
+			untrusted code with it. The usual warnings for all technology based on Linux containers apply here.
+			See <command>systemd-nspawn(1)</command> for more information on the container solution Debspawn uses.
 		</para>
 		<para>
-			Debspawn also allows one to run arbitrary custom commands in its environment. This is useful to execute a variety of non-package build and QA actions in the
-			same environment in which packages are normally built.
+			Debspawn also allows one to run arbitrary custom commands in its environment. This is useful to execute a variety of non-package build and QA actions that
+			make sense to be run in the same environment in which packages are usually built.
 		</para>
 		<para>
-			For more information about the DebSpawn project, you can visit its <ulink url="https://github.com/lkorigin/debspawn">project page</ulink>.
+			For more information about the Debspawn project, you can visit its <ulink url="https://github.com/lkorigin/debspawn">project page</ulink>.
 		</para>
 	</refsect1>
 
@@ -80,8 +80,16 @@
 						provided. For details, see <command>debspawn-create(1)</command>.
 					</para>
 				</listitem>
+			</varlistentry>
 
-
+			<varlistentry>
+				<term><option>list</option></term>
+				<listitem>
+					<para>
+						List information about all container image that Debspawn knows on the current host.
+						For details, see <command>debspawn-list(1)</command>.
+					</para>
+				</listitem>
 			</varlistentry>
 
 			<varlistentry>
@@ -98,8 +106,8 @@
 				<term><option>update</option></term>
 				<listitem>
 					<para>
-						Update a container base image, ensuring all packages are up to date and all
-						required scripts are installed.
+						Update a container base image, ensuring all packages are up to date and the image is set up
+						properly for use with <command>debspawn</command>.
 						For details, see <command>debspawn-update(1)</command>.
 					</para>
 				</listitem>
@@ -130,7 +138,7 @@
 				<listitem>
 					<para>
 						Run arbitrary commands in debspawn container session. This is primarily useful
-						for using <command>&package;</command> from another script.
+						for using <command>&package;</command> to isolate non-package build processes.
 						For details, see <command>debspawn-run(1)</command>.
 					</para>
 				</listitem>
