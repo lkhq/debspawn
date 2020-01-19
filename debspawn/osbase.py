@@ -188,18 +188,21 @@ class OSBase:
                 if os.path.lexists(fname) and not os.path.isdir(fname) and not os.path.ismount(fname):
                     os.remove(fname)
 
-    def create(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None):
-        ''' Create new container base image '''
-        ensure_root()
+    def _create_internal(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None, show_header=True):
+        ''' Create new container base image (internal method) '''
 
         if self.exists():
-            print_error('This configuration has already been created. You can only delete or update it.')
+            print_error('An image already exists for this configuration. Can not create a new one.')
             return False
 
         # ensure image location exists
         Path(self._gconf.osroots_dir).mkdir(parents=True, exist_ok=True)
 
-        print_header('Creating new base: {} [{}]'.format(self.suite, self.arch))
+        if show_header:
+            print_header('Creating new base: {} [{}]'.format(self.suite, self.arch))
+        else:
+            print_section('Creating new base: {} [{}]'.format(self.suite, self.arch))
+
         print('Using mirror: {}'.format(mirror if mirror else 'default'))
         if self.variant:
             print('variant: {}'.format(self.variant))
@@ -282,8 +285,25 @@ class OSBase:
         # or just display information about it
         self._write_config_json(mirror, components, extra_suites, extra_source_lines)
 
-        print_info('Done.')
         return True
+
+    def create(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None):
+        ''' Create new container base image (internal method) '''
+        ensure_root()
+
+        if self.exists():
+            print_error('This configuration has already been created. You can only delete or update it.')
+            return False
+
+        ret = self._create_internal(mirror=mirror,
+                                    components=components,
+                                    extra_suites=extra_suites,
+                                    extra_source_lines=extra_source_lines,
+                                    show_header=True)
+        if ret:
+            print_info('Done.')
+
+        return ret
 
     def delete(self):
         ''' Remove container base image '''
@@ -342,7 +362,7 @@ class OSBase:
             print_error('Can not update "{}": The configuration does not exist.'.format(self.name))
             return False
 
-        print_header('Updating container')
+        print_header('Updating container image')
 
         with self.new_instance() as (instance_dir, machine_name):
             # ensure helper script runner exists and is up to date
@@ -361,6 +381,73 @@ class OSBase:
 
         print_info('Done.')
         return True
+
+    def recreate(self):
+        ''' Recreate a container base image '''
+        ensure_root()
+
+        if not self.exists():
+            print_error('Can not recreate "{}": The image does not exist.'.format(self.name))
+            return False
+
+        config_fname = self.get_config_location()
+        if not os.path.isfile(config_fname):
+            print_error('Can not recreate "{}": Unable to find configuration data for this image.'.format(self.name))
+            return False
+
+        print_header('Recreating container image')
+
+        # read configuration data
+        with open(config_fname, 'rt') as f:
+            cdata = json.loads(f.read())
+            self._suite = cdata.get('Suite', self.suite)
+            self._arch = cdata.get('Architecture', self.arch)
+            self._variant = cdata.get('Variant', self.variant)
+            mirror = cdata.get('Mirror')
+            components = cdata.get('Components')
+            extra_suites = cdata.get('ExtraSuites', [])
+            extra_source_lines = cdata.get('ExtraSourceLines')
+
+        print_section('Deleting cache')
+        cache_size = self._aptcache.clear()
+        print_info('Removed {} cached packages.'.format(cache_size))
+        self._aptcache.delete()
+        print_info('Cache directory removed.')
+
+        # move old image tarball out of the way
+        image_name = self.get_tarball_location()
+        image_name_old = self.get_tarball_location() + '.old'
+        if os.path.isfile(image_name_old):
+            print_info('Removing cruft image')
+            os.remove(image_name_old)
+        os.rename(image_name, image_name_old)
+        print_info('Old tarball moved.')
+
+        # ty to create the tarball again
+        try:
+            ret = self._create_internal(mirror=mirror,
+                                        components=components,
+                                        extra_suites=extra_suites,
+                                        extra_source_lines=extra_source_lines,
+                                        show_header=False)
+        except Exception as e:
+            print_error('Error while trying to create image: {}'.format(str(e)))
+            ret = False
+
+        if ret:
+            if os.path.isfile(image_name_old):
+                print_info('Removing old image')
+                os.remove(image_name_old)
+            print_info('Done.')
+            return True
+        else:
+            print_info('Restoring old tarball')
+            if os.path.isfile(image_name):
+                print_info('Removing failed new image')
+                os.remove(image_name)
+            os.rename(image_name_old, image_name)
+            print_info('Recreation failed.')
+            return False
 
     def login(self, persistent=False, allowed=[]):
         ''' Interactive shell login into the container '''

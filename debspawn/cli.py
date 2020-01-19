@@ -118,7 +118,10 @@ def command_update(options):
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf, options.suite, options.arch, options.variant)
-    r = osbase.update()
+    if options.recreate:
+        r = osbase.recreate()
+    else:
+        r = osbase.update()
     if not r:
         sys.exit(2)
 
@@ -291,6 +294,8 @@ def create_parser(formatter_class=None):
     # 'update' command
     sp = subparsers.add_parser('update', help='Update a container image')
     add_container_select_arguments(sp)
+    sp.add_argument('--recreate', action='store_true', dest='recreate',
+                    help='Re-create the container image from scratch using the settings used to create it previously, instead of just updating it.')
     sp.set_defaults(func=command_update)
 
     # 'list' command
