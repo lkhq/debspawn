@@ -1,3 +1,22 @@
+Version 0.4.0
+~~~~~~~~~~~~~~
+Released: 2020-01-20
+
+Features:
+ * Implement an interactive build mode
+ * Store a copy of the build log by default
+ * Allow copying back changes in interactive mode
+ * Use a bit of color in errors and warnings, if possible
+ * Update manual pages
+ * Permit recreation of images, instead of just updating them
+
+Bugfixes:
+ * Move dsrun helper into the package itself
+ * Drop some unwanted files from /dev before creating OS tarballs
+ * Remove d/files file if it's created by Debspawn pre-build
+ * Interactive mode and build logs are mutually exclusive for now
+ * Add MANIFEST file
+
 Version 0.3.0
 ~~~~~~~~~~~~~~
 Released: 2020-01-06
