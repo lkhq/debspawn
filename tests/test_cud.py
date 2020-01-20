@@ -33,3 +33,11 @@ def test_container_update(gconfig, testing_container):
     suite, arch, variant = testing_container
     osbase = OSBase(gconfig, suite, arch, variant)
     assert osbase.update()
+
+
+def test_container_recreate(gconfig, testing_container):
+    ''' Test recreating a container '''
+
+    suite, arch, variant = testing_container
+    osbase = OSBase(gconfig, suite, arch, variant)
+    assert osbase.recreate()

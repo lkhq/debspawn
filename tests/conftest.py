@@ -83,11 +83,11 @@ def build_arch():
 @pytest.fixture(scope='session')
 def testing_container(gconfig, build_arch):
     '''
-    Create a container for Debian testing used for default tests
+    Create a container for Debian stable used for default tests
     '''
     from debspawn.osbase import OSBase
 
-    suite = 'testing'
+    suite = 'stable'
     variant = 'minbase'
     components = ['main', 'contrib', 'non-free']
     extra_suites = []
