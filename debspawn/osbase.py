@@ -593,7 +593,7 @@ class OSBase:
                 banned_permissions = ['full-dev', 'full-proc', 'read-kmods']
                 filtered_allowed = []
                 for perm in allowed:
-                    if not perm in banned_permissions:
+                    if perm not in banned_permissions:
                         filtered_allowed.append(perm)
                 r = nspawn_run_persist(self,
                                        instance_dir,
