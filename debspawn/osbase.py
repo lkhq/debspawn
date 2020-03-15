@@ -588,12 +588,19 @@ class OSBase:
                 if r != 0:
                     print_error('Container setup failed.')
                     return False
+                # we do not want some permissions to be in effect here,
+                # as they may have unwanted effects on the final cached image
+                banned_permissions = ['full-dev', 'full-proc', 'read-kmods']
+                filtered_allowed = []
+                for perm in allowed:
+                    if not perm in banned_permissions:
+                        filtered_allowed.append(perm)
                 r = nspawn_run_persist(self,
                                        instance_dir,
                                        machine_name,
                                        '/srv',
                                        init_command,
-                                       allowed=allowed)
+                                       allowed=filtered_allowed)
                 if r != 0:
                     return False
 

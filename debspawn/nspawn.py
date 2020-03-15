@@ -46,23 +46,41 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
 
     capabilities = []
     full_dev_access = False
+    full_proc_access = False
+    ro_kmods_access = False
+    all_privileges = False
     for perm in allow_permissions:
         perm = perm.lower()
-        if perm.startswith('cap_'):
-            capabilities.append(perm.upper())
-        elif perm == 'full-dev-access':
+        if perm.startswith('cap_') or perm == 'all':
+            if perm == 'all':
+                capabilities.append(perm)
+                print_warn('Container retains all privileges.')
+                all_privileges = True
+            else:
+                capabilities.append(perm.upper())
+        elif perm == 'full-dev':
             full_dev_access = True
+        elif perm == 'full-proc':
+            full_proc_access = True
+        elif perm == 'read-kmods':
+            ro_kmods_access = True
         else:
             print_info('Unknown allowed permission: {}'.format(perm))
 
-    if (capabilities or full_dev_access) and not osbase.global_config.allow_unsafe_perms:
+    if (capabilities or full_dev_access or full_proc_access) and not osbase.global_config.allow_unsafe_perms:
         print_error('Configuration does not permit usage of additional and potentially dangerous additional permissions. Exiting.')
         sys.exit(9)
 
     cmd = ['systemd-nspawn']
     cmd.extend(['-M', machine_name])
     if full_dev_access:
-        cmd.extend(['--bind', '/dev'])
+        cmd.extend(['--bind', '/dev', '--console=pipe'])
+    if full_proc_access:
+        cmd.extend(['--bind', '/proc'])
+        if not all_privileges:
+            print_warn('Container has access to host /proc')
+    if ro_kmods_access:
+        cmd.extend(['--bind-ro', '/lib/modules/'])
     if capabilities:
         cmd.extend(['--capability', ','.join(capabilities)])
     cmd.extend(parameters)
@@ -79,7 +97,8 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
             # child process - edit the cgroup to allow full access to all
             # devices. Hopefully there won't be too much need for this awful code.
             parent_pid = os.getppid()
-            print_warn('Giving container access to all host devices.')
+            if not all_privileges:
+                print_warn('Container will have direct access to all host devices.')
 
             syscg_devices_allow = '/sys/fs/cgroup/devices/machine.slice/machine-{}.scope/devices.allow'.format(escaped_full_machine_name)
             tries = 0
