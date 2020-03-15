@@ -215,7 +215,11 @@ def command_run(options, custom_command):
         print('Need at least a suite name!')
         sys.exit(1)
     gconf = init_config(options)
-    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    osbase = OSBase(gconf,
+                    options.suite,
+                    options.arch,
+                    options.variant,
+                    cachekey=options.cachekey)
 
     allowed = []
     if options.allow:
@@ -224,8 +228,9 @@ def command_run(options, custom_command):
     r = osbase.run(custom_command,
                    options.build_dir,
                    options.artifacts_dir,
-                   options.external_commad,
-                   options.header,
+                   init_command=options.init_command,
+                   copy_command=options.external_commad,
+                   header_msg=options.header,
                    allowed=allowed)
     if not r:
         sys.exit(2)
@@ -351,8 +356,13 @@ def create_parser(formatter_class=None):
                     help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')
     sp.add_argument('--build-dir', action='store', dest='build_dir', default=None,
                     help='Select a host directory that gets bind mounted to /srv/build.')
+    sp.add_argument('--cachekey', action='store', dest='cachekey', default=None,
+                    help=('If set, use the specified cache-ID to store an initialized container image for faster initialization times.\n'
+                          'This may mean that the command passed in `--init-command` is skipped if the cache already existed.'))
+    sp.add_argument('--init-command', action='store', dest='init_command', default=None,
+                    help='The command or command script used to set up the container.')
     sp.add_argument('-x', '--external-command', action='store_true', dest='external_commad',
-                    help='If set, the command script will be copied from the host to the container and then executed.')
+                    help='If set, the command script(s) will be copied from the host to the container and then executed.')
     sp.add_argument('--header', action='store', dest='header', default=None,
                     help='Name of the task that is run, will be printed as header.')
     sp.add_argument('--allow', action='store', dest='allow',

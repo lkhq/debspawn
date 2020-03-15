@@ -24,7 +24,7 @@ import shutil
 from pathlib import Path
 from contextlib import contextmanager
 from .utils import temp_dir, print_header, print_section, format_filesize, \
-    print_info, print_error, print_warn
+    print_info, print_error, print_warn, listify
 from .utils.env import ensure_root
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
@@ -37,7 +37,7 @@ class OSBase:
     Describes an OS base registered with debspawn
     '''
 
-    def __init__(self, gconf, suite, arch, variant=None, base_suite=None):
+    def __init__(self, gconf, suite, arch, variant=None, base_suite=None, cachekey=None):
         self._gconf = gconf
         self._suite = suite
         self._base_suite = base_suite
@@ -45,6 +45,9 @@ class OSBase:
         self._variant = variant
         self._name = self._make_name()
         self._results_dir = self._gconf.results_dir
+        self._cachekey = cachekey
+        if self._cachekey:
+            self._cachekey = self._cachekey.replace(' ', '')
 
         self._aptcache = APTCache(self)
 
@@ -116,14 +119,30 @@ class OSBase:
 
         os.chmod(script_fname, 0o0755)
 
-    def get_tarball_location(self):
+    def get_image_location(self):
         return os.path.join(self._gconf.osroots_dir, '{}.tar.zst'.format(self.name))
+
+    def get_image_cache_dir(self):
+        cache_img_dir = os.path.join(self._gconf.osroots_dir, 'imagecache', self.name)
+        Path(cache_img_dir).mkdir(parents=True, exist_ok=True)
+        return cache_img_dir
+
+    def get_cache_image_location(self):
+        if not self._cachekey:
+            return None
+        return os.path.join(self.get_image_cache_dir(), '{}.tar.zst'.format(self._cachekey))
 
     def get_config_location(self):
         return os.path.join(self._gconf.osroots_dir, '{}.json'.format(self.name))
 
     def exists(self):
-        return os.path.isfile(self.get_tarball_location())
+        return os.path.isfile(self.get_image_location())
+
+    def cacheimg_exists(self):
+        location = self.get_cache_image_location()
+        if not location:
+            return False
+        return os.path.isfile(location)
 
     def ensure_exists(self):
         '''
@@ -279,7 +298,7 @@ class OSBase:
 
             print_section('Creating Tarball')
             self._clear_image_tree(tdir)
-            compress_directory(tdir, self.get_tarball_location())
+            compress_directory(tdir, self.get_image_location())
 
         # store configuration settings, so we can later recreate this tarball
         # or just display information about it
@@ -316,13 +335,16 @@ class OSBase:
         print_header('Removing base image {}'.format(self.name))
 
         print_section('Deleting cache')
+        # remove packages cache
         cache_size = self._aptcache.clear()
         print_info('Removed {} cached packages.'.format(cache_size))
         self._aptcache.delete()
+        # remove cached images
+        shutil.rmtree(self.get_image_cache_dir())
         print_info('Cache directory removed.')
 
         print_section('Deleting base tarball')
-        os.remove(self.get_tarball_location())
+        os.remove(self.get_image_location())
 
         config_fname = self.get_config_location()
         if os.path.isfile(config_fname):
@@ -335,7 +357,11 @@ class OSBase:
     @contextmanager
     def new_instance(self, basename=None):
         with temp_dir() as tdir:
-            decompress_tarball(self.get_tarball_location(), tdir)
+            if self.cacheimg_exists():
+                image_fname = self.get_cache_image_location()
+            else:
+                image_fname = self.get_image_location()
+            decompress_tarball(image_fname, tdir)
             yield tdir, self.new_nspawn_machine_name()
 
     def make_instance_permanent(self, instance_dir):
@@ -344,15 +370,23 @@ class OSBase:
         # remove unwanted files from the tarball
         self._clear_image_tree(instance_dir)
 
-        tarball_name = self.get_tarball_location()
+        if self._cachekey:
+            tarball_name = self.get_cache_image_location()
+        else:
+            tarball_name = self.get_image_location()
         tarball_name_old = '{}.old'.format(tarball_name)
 
-        os.replace(tarball_name, tarball_name_old)
+        if os.path.isfile(tarball_name):
+            os.replace(tarball_name, tarball_name_old)
         compress_directory(instance_dir, tarball_name)
-        os.remove(tarball_name_old)
+        if os.path.isfile(tarball_name_old):
+            os.remove(tarball_name_old)
 
-        tar_size = os.path.getsize(self.get_tarball_location())
-        print_info('New compressed tarball size is {}'.format(format_filesize(tar_size)))
+        tar_size = os.path.getsize(tarball_name)
+        if self._cachekey:
+            print_info('New compressed tarball size (for {}) is {}'.format(self._cachekey, format_filesize(tar_size)))
+        else:
+            print_info('New compressed tarball size is {}'.format(format_filesize(tar_size)))
 
     def update(self):
         ''' Update container base image '''
@@ -378,6 +412,8 @@ class OSBase:
         print_section('Cleaning up cache')
         cache_size = self._aptcache.clear()
         print_info('Removed {} cached packages.'.format(cache_size))
+        # remove now-outdated cached images
+        shutil.rmtree(self.get_image_cache_dir())
 
         print_info('Done.')
         return True
@@ -415,8 +451,8 @@ class OSBase:
         print_info('Cache directory removed.')
 
         # move old image tarball out of the way
-        image_name = self.get_tarball_location()
-        image_name_old = self.get_tarball_location() + '.old'
+        image_name = self.get_image_location()
+        image_name_old = self.get_image_location() + '.old'
         if os.path.isfile(image_name_old):
             print_info('Removing cruft image')
             os.remove(image_name_old)
@@ -438,6 +474,10 @@ class OSBase:
             if os.path.isfile(image_name_old):
                 print_info('Removing old image')
                 os.remove(image_name_old)
+
+            print_info('Removing outdated cached images')
+            shutil.rmtree(self.get_image_cache_dir())
+
             print_info('Done.')
             return True
         else:
@@ -479,7 +519,28 @@ class OSBase:
         print_info('Done.')
         return True
 
-    def run(self, command, build_dir, artifacts_dir, copy_command=False, header_msg=None, allowed=[]):
+    def _copy_command_script_to_instance_dir(self, instance_dir: str, command_script: str) -> str:
+        '''
+        Copy a script from the host to the current instance directory and make it
+        executable.
+        Contains the path to the executable script as seen from inside the container.
+        '''
+        host_script = os.path.abspath(command_script)
+        if not os.path.isfile(host_script):
+            return None
+
+        script_location = os.path.join(instance_dir, 'srv', 'tmp')
+        Path(script_location).mkdir(parents=True, exist_ok=True)
+        script_fname = os.path.join(script_location, os.path.basename(host_script))
+
+        if os.path.isfile(script_fname):
+            os.remove(script_fname)
+        shutil.copy2(host_script, script_fname)
+        os.chmod(script_fname, 0o0755)
+
+        return os.path.join('/srv', 'tmp', os.path.basename(host_script))
+
+    def run(self, command, build_dir, artifacts_dir, init_command=None, copy_command=False, header_msg=None, allowed=[]):
         ''' Run an arbitrary command or script in the container '''
         ensure_root()
 
@@ -491,8 +552,11 @@ class OSBase:
             print_error('No command was given. Can not continue.')
             return False
 
-        if header_msg:
-            print_header(header_msg)
+        if isinstance(init_command, str):
+            if init_command:
+                import shlex
+                init_command = shlex.split(init_command)
+        init_command = listify(init_command)
 
         # ensure we have absolute paths
         if build_dir:
@@ -500,27 +564,58 @@ class OSBase:
         if artifacts_dir:
             artifacts_dir = os.path.abspath(artifacts_dir)
 
+        if self._cachekey and init_command and not self.cacheimg_exists():
+            print_header('Preparing template for `{}`'.format(self._cachekey))
+
+            # we do not have a cached image prepared, let's do that now!
+            with self.new_instance() as (instance_dir, machine_name):
+                # ensure helper script runner exists and is up to date
+                self._copy_helper_script(instance_dir)
+
+                if copy_command:
+                    # copy initialization script from host to container
+                    host_script = init_command[0]
+                    init_command[0] = self._copy_command_script_to_instance_dir(instance_dir, host_script)
+                    if not init_command[0]:
+                        print_error('Unable to find initialization script "{}", can not copy it to the container. Exiting.'.format(host_script))
+                        return False
+
+                r = nspawn_run_helper_persist(self,
+                                              instance_dir,
+                                              machine_name,
+                                              '--prepare-run',
+                                              '/srv')
+                if r != 0:
+                    print_error('Container setup failed.')
+                    return False
+                r = nspawn_run_persist(self,
+                                       instance_dir,
+                                       machine_name,
+                                       '/srv',
+                                       init_command,
+                                       allowed=allowed)
+                if r != 0:
+                    return False
+
+                print_info('Storing prepared image in cache')
+                self.make_instance_permanent(instance_dir)
+
+        if header_msg:
+            print_header(header_msg)
+        if self._cachekey and init_command and self.cacheimg_exists():
+            print_info('Using cached container image `{}`'.format(self._cachekey))
+
         with self.new_instance() as (instance_dir, machine_name):
             # ensure helper script runner exists and is up to date
             self._copy_helper_script(instance_dir)
 
             if copy_command:
                 # copy the script from the host into our container and execute it there
-                host_script = os.path.abspath(command[0])
-                if not os.path.isfile(host_script):
+                host_script = command[0]
+                command[0] = self._copy_command_script_to_instance_dir(instance_dir, host_script)
+                if not command[0]:
                     print_error('Unable to find script "{}", can not copy it to the container. Exiting.'.format(host_script))
                     return False
-
-                script_location = os.path.join(instance_dir, 'srv', 'tmp')
-                Path(script_location).mkdir(parents=True, exist_ok=True)
-                script_fname = os.path.join(script_location, os.path.basename(host_script))
-
-                if os.path.isfile(script_fname):
-                    os.remove(script_fname)
-                shutil.copy2(host_script, script_fname)
-                os.chmod(script_fname, 0o0755)
-
-                command[0] = os.path.join('/srv', 'tmp', os.path.basename(host_script))
 
             r = nspawn_run_helper_persist(self,
                                           instance_dir,
@@ -577,6 +672,12 @@ def print_container_base_image_info(gconf):
         imgid = os.path.basename(img_basepath)
         print('[{}]'.format(imgid))
 
+        cache_files = list(glob(os.path.join(osroots_dir, 'imagecache', imgid, '*.tar.zst')))
+        cached_names = []
+        for cfile in cache_files:
+            cname = os.path.basename(os.path.splitext(os.path.splitext(cfile)[0])[0])
+            cached_names.append(cname)
+
         # read configuration data if it exists
         if os.path.isfile(config_fname):
             with open(config_fname, 'rt') as f:
@@ -588,5 +689,8 @@ def print_container_base_image_info(gconf):
 
         tar_size = os.path.getsize(tar_fname)
         print('Size = {}'.format(format_filesize(tar_size)))
+
+        if cached_names:
+            print('CachedImages = {}'.format('; '.join(cached_names)))
         if i != tar_files_len - 1:
             print()

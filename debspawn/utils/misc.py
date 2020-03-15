@@ -24,6 +24,15 @@ from contextlib import contextmanager
 from ..config import GlobalConfig
 
 
+def listify(item):
+    '''
+    Return a list of :item, unless :item already is a lit.
+    '''
+    if not item:
+        return []
+    return item if type(item) == list else [item]
+
+
 @contextmanager
 def cd(where):
     ncwd = os.getcwd()
