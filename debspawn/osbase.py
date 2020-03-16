@@ -123,7 +123,7 @@ class OSBase:
         return os.path.join(self._gconf.osroots_dir, '{}.tar.zst'.format(self.name))
 
     def get_image_cache_dir(self):
-        cache_img_dir = os.path.join(self._gconf.osroots_dir, 'imagecache', self.name)
+        cache_img_dir = os.path.join(self._gconf.osroots_dir, 'dcache', self.name)
         Path(cache_img_dir).mkdir(parents=True, exist_ok=True)
         return cache_img_dir
 
@@ -679,7 +679,7 @@ def print_container_base_image_info(gconf):
         imgid = os.path.basename(img_basepath)
         print('[{}]'.format(imgid))
 
-        cache_files = list(glob(os.path.join(osroots_dir, 'imagecache', imgid, '*.tar.zst')))
+        cache_files = list(glob(os.path.join(osroots_dir, 'dcache', imgid, '*.tar.zst')))
         cached_names = []
         for cfile in cache_files:
             cname = os.path.basename(os.path.splitext(os.path.splitext(cfile)[0])[0])
