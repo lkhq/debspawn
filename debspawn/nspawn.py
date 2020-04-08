@@ -23,6 +23,37 @@ from .utils import temp_dir, print_error, print_warn, print_info, safe_run, run_
 from .utils.env import colored_output_allowed, unicode_allowed
 
 
+__systemd_version = None
+
+
+def systemd_version():
+    global __systemd_version
+    if __systemd_version:
+        return __systemd_version
+
+    __systemd_version = -1
+    try:
+        out, _, _ = safe_run(['systemd-nspawn', '--version'])
+        parts = out.split(' ', 2)
+        if len(parts) >= 2:
+            __systemd_version = int(parts[1])
+    except Exception as e:
+        print_warn('Unable to determine systemd version: {}'.format(e))
+
+    return __systemd_version
+
+
+def systemd_version_atleast(expected_version: int):
+    v = systemd_version()
+    # we always assume we are running the highest version,
+    # if we failed to determine the right systemd version
+    if v < 0:
+        return True
+    if v >= expected_version:
+        return True
+    return False
+
+
 def get_nspawn_personality(osbase):
     '''
     Return the syszemd-nspawn container personality for the given combination
@@ -74,7 +105,9 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
     cmd = ['systemd-nspawn']
     cmd.extend(['-M', machine_name])
     if full_dev_access:
-        cmd.extend(['--bind', '/dev', '--console=pipe'])
+        cmd.extend(['--bind', '/dev'])
+        if systemd_version_atleast(244):
+            cmd.append('--console=pipe')
     if full_proc_access:
         cmd.extend(['--bind', '/proc'])
         if not all_privileges:
