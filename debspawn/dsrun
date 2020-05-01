@@ -216,7 +216,7 @@ def prepare_package_build(arch_only=False, qa_lintian=False):
     return True
 
 
-def build_package(buildflags=None):
+def build_package(buildflags=None, suite=None):
     print_section('Build')
 
     os.chdir(BUILD_DIR)
@@ -226,6 +226,8 @@ def build_package(buildflags=None):
             break
 
     cmd = ['dpkg-buildpackage']
+    if suite:
+        cmd.append('--changes-option=-DDistribution={}'.format(suite))
     if buildflags:
         cmd.extend(buildflags)
     run_command(cmd)
@@ -297,6 +299,8 @@ def main():
                         help='Run Lintian on the generated package.')
     parser.add_argument('--buildflags', action='store', dest='buildflags', default=None,
                         help='Flags passed to dpkg-buildpackage.')
+    parser.add_argument('--suite', action='store', dest='suite', default=None,
+                        help='The suite we are building for (may be inferred if not set).')
     parser.add_argument('--prepare-run', action='store_true', dest='prepare_run',
                         help='Prepare container image for generic script run.')
     parser.add_argument('--run-qa', action='store_true', dest='run_qatasks',
@@ -322,7 +326,7 @@ def main():
         buildflags = []
         if options.buildflags:
             buildflags = [s.strip('\'" ') for s in options.buildflags.split(';')]
-        r = build_package(buildflags)
+        r = build_package(buildflags, options.suite)
         if not r:
             return 2
     elif options.prepare_run:

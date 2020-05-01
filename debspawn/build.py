@@ -197,6 +197,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
                             '-u', 'builder',
                             '--private-network']
             helper_flags = ['--build-run']
+            helper_flags.extend(['--suite', osbase.suite])
             if buildflags:
                 helper_flags.append('--buildflags={}'.format(';'.join(buildflags)))
             r = nspawn_run_helper_persist(osbase,
