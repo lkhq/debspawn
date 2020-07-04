@@ -165,11 +165,6 @@ def prepare_package_build(arch_only=False, qa_lintian=False):
         run_apt_command(['install', '--no-install-recommends',
                          'build-essential', 'dpkg-dev', 'fakeroot'])
 
-        # if we want to run Lintian later, we need to make sure it is installed
-        if qa_lintian:
-            print('Lintian check requested, installing Lintian.')
-            run_apt_command(['install', 'lintian'])
-
         # check if we have extra packages to register with APT
         if os.path.exists(EXTRAPKG_DIR) and os.path.isdir(EXTRAPKG_DIR):
             if os.listdir(EXTRAPKG_DIR):
@@ -248,7 +243,8 @@ def run_qatasks(qa_lintian=True):
     if qa_lintian:
         print_section('QA: Lintian')
 
-        # ensure Lintian is really installed
+        # Now that the build is complete, install lintian
+        print('Lintian check requested, installing Lintian.')
         run_apt_command(['install', 'lintian'])
 
         # drop privileges
