@@ -156,7 +156,7 @@ def prepare_run():
     return True
 
 
-def prepare_package_build(arch_only=False, qa_lintian=False):
+def prepare_package_build(arch_only=False):
     print_section('Preparing container for build')
 
     with eatmydata():
@@ -315,7 +315,7 @@ def main():
         if not r:
             return 2
     elif options.build_prepare:
-        r = prepare_package_build(options.arch_only, options.qa_lintian)
+        r = prepare_package_build(options.arch_only)
         if not r:
             return 2
     elif options.build_run:
