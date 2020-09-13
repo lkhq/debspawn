@@ -257,8 +257,8 @@ class OSBase:
             self._copy_helper_script(tdir)
 
             # if we bootstrapped the base suite, add the primary suite to
-            # sources.list now
-            if self.has_base_suite:
+            # sources.list. We also add any explicit extra suites and source lines
+            if self.has_base_suite or extra_suites or extra_source_lines:
                 import re
 
                 sourceslist_fname = os.path.join(tdir, 'etc', 'apt', 'sources.list')
@@ -277,15 +277,16 @@ class OSBase:
                 if not components:
                     components = ['main']  # FIXME: We should really be more clever here, e.g. depend on python-apt and parse sources.list properly
                 with open(sourceslist_fname, 'a') as f:
-                    f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror, suite=self.suite, components=' '.join(components)))
+                    if self.has_base_suite:
+                        f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror, suite=self.suite, components=' '.join(components)))
 
                     if extra_suites:
                         f.write('\n')
-                    for esuite in extra_suites:
-                        if esuite == self.suite or esuite == bootstrap_suite:
-                            # don't add existing suites multiple times
-                            continue
-                        f.write('deb {mirror} {esuite} {components}\n'.format(mirror=mirror, esuite=esuite, components=' '.join(components)))
+                        for esuite in extra_suites:
+                            if esuite == self.suite or esuite == bootstrap_suite:
+                                # don't add existing suites multiple times
+                                continue
+                            f.write('deb {mirror} {esuite} {components}\n'.format(mirror=mirror, esuite=esuite, components=' '.join(components)))
 
                     if extra_source_lines:
                         f.write('\n')
