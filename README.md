@@ -96,12 +96,16 @@ $ debspawn build --arch=i386 cosmic ./hello_2.10-1.dsc
 
 Build results are by default returned in `/var/lib/debspawn/results/`
 
+If you need to inject other local packages as build dependencies, place `deb` files in `/var/lib/debspawn/injected-pkgs` (or other location set in the config file).
+
 ### Building a package - with git-buildpackage
 
 You can use a command like this to build your project with gbp and Debspawn:
 ```bash
 $ gbp buildpackage --git-builder='debspawn build sid --sign'
 ```
+
+You might also want to add `--results-dir ..` to the debspawn arguments to get the resulting artifacts in the directory to which the package repository was originally exported.
 
 ### Manual interactive-shell action
 
@@ -129,6 +133,18 @@ $ debspawn delete --arch=i386 cosmic
 This is achieved with the `debspawn run` command and is a bit more involved. Refer to the manual page
 and help output for more information.
 
+### Global configuration
+
+Debspawn will read a global configuration file from `/etc/debspawn/config.json`, or a configuration file in a location specified by the `--config` flag. If a config file is specified on the command line, the global file is ignored rather than merged.
+
+The config is a JSON file containing any of the following (all optional) keys:
+
+* `OSRootsDir`: directory for os images (`/var/lib/debspawn/containers/`)
+* `ResultsDir`: directory for build artifacts (`/var/lib/debspawn/results/`)
+* `APTCacheDir`: directory for debspawn's own package cache (`/var/lib/debspawn/aptcache/`)
+* `InjectedPkgsDir`: packages placed in this directory will be available as dependencies for builds (`/var/lib/debspawn/injected-pkgs/`)
+* `TempDir`: temporary directory used for running containers (`/var/tmp/debspawn/`)
+* `AllowUnsafePermissions`: allow usage of risker container permissions, such as binding the host `/dev` and `/proc` into the container (`false`)
 
 ## FAQ
 

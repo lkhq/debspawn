@@ -157,6 +157,77 @@
 	</refsect1>
 
 	<refsect1>
+		<title>Configuration</title>
+
+		<para>
+			Configuration is read from an optional JSON file, located at /etc/debspawn/global.json or a location specified with <option>--config</option>. Specifying a config file on the command line overrides the global file, rather than merges the contents.
+		</para>
+
+		<para>
+			The following keys are understood. All are optional:
+		</para>
+
+		<variablelist>
+
+			<varlistentry>
+				<term><option>OSRootsDir</option></term>
+				<listitem>
+					<para>
+						Location for stored container images.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>ResultsDir</option></term>
+				<listitem>
+					<para>
+						Location where build artifacts will be placed.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>APTCacheDir</option></term>
+				<listitem>
+					<para>
+						Location for debspawn's package cache.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>InjectedPkgsDir</option></term>
+				<listitem>
+					<para>
+						Package files in this directory will be available to satisfy build dependencies.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>TempDir</option></term>
+				<listitem>
+					<para>
+						Temporary directory for running containers.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>AllowUnsafePermissions</option></term>
+				<listitem>
+					<para>
+						Whether unsafe options can be used when creating the container, such as binding the host /dev and /proc.
+					</para>
+				</listitem>
+			</varlistentry>
+
+		</variablelist>
+
+	</refsect1>
+
+	<refsect1>
 		<title>See Also</title>
 		<para>dpkg-buildpackage(1), systemd-nspawn(1), sbuild(1).</para>
 	</refsect1>
