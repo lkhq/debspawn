@@ -297,6 +297,12 @@ class OSBase:
             if nspawn_run_helper_persist(self, tdir, self.new_nspawn_machine_name(), '--update') != 0:
                 return False
 
+            # drop machine-id file, if one exists
+            try:
+                os.remove(os.path.join(tdir, 'etc', 'machine-id'))
+            except OSError:
+                pass
+
             print_section('Creating Tarball')
             self._clear_image_tree(tdir)
             compress_directory(tdir, self.get_image_location())
@@ -406,6 +412,12 @@ class OSBase:
             print_section('Update')
             if nspawn_run_helper_persist(self, instance_dir, self.new_nspawn_machine_name(), '--update') != 0:
                 return False
+
+            # drop machine-id file, if one exists
+            try:
+                os.remove(os.path.join(instance_dir, 'etc', 'machine-id'))
+            except OSError:
+                pass
 
             print_section('Recreating tarball')
             self.make_instance_permanent(instance_dir)
