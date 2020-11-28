@@ -241,11 +241,13 @@ def run_qatasks(qa_lintian=True):
             break
 
     if qa_lintian:
-        print_section('QA: Lintian')
+        print_section('QA: Prepare')
 
-        # Now that the build is complete, install lintian
-        print('Lintian check requested, installing Lintian.')
+    if qa_lintian:
+        # install Lintian if Lintian check was requested
         run_apt_command(['install', 'lintian'])
+
+        print_section('QA: Lintian')
 
         # drop privileges
         pw = pwd.getpwnam(BUILD_USER)

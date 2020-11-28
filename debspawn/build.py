@@ -177,9 +177,6 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
             prep_flags = ['--build-prepare']
             if build_only == 'arch':
                 prep_flags.append('--arch-only')
-            if qa_lintian:
-                # install Lintian from the start, if we run it later
-                prep_flags.append('--lintian')
             r = nspawn_run_helper_persist(osbase,
                                           instance_dir,
                                           machine_name,
