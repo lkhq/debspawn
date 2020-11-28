@@ -16,8 +16,8 @@ addons:
     - debootstrap
 
 python:
-  - "3.7"
   - "3.8"
+  - "3.9"
   - "nightly"
 
 matrix:
@@ -25,7 +25,7 @@ matrix:
     - python: "nightly"
 
 install:
- - pip install flake8 pytest
+ - pip install flake8 pytest toml
 
 script:
   - ./setup.py build
