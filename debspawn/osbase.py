@@ -193,6 +193,7 @@ class OSBase:
 
         with open(self.get_config_location(), 'wt') as f:
             f.write(json.dumps(data, sort_keys=True, indent=4))
+            f.write('\n')
 
     def _clear_image_tree(self, image_dir):
         ''' Clear files from a directory tree that we don't want in the tarball. '''
