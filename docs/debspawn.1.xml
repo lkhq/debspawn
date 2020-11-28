@@ -160,39 +160,34 @@
 		<title>Configuration</title>
 
 		<para>
-			Configuration is read from an optional JSON file, located at /etc/debspawn/global.json or a location specified with <option>--config</option>. Specifying a config file on the command line overrides the global file, rather than merges the contents.
+			Configuration is read from an optional TOML file, located at <filename>/etc/debspawn/global.toml</filename> or a location specified
+			with <option>--config</option>. Specifying a config file on the command line will skip loading of the global, system-wide configuration.
 		</para>
 
 		<para>
-			The following keys are understood. All are optional:
+			The following keys are valid at the document root level, all are optional:
 		</para>
 
 		<variablelist>
 
 			<varlistentry>
-				<term><option>OSRootsDir</option></term>
+				<term><option>OSImagesDir</option></term>
 				<listitem>
-					<para>
-						Location for stored container images.
-					</para>
+					<para>Location for stored container images.</para>
 				</listitem>
 			</varlistentry>
 
 			<varlistentry>
 				<term><option>ResultsDir</option></term>
 				<listitem>
-					<para>
-						Location where build artifacts will be placed.
-					</para>
+					<para>Default output directory for build artifacts on successful builds.</para>
 				</listitem>
 			</varlistentry>
 
 			<varlistentry>
 				<term><option>APTCacheDir</option></term>
 				<listitem>
-					<para>
-						Location for debspawn's package cache.
-					</para>
+					<para>Location for debspawn's package cache.</para>
 				</listitem>
 			</varlistentry>
 
@@ -200,7 +195,9 @@
 				<term><option>InjectedPkgsDir</option></term>
 				<listitem>
 					<para>
-						Package files in this directory will be available to satisfy build dependencies.
+						Package files placed in the root of this directory are available to all containers
+						to satisfy build dependencies, while ones placed in subdirectories with the OS image
+						name (e.g. <literal>sid-arm64</literal>) will only be available to the specified container.
 					</para>
 				</listitem>
 			</varlistentry>
@@ -208,9 +205,7 @@
 			<varlistentry>
 				<term><option>TempDir</option></term>
 				<listitem>
-					<para>
-						Temporary directory for running containers.
-					</para>
+					<para>Temporary data location (Default: <filename>/var/tmp/debspawn/</filename>)</para>
 				</listitem>
 			</varlistentry>
 
@@ -218,7 +213,11 @@
 				<term><option>AllowUnsafePermissions</option></term>
 				<listitem>
 					<para>
-						Whether unsafe options can be used when creating the container, such as binding the host /dev and /proc.
+						Boolean option. If set to <literal>true</literal>, unsafe options can be used
+						for building software via <command>&package; run</command>, such as making the
+						host's <filename>/dev</filename> and <filename>/proc</filename> filesystems
+						available from within the container. See the <parameter>--allow</parameter> option
+						of <command>&package; run</command> for more details.
 					</para>
 				</listitem>
 			</varlistentry>

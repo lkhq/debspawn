@@ -19,7 +19,7 @@
 
 import os
 import sys
-import json
+import toml
 
 
 thisfile = __file__
@@ -40,15 +40,15 @@ class GlobalConfig:
     class __GlobalConfig:
         def load(self, fname=None):
             if not fname:
-                fname = '/etc/debspawn/global.json'
+                fname = '/etc/debspawn/global.toml'
 
-            jdata = {}
+            cdata = {}
             if os.path.isfile(fname):
-                with open(fname) as json_file:
+                with open(fname) as f:
                     try:
-                        jdata = json.load(json_file)
-                    except json.JSONDecodeError as e:
-                        print('Unable to parse global configuration (global.json): {}'.format(str(e)), file=sys.stderr)
+                        cdata = toml.load(f)
+                    except toml.TomlDecodeError as e:
+                        print('Unable to parse global configuration (global.toml): {}'.format(str(e)), file=sys.stderr)
                         sys.exit(8)
 
             self._dsrun_path = os.path.normpath(os.path.join(thisfile, '..', 'dsrun'))
@@ -56,12 +56,12 @@ class GlobalConfig:
                 print('Debspawn is not set up properly: Unable to find file "{}". Can not continue.'.format(self._dsrun_path), file=sys.stderr)
                 sys.exit(4)
 
-            self._osroots_dir = jdata.get('OSRootsDir', '/var/lib/debspawn/containers/')
-            self._results_dir = jdata.get('ResultsDir', '/var/lib/debspawn/results/')
-            self._aptcache_dir = jdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
-            self._injected_pkgs_dir = jdata.get('InjectedPkgsDir', '/var/lib/debspawn/injected-pkgs/')
-            self._temp_dir = jdata.get('TempDir', '/var/tmp/debspawn/')
-            self._allow_unsafe_perms = jdata.get('AllowUnsafePermissions', False)
+            self._osroots_dir = cdata.get('OSImagesDir', '/var/lib/debspawn/containers/')
+            self._results_dir = cdata.get('ResultsDir', '/var/lib/debspawn/results/')
+            self._aptcache_dir = cdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
+            self._injected_pkgs_dir = cdata.get('InjectedPkgsDir', '/var/lib/debspawn/injected-pkgs/')
+            self._temp_dir = cdata.get('TempDir', '/var/tmp/debspawn/')
+            self._allow_unsafe_perms = cdata.get('AllowUnsafePermissions', False)
 
         @property
         def dsrun_path(self) -> str:
