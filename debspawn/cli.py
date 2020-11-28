@@ -400,4 +400,7 @@ def run(mainfile, args):
             custom_command = args.command
         command_run(args, custom_command)
     else:
+        if not hasattr(args, 'func'):
+            print('Unknown or no subcommand was provided. Can not proceed.')
+            sys.exit(1)
         args.func(args)
