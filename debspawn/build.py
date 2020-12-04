@@ -60,6 +60,7 @@ def interact_with_build_environment(osbase, instance_dir, machine_name, *,
                        flags=nspawn_flags,
                        tmp_apt_cache_dir=aptcache_tmp,
                        pkginjector=pkginjector,
+                       syscall_filter=osbase.global_config.syscall_filter,
                        verbose=True)
 
     if source_pkg_dir:
@@ -204,7 +205,8 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
                                           '/srv',
                                           nspawn_flags=nspawn_flags,
                                           tmp_apt_cache_dir=aptcache_tmp,
-                                          pkginjector=pkginjector)
+                                          pkginjector=pkginjector,
+                                          syscall_filter=osbase.global_config.syscall_filter)
             # exit, unless we are in interactive mode
             if r != 0 and not interact:
                 return False

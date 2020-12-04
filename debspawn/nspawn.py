@@ -67,7 +67,7 @@ def get_nspawn_personality(osbase):
     return None
 
 
-def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
+def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], syscall_filter=[]):
     '''
     Execute systemd-nspawn with the given parameters.
     Mess around with cgroups if necessary.
@@ -116,6 +116,8 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
         cmd.extend(['--bind-ro', '/lib/modules/'])
     if capabilities:
         cmd.extend(['--capability', ','.join(capabilities)])
+    if syscall_filter:
+        cmd.extend(['--system-call-filter', ' '.join(syscall_filter)])
     cmd.extend(parameters)
 
     if not full_dev_access:
@@ -162,7 +164,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[]):
 
 
 def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], *,
-                       tmp_apt_cache_dir=None, pkginjector=None, allowed=[], verbose=False):
+                       tmp_apt_cache_dir=None, pkginjector=None, allowed=[], syscall_filter=[], verbose=False):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -187,7 +189,7 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
         osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
 
         # run command in container
-        ret = _execute_sdnspawn(osbase, params, machine_name, allowed)
+        ret = _execute_sdnspawn(osbase, params, machine_name, allowed, syscall_filter)
 
         # archive APT cache, so future runs of this command are faster
         osbase.aptcache.merge_from_dir(aptcache_tmp_dir)
@@ -203,7 +205,7 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
     return ret
 
 
-def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flags=[], allowed=[]):
+def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flags=[], allowed=[], syscall_filter=[]):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -219,7 +221,7 @@ def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flag
     params.extend(['-aqxD', base_dir])
     params.extend(command)
 
-    return _execute_sdnspawn(osbase, params, machine_name, allowed)
+    return _execute_sdnspawn(osbase, params, machine_name, allowed, syscall_filter)
 
 
 def nspawn_make_helper_cmd(flags):
@@ -247,7 +249,7 @@ def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, ch
 
 
 def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *,
-                              nspawn_flags=[], tmp_apt_cache_dir=None, pkginjector=None, allowed=[]):
+                              nspawn_flags=[], tmp_apt_cache_dir=None, pkginjector=None, allowed=[], syscall_filter=[]):
     cmd = nspawn_make_helper_cmd(helper_flags)
     return nspawn_run_persist(osbase,
                               base_dir,
@@ -257,4 +259,5 @@ def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdi
                               nspawn_flags,
                               tmp_apt_cache_dir=tmp_apt_cache_dir,
                               pkginjector=pkginjector,
-                              allowed=allowed)
+                              allowed=allowed,
+                              syscall_filter=syscall_filter)

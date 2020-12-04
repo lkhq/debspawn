@@ -63,6 +63,23 @@ class GlobalConfig:
             self._temp_dir = cdata.get('TempDir', '/var/tmp/debspawn/')
             self._allow_unsafe_perms = cdata.get('AllowUnsafePermissions', False)
 
+            self._syscall_filter = cdata.get('SyscallFilter', 'compat')
+            if self._syscall_filter == 'compat':
+                # permit some system calls known to be needed by packages that sbuild & Co.
+                # build without problems.
+                self._syscall_filter = ['@memlock',
+                                        '@pkey',
+                                        '@clock',
+                                        '@cpu-emulation']
+            elif self._syscall_filter == 'nspawn-default':
+                # make no additional changes, so nspawn's built-in defaults are used
+                self._syscall_filter = []
+            else:
+                if type(self._syscall_filter) is not list:
+                    print('Configuration error (global.toml): Entry "SyscallFilter" needs to be either a string value ("compat" or "nspawn-default"), ' +
+                           'or a list of permissible system call names as listed by the syscall-filter command of systemd-analyze(1)', file=sys.stderr)
+                    sys.exit(8)
+
         @property
         def dsrun_path(self) -> str:
             return self._dsrun_path
@@ -90,6 +107,10 @@ class GlobalConfig:
         @property
         def temp_dir(self) -> str:
             return self._temp_dir
+
+        @property
+        def syscall_filter(self) -> list:
+            return self._syscall_filter
 
         @property
         def allow_unsafe_perms(self) -> bool:
