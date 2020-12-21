@@ -77,7 +77,7 @@ class GlobalConfig:
             else:
                 if type(self._syscall_filter) is not list:
                     print('Configuration error (global.toml): Entry "SyscallFilter" needs to be either a string value ("compat" or "nspawn-default"), ' +
-                           'or a list of permissible system call names as listed by the syscall-filter command of systemd-analyze(1)', file=sys.stderr)
+                          'or a list of permissible system call names as listed by the syscall-filter command of systemd-analyze(1)', file=sys.stderr)
                     sys.exit(8)
 
         @property
