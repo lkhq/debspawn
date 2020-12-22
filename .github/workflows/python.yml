@@ -1,0 +1,56 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.7', '3.8', '3.9' ]
+
+    name: Python ${{ matrix.python-version }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Upgrade
+      run: sudo apt-get update && sudo apt-get full-upgrade
+      
+    - name: Install system prerequisites
+      run: sudo apt-get install -yq
+             xsltproc
+             docbook-xsl
+             docbook-xml
+             zstd
+             systemd-container
+             debootstrap
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest toml
+        
+    - name: Build & Install
+      run: |
+        ./setup.py build
+        ./setup.py install --single-version-externally-managed --root=/tmp
+        rm -rf build/
+          
+    - name: Test
+      run: |
+        sudo $(which python3) -m pytest
+        rm -rf build/
+
+    - name: Lint
+      run: |
+        flake8 ./ --statistics
+        flake8 debspawn/dsrun --statistics
