@@ -135,9 +135,10 @@ and help output for more information.
 
 ### Global configuration
 
-Debspawn will read a global configuration file from `/etc/debspawn/config.json`, or a configuration file in a location specified by the `--config` flag. If a config file is specified on the command line, the global file is ignored rather than merged.
+Debspawn will read a global configuration file from `/etc/debspawn/global.toml`, or a configuration file in a location specified by the `--config` flag.
+If a config file is specified on the command line, the global file is ignored rather than merged.
 
-The config is a JSON file containing any of the following (all optional) keys:
+The config is a TOML file containing any of the following (all optional) keys:
 
 * `OSRootsDir`: directory for os images (`/var/lib/debspawn/containers/`)
 * `ResultsDir`: directory for build artifacts (`/var/lib/debspawn/results/`)
