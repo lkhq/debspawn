@@ -1,3 +1,22 @@
+Version 0.4.1
+~~~~~~~~~~~~~~
+Released: 2020-12-22
+
+Features:
+ * README, debspawn.1: document config file (Gordon Ball)
+ * Install lintian after build (Harlan Lieberman-Berg)
+ * Allow custom scripts to cache their prepared images for faster builds (Matthias Klumpp)
+ * Allow running fully privileged containers (Matthias Klumpp)
+ * Make global config file use TOML, update documentation (Matthias Klumpp)
+
+Bugfixes:
+ * Pass --console nspawn flag only if our systemd version is high enough (Matthias Klumpp)
+ * Enforce the suite name of the env we built in for changes files (Matthias Klumpp)
+ * Add extra suites to sources even if base suite is equal to image suite (Matthias Klumpp)
+ * Have nspawn recreate container machine-id each time (Matthias Klumpp)
+ * cli: Safeguard against cases where we have flags but no subcommands (Matthias Klumpp)
+ * Disable syscall filter for some groups by default (Matthias Klumpp)
+
 Version 0.4.0
 ~~~~~~~~~~~~~~
 Released: 2020-01-20
