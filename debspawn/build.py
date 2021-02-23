@@ -66,8 +66,11 @@ def interact_with_build_environment(osbase, instance_dir, machine_name, *,
     if source_pkg_dir:
         print()
         while True:
-            copy_changes = input(('Should changes to the debian/ directory be copied back to the host?\n'
-                                  'This will OVERRIDE all changes made on files on the host. [y/N]: '))
+            try:
+                copy_changes = input(('Should changes to the debian/ directory be copied back to the host?\n'
+                                      'This will OVERRIDE all changes made on files on the host. [y/N]: '))
+            except EOFError:
+                copy_changes = 'n'
             if copy_changes == 'y' or copy_changes == 'Y':
                 copy_changes = True
                 break
