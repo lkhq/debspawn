@@ -56,7 +56,7 @@ class GlobalConfig:
                 print('Debspawn is not set up properly: Unable to find file "{}". Can not continue.'.format(self._dsrun_path), file=sys.stderr)
                 sys.exit(4)
 
-            self._osroots_dir = cdata.get('OSImagesDir', '/var/lib/debspawn/containers/')
+            self._osroots_dir = cdata.get('OSImagesDir', '/var/lib/debspawn/images/')
             self._results_dir = cdata.get('ResultsDir', '/var/lib/debspawn/results/')
             self._aptcache_dir = cdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
             self._injected_pkgs_dir = cdata.get('InjectedPkgsDir', '/var/lib/debspawn/injected-pkgs/')
