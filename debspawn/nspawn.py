@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import platform
 from .utils import temp_dir, print_error, print_warn, print_info, safe_run, run_forwarded
 from .utils.env import colored_output_allowed, unicode_allowed
@@ -73,7 +72,6 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
     Mess around with cgroups if necessary.
     '''
     import sys
-    import time
 
     capabilities = []
     full_dev_access = False
@@ -102,7 +100,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
             print_info('Unknown allowed permission: {}'.format(perm))
 
     if (capabilities or full_dev_access or full_proc_access or kvm_access) \
-        and not osbase.global_config.allow_unsafe_perms:
+            and not osbase.global_config.allow_unsafe_perms:
         print_error('Configuration does not permit usage of additional and potentially dangerous permissions. Exiting.')
         sys.exit(9)
 
