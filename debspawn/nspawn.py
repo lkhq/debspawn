@@ -79,6 +79,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
     full_dev_access = False
     full_proc_access = False
     ro_kmods_access = False
+    kvm_access = False
     all_privileges = False
     for perm in allow_permissions:
         perm = perm.lower()
@@ -95,11 +96,14 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
             full_proc_access = True
         elif perm == 'read-kmods':
             ro_kmods_access = True
+        elif perm == 'kvm':
+            kvm_access = True
         else:
             print_info('Unknown allowed permission: {}'.format(perm))
 
-    if (capabilities or full_dev_access or full_proc_access) and not osbase.global_config.allow_unsafe_perms:
-        print_error('Configuration does not permit usage of additional and potentially dangerous additional permissions. Exiting.')
+    if (capabilities or full_dev_access or full_proc_access or kvm_access) \
+        and not osbase.global_config.allow_unsafe_perms:
+        print_error('Configuration does not permit usage of additional and potentially dangerous permissions. Exiting.')
         sys.exit(9)
 
     cmd = ['systemd-nspawn']
@@ -108,6 +112,11 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
         cmd.extend(['--bind', '/dev'])
         if systemd_version_atleast(244):
             cmd.append('--console=pipe')
+        cmd.extend(['--property=DeviceAllow=block-* rw',
+                    '--property=DeviceAllow=char-* rw'])
+    if kvm_access and not full_dev_access:
+        cmd.extend(['--bind', '/dev/kvm'])
+        cmd.extend(['--property=DeviceAllow=/dev/kvm rw'])
     if full_proc_access:
         cmd.extend(['--bind', '/proc'])
         if not all_privileges:
@@ -120,47 +129,8 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
         cmd.extend(['--system-call-filter', ' '.join(syscall_filter)])
     cmd.extend(parameters)
 
-    if not full_dev_access:
-        proc = run_forwarded(cmd)
-        return proc.returncode
-    else:
-        out, _, _ = safe_run(['systemd-escape', machine_name])
-        escaped_full_machine_name = out.strip()
-
-        pid = os.fork()
-        if pid == 0:
-            # child process - edit the cgroup to allow full access to all
-            # devices. Hopefully there won't be too much need for this awful code.
-            parent_pid = os.getppid()
-            if not all_privileges:
-                print_warn('Container will have direct access to all host devices.')
-
-            syscg_devices_allow = '/sys/fs/cgroup/devices/machine.slice/machine-{}.scope/devices.allow'.format(escaped_full_machine_name)
-            tries = 0
-            while not os.path.exists(syscg_devices_allow):
-                time.sleep(0.5)
-                tries += 1
-                if tries > 40:
-                    break
-
-                # check if our parent process has died - this is very prone to race conditions, but
-                # the best simple way to perform this check. The Linux kernel has neat features to
-                # make this easier though.
-                if os.getppid() != parent_pid:
-                    os._exit(0)
-
-            if not os.path.isfile(syscg_devices_allow):
-                print_error('Unable to give container full read/write permissions on host /dev!')
-                os._exit(0)
-            with open(syscg_devices_allow, 'w') as sys_f:
-                sys_f.write('c *:* rwm\n')  # full access to character devices
-                sys_f.flush()
-                sys_f.write('b *:* rwm\n')  # full access to block devices
-                sys_f.flush()
-            os._exit(0)
-        else:
-            proc = run_forwarded(cmd)
-            return proc.returncode
+    proc = run_forwarded(cmd)
+    return proc.returncode
 
 
 def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], *,
