@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import platform
 from .utils import temp_dir, print_error, print_warn, print_info, safe_run, run_forwarded
 from .utils.env import colored_output_allowed, unicode_allowed
@@ -113,8 +114,11 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
         cmd.extend(['--property=DeviceAllow=block-* rw',
                     '--property=DeviceAllow=char-* rw'])
     if kvm_access and not full_dev_access:
-        cmd.extend(['--bind', '/dev/kvm'])
-        cmd.extend(['--property=DeviceAllow=/dev/kvm rw'])
+        if os.path.exists('/dev/kvm'):
+            cmd.extend(['--bind', '/dev/kvm'])
+            cmd.extend(['--property=DeviceAllow=/dev/kvm rw'])
+        else:
+            print_warn('Access to KVM requested, but /dev/kvm does not exist on the host. Is virtualization supported?')
     if full_proc_access:
         cmd.extend(['--bind', '/proc'])
         if not all_privileges:
