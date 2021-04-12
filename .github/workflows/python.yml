@@ -22,6 +22,9 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Update cache
+      run: sudo apt-get update -qq
+
     - name: Install system prerequisites
       run: sudo apt-get install -yq
              xsltproc
