@@ -210,7 +210,8 @@ def nspawn_make_helper_cmd(flags):
     return cmd
 
 
-def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *, nspawn_flags=[], allowed=[]):
+def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *,
+                                nspawn_flags=[], allowed=[]):
     cmd = nspawn_make_helper_cmd(helper_flags)
     return nspawn_run_ephemeral(base_dir,
                                 machine_name,

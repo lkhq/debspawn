@@ -92,7 +92,8 @@ def generate_docbook_pages(build_dir):
             print('Manual page template {} is missing! Skipping it.'.format(template_fname))
             continue
 
-        xml_manpages.append(editor.process_file(template_fname, os.path.join(build_dir, os.path.basename(template_fname))))
+        xml_manpages.append(editor.process_file(template_fname,
+                                                os.path.join(build_dir, os.path.basename(template_fname))))
 
     return xml_manpages
 

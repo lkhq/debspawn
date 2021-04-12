@@ -53,7 +53,8 @@ class GlobalConfig:
 
             self._dsrun_path = os.path.normpath(os.path.join(thisfile, '..', 'dsrun'))
             if not os.path.isfile(self._dsrun_path):
-                print('Debspawn is not set up properly: Unable to find file "{}". Can not continue.'.format(self._dsrun_path), file=sys.stderr)
+                print('Debspawn is not set up properly: Unable to find file "{}". Can not continue.'.format(
+                    self._dsrun_path), file=sys.stderr)
                 sys.exit(4)
 
             self._osroots_dir = cdata.get('OSImagesDir', '/var/lib/debspawn/images/')
@@ -76,8 +77,9 @@ class GlobalConfig:
                 self._syscall_filter = []
             else:
                 if type(self._syscall_filter) is not list:
-                    print('Configuration error (global.toml): Entry "SyscallFilter" needs to be either a string value ("compat" or "nspawn-default"), ' +
-                          'or a list of permissible system call names as listed by the syscall-filter command of systemd-analyze(1)', file=sys.stderr)
+                    print(('Configuration error (global.toml): Entry "SyscallFilter" needs to be either a string value '
+                           '("compat" or "nspawn-default"), or a list of permissible system call names as listed by '
+                           'the syscall-filter command of systemd-analyze(1)'), file=sys.stderr)
                     sys.exit(8)
 
         @property

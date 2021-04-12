@@ -340,7 +340,9 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
 def _print_system_info():
     from . import __version__
     from .utils.misc import current_time_string
-    print_info('debspawn {version} on {host} at {time}'.format(version=__version__, host=platform.node(), time=current_time_string()))
+    print_info('debspawn {version} on {host} at {time}'.format(version=__version__,
+                                                               host=platform.node(),
+                                                               time=current_time_string()))
 
 
 def build_from_directory(osbase, pkg_dir, *,
@@ -423,7 +425,9 @@ def build_from_directory(osbase, pkg_dir, *,
         _retrieve_artifacts(osbase, pkg_tmp_dir)
 
     # save buildlog, if we generated one
-    log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename, version_noepoch(pkg_version), osbase.arch))
+    log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename,
+                                                                            version_noepoch(pkg_version),
+                                                                            osbase.arch))
     save_captured_console_output(log_fname)
 
     # sign the resulting package
@@ -498,7 +502,9 @@ def build_from_dsc(osbase, dsc_fname, *,
         _retrieve_artifacts(osbase, pkg_tmp_dir)
 
     # save buildlog, if we generated one
-    log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename, version_noepoch(pkg_version), osbase.arch))
+    log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename,
+                                                                            version_noepoch(pkg_version),
+                                                                            osbase.arch))
     save_captured_console_output(log_fname)
 
     # sign the resulting package
@@ -508,5 +514,4 @@ def build_from_dsc(osbase, dsc_fname, *,
             return False
 
     print_info('Done.')
-
     return True

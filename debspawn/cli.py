@@ -284,11 +284,14 @@ def create_parser(formatter_class=None):
     sp.add_argument('--components', action='store', dest='components', default=None,
                     help='A comma-separated list of archive components to enable in the newly created image.')
     sp.add_argument('--base-suite', action='store', dest='base_suite', default=None,
-                    help='A full suite that forms the base of the selected partial suite (e.g. for -updates and -backports).')
+                    help=('A full suite that forms the base of the selected partial suite '
+                          '(e.g. for -updates and -backports).'))
     sp.add_argument('--extra-suites', action='store', dest='extra_suites', default=None,
-                    help='Space-separated list of additional suites that should also be added to the sources.list file.')
+                    help=('Space-separated list of additional suites that should also be added to the '
+                          'sources.list file.'))
     sp.add_argument('--extra-sourceslist-lines', action='store', dest='extra_source_lines', default=None,
-                    help='Lines that should be added to the build environments source.list verbatim. Separate lines by linebreaks.')
+                    help=('Lines that should be added to the build environments source.list verbatim. '
+                          'Separate lines by linebreaks.'))
     sp.set_defaults(func=command_create)
 
     # 'delete' command
@@ -300,7 +303,8 @@ def create_parser(formatter_class=None):
     sp = subparsers.add_parser('update', help='Update a container image')
     add_container_select_arguments(sp)
     sp.add_argument('--recreate', action='store_true', dest='recreate',
-                    help='Re-create the container image from scratch using the settings used to create it previously, instead of just updating it.')
+                    help=('Re-create the container image from scratch using the settings used to create it previously, '
+                          'instead of just updating it.'))
     sp.set_defaults(func=command_update)
 
     # 'list' command
@@ -308,7 +312,8 @@ def create_parser(formatter_class=None):
     sp.set_defaults(func=command_list)
 
     # 'build' command
-    sp = subparsers.add_parser('build', help='Build a package in an isolated environment', formatter_class=formatter_class, aliases=['b'])
+    sp = subparsers.add_parser('build', help='Build a package in an isolated environment',
+                               formatter_class=formatter_class, aliases=['b'])
     add_container_select_arguments(sp)
     sp.add_argument('-s', '--sign', action='store_true', dest='sign',
                     help='Sign the resulting package.')
@@ -325,17 +330,19 @@ def create_parser(formatter_class=None):
     sp.add_argument('--results-dir', action='store', dest='results_dir',
                     help='Override the configured results directory and return artifacts at a custom location.')
     sp.add_argument('--maintainer', action='store', dest='maintainer',
-                    help=('Set the name and email address of the maintainer for this package and upload, rather than using '
-                          'the information from the source tree\'s control file or changelog.'))
+                    help=('Set the name and email address of the maintainer for this package and upload, rather than '
+                          'using the information from the source tree\'s control file or changelog.'))
     sp.add_argument('--clean-source', action='store_true', dest='clean_source',
-                    help=('Run the d/rules clean target outside of the container. This means the package build dependencies need to be '
-                          'installed on the host system when building from a source directory.'))
+                    help=('Run the d/rules clean target outside of the container. This means the package build '
+                          'dependencies need to be installed on the host system when building from a '
+                          'source directory.'))
     sp.add_argument('--lintian', action='store_true', dest='lintian',
                     help='Run the Lintian static analysis tool for Debian packages after the package is built.')
     sp.add_argument('--no-buildlog', action='store_true', dest='no_buildlog',
                     help='Do not write a build log.')
     sp.add_argument('-i', '--interact', action='store_true', dest='interact',
-                    help='Run an interactive shell in the build environment after build. This implies `--no-buildlog` and disables the log.')
+                    help=('Run an interactive shell in the build environment after build. This implies `--no-buildlog` '
+                          'and disables the log.'))
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)
@@ -346,7 +353,8 @@ def create_parser(formatter_class=None):
     sp.add_argument('--persistent', action='store_true', dest='persistent',
                     help='Make changes done in the session persistent.')
     sp.add_argument('--allow', action='store', dest='allow',
-                    help='List one or more additional permissions to grant the container. Takes a comma-separated list of capability names.')
+                    help=('List one or more additional permissions to grant the container. Takes a comma-separated '
+                          'list of capability names.'))
     sp.set_defaults(func=command_login)
 
     # 'run' command
@@ -357,16 +365,20 @@ def create_parser(formatter_class=None):
     sp.add_argument('--build-dir', action='store', dest='build_dir', default=None,
                     help='Select a host directory that gets bind mounted to /srv/build.')
     sp.add_argument('--cachekey', action='store', dest='cachekey', default=None,
-                    help=('If set, use the specified cache-ID to store an initialized container image for faster initialization times.\n'
-                          'This may mean that the command passed in `--init-command` is skipped if the cache already existed.'))
+                    help=('If set, use the specified cache-ID to store an initialized container image for faster '
+                          'initialization times.\n'
+                          'This may mean that the command passed in `--init-command` is skipped if the cache '
+                          'already existed.'))
     sp.add_argument('--init-command', action='store', dest='init_command', default=None,
                     help='The command or command script used to set up the container.')
     sp.add_argument('-x', '--external-command', action='store_true', dest='external_commad',
-                    help='If set, the command script(s) will be copied from the host to the container and then executed.')
+                    help=('If set, the command script(s) will be copied from the host to the container '
+                          'and then executed.'))
     sp.add_argument('--header', action='store', dest='header', default=None,
                     help='Name of the task that is run, will be printed as header.')
     sp.add_argument('--allow', action='store', dest='allow',
-                    help='List one or more additional permissions to grant the container. Takes a comma-separated list of capability names.')
+                    help=('List one or more additional permissions to grant the container. Takes a comma-separated '
+                          'list of capability names.'))
     sp.add_argument('command', action='store', nargs='*', default=None,
                     help='The command to run.')
 

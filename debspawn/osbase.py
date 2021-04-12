@@ -209,7 +209,8 @@ class OSBase:
                 if os.path.lexists(fname) and not os.path.isdir(fname) and not os.path.ismount(fname):
                     os.remove(fname)
 
-    def _create_internal(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None, show_header=True):
+    def _create_internal(self, mirror=None, components=None,
+                         extra_suites=[], extra_source_lines=None, show_header=True):
         ''' Create new container base image (internal method) '''
 
         if self.exists():
@@ -267,7 +268,9 @@ class OSBase:
                 if not mirror:
                     with open(sourceslist_fname, 'r') as f:
                         contents = f.read()
-                        matches = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', contents)
+                        matches = re.findall(
+                            'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
+                            contents)
                         if not matches:
                             print_error('Unable to detect default APT repository URL (no regex matches).')
                             return False
@@ -277,10 +280,14 @@ class OSBase:
                         return False
 
                 if not components:
-                    components = ['main']  # FIXME: We should really be more clever here, e.g. depend on python-apt and parse sources.list properly
+                    # FIXME: We should really be more clever here, e.g. depend on python-apt
+                    # and parse sources.list properly
+                    components = ['main']
                 with open(sourceslist_fname, 'a') as f:
                     if self.has_base_suite:
-                        f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror, suite=self.suite, components=' '.join(components)))
+                        f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror,
+                                                                             suite=self.suite,
+                                                                             components=' '.join(components)))
 
                     if extra_suites:
                         f.write('\n')
@@ -288,7 +295,9 @@ class OSBase:
                             if esuite == self.suite or esuite == bootstrap_suite:
                                 # don't add existing suites multiple times
                                 continue
-                            f.write('deb {mirror} {esuite} {components}\n'.format(mirror=mirror, esuite=esuite, components=' '.join(components)))
+                            f.write('deb {mirror} {esuite} {components}\n'.format(mirror=mirror,
+                                                                                  esuite=esuite,
+                                                                                  components=' '.join(components)))
 
                     if extra_source_lines:
                         f.write('\n')
@@ -512,7 +521,8 @@ class OSBase:
             print_info('Can not enter "{}": The configuration does not exist.'.format(self.name))
             return False
 
-        print_header('Login (persistent changes) for {}'.format(self.name) if persistent else 'Login for {}'.format(self.name))
+        print_header('Login (persistent changes) for {}'.format(self.name)
+                     if persistent else 'Login for {}'.format(self.name))
         with self.new_instance() as (instance_dir, machine_name):
             # ensure helper script runner exists and is up to date
             self._copy_helper_script(instance_dir)
@@ -555,7 +565,8 @@ class OSBase:
 
         return os.path.join('/srv', 'tmp', os.path.basename(host_script))
 
-    def run(self, command, build_dir, artifacts_dir, init_command=None, copy_command=False, header_msg=None, allowed=[]):
+    def run(self, command, build_dir, artifacts_dir, init_command=None, copy_command=False,
+            header_msg=None, allowed=[]):
         ''' Run an arbitrary command or script in the container '''
         ensure_root()
 
@@ -592,7 +603,8 @@ class OSBase:
                     host_script = init_command[0]
                     init_command[0] = self._copy_command_script_to_instance_dir(instance_dir, host_script)
                     if not init_command[0]:
-                        print_error('Unable to find initialization script "{}", can not copy it to the container. Exiting.'.format(host_script))
+                        print_error(('Unable to find initialization script "{}", '
+                                     'can not copy it to the container. Exiting.').format(host_script))
                         return False
 
                 r = nspawn_run_helper_persist(self,
@@ -636,7 +648,8 @@ class OSBase:
                 host_script = command[0]
                 command[0] = self._copy_command_script_to_instance_dir(instance_dir, host_script)
                 if not command[0]:
-                    print_error('Unable to find script "{}", can not copy it to the container. Exiting.'.format(host_script))
+                    print_error(('Unable to find script "{}", can not copy it to the container. '
+                                 'Exiting.').format(host_script))
                     return False
 
             r = nspawn_run_helper_persist(self,

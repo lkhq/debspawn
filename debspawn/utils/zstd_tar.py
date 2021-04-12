@@ -25,7 +25,8 @@ def ensure_tar_zstd():
     ''' Check if the required binaries for compression are available '''
 
     if not shutil.which('zstd'):
-        raise Exception('The "zsdt" binary was not found, we can not compress tarballs. Please install zstd to continue!')
+        raise Exception(('The "zsdt" binary was not found, we can not compress tarballs. '
+                         'Please install zstd to continue!'))
     if not shutil.which('tar'):
         raise Exception('The "tar" binary was not found, we can not create tarballs. Please install tar to continue!')
 
