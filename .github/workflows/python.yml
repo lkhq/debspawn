@@ -22,9 +22,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Upgrade
-      run: sudo apt-get update && sudo apt-get full-upgrade
-
     - name: Install system prerequisites
       run: sudo apt-get install -yq
              xsltproc
@@ -37,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest toml
+        pip install toml flake8 pytest pylint mypy
 
     - name: Build & Install
       run: |
