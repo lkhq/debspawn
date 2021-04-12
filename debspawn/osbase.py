@@ -598,6 +598,7 @@ class OSBase:
                 # ensure helper script runner exists and is up to date
                 self._copy_helper_script(instance_dir)
 
+                init_nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(build_dir))]
                 if copy_command:
                     # copy initialization script from host to container
                     host_script = init_command[0]
@@ -627,6 +628,7 @@ class OSBase:
                                        machine_name,
                                        '/srv',
                                        init_command,
+                                       init_nspawn_flags,
                                        allowed=filtered_allowed)
                 if r != 0:
                     return False
