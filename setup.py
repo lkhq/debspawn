@@ -48,10 +48,12 @@ class install_scripts(install_scripts_orig):
 
         if '--single-version-externally-managed' not in sys.argv:
             print()
-            print('Attempting to install Debspawn as binary distribution may not yield a working installation.', file=sys.stderr)
-            print('We require a file to be installed in a system location, and manual pages are in an external location as well.', file=sys.stderr)
-            print(('Currently, no workarounds for this issue have been implemented in Debspawn itself, so please run setup.py with '
-                   '`--single-version-externally-managed`.'), file=sys.stderr)
+            print('Attempting to install Debspawn as binary distribution may not yield a working installation.',
+                  file=sys.stderr)
+            print(('We require a file to be installed in a system location, and manual pages are in an external '
+                   'location as well.'), file=sys.stderr)
+            print(('Currently, no workarounds for this issue have been implemented in Debspawn itself, so please '
+                   'run setup.py with `--single-version-externally-managed`.'), file=sys.stderr)
             print('If you are using pip, try `sudo pip3 install --no-binary debspawn .`', file=sys.stderr)
             sys.exit(1)
 
