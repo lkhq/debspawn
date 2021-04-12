@@ -1,6 +1,6 @@
 # Debspawn
 
-![Build & Test](https://github.com/lkorigin/debspawn/workflows/Build%20&%20Test/badge.svg)
+![Build & Test](https://github.com/lkhq/debspawn/workflows/Build%20&%20Test/badge.svg)
 
 Debspawn is a tool to build Debian packages in an isolated environment. Unlike similar tools like `sbuild`
 or `pbuilder`, `debspawn` uses `systemd-nspawn` instead of plain chroots to manage the isolated environment.
