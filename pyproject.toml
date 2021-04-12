@@ -1,0 +1,42 @@
+[project]
+name = "debspawn"
+description = "Debian package builder and build helper using systemd-nspawn"
+authors = [
+    "Matthias Klumpp <matthias@tenstral.net>"
+]
+license = "LGPL-3.0-or-later"
+readme = "README.md"
+python = "^3.9"
+homepage = "https://github.com/lkhq/debspawn"
+repository = "https://github.com/lkhq/debspawn"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pylint.master]
+
+[tool.pylint.format]
+max-line-length = 120
+
+[tool.pylint."messages control"]
+disable = [
+    'C', 'R',
+    'fixme',
+    'unused-argument',
+    'global-statement',
+    'logging-format-interpolation',
+    'attribute-defined-outside-init',
+    'protected-access',
+    'comparison-with-callable', # https://github.com/PyCQA/pylint/issues/2757
+    'broad-except',
+    'redefined-builtin',
+]
+
+[tool.pylint.reports]
+score = 'no'
+
+[tool.pylint.typecheck]
+ignored-modules = [
+    'zmq',
+]

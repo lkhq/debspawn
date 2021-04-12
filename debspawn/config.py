@@ -85,7 +85,7 @@ class GlobalConfig:
             return self._dsrun_path
 
         @dsrun_path.setter
-        def dsrun_path(self, v) -> str:
+        def dsrun_path(self, v):
             self._dsrun_path = v
 
         @property

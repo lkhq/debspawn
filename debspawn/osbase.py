@@ -23,6 +23,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from contextlib import contextmanager
+from typing import Optional
 from .utils import temp_dir, print_header, print_section, format_filesize, \
     print_info, print_error, print_warn, listify
 from .utils.env import ensure_root
@@ -533,7 +534,7 @@ class OSBase:
         print_info('Done.')
         return True
 
-    def _copy_command_script_to_instance_dir(self, instance_dir: str, command_script: str) -> str:
+    def _copy_command_script_to_instance_dir(self, instance_dir: str, command_script: str) -> Optional[str]:
         '''
         Copy a script from the host to the current instance directory and make it
         executable.
