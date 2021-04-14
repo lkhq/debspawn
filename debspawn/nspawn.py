@@ -107,6 +107,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
 
     cmd = ['systemd-nspawn']
     cmd.extend(['-M', machine_name])
+    cmd.append('--register=no')
     if full_dev_access:
         cmd.extend(['--bind', '/dev'])
         if systemd_version_atleast(244):
