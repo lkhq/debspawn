@@ -211,7 +211,7 @@ class OSBase:
 
     def _create_internal(self, mirror=None, components=None,
                          extra_suites: list[str] = None, extra_source_lines: str = None,
-                         show_header: bool =True):
+                         show_header: bool = True):
         ''' Create new container base image (internal method) '''
 
         if self.exists():
