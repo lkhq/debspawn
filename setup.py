@@ -99,9 +99,9 @@ setup(
     author_email="matthias@tenstral.net",
     description='Debian package builder and build helper using systemd-nspawn',
     license="LGPL-3.0+",
-    url="https://lkorigin.github.io/",
+    url="https://github.com/lkhq/debspawn",
 
-    python_requires='>=3.5',
+    python_requires='>=3.9',
     platforms=['any'],
     zip_safe=False,
     include_package_data=True,
