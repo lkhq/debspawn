@@ -28,15 +28,9 @@ disable = [
     'logging-format-interpolation',
     'attribute-defined-outside-init',
     'protected-access',
-    'comparison-with-callable', # https://github.com/PyCQA/pylint/issues/2757
     'broad-except',
     'redefined-builtin',
 ]
 
 [tool.pylint.reports]
 score = 'no'
-
-[tool.pylint.typecheck]
-ignored-modules = [
-    'zmq',
-]

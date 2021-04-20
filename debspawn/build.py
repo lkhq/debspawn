@@ -22,8 +22,9 @@ import subprocess
 import shutil
 import platform
 from glob import glob
+from collections.abc import Iterable
 from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_free_space, get_tree_size
-from .utils.misc import temp_dir, cd, format_filesize, version_noepoch
+from .utils.misc import listify, temp_dir, cd, format_filesize, version_noepoch
 from .utils.log import print_header, print_section, print_info, print_warn, print_error, \
     capture_console_output, save_captured_console_output
 from .utils.command import safe_run
@@ -282,9 +283,11 @@ def _read_source_package_details():
     return pkg_sourcename, pkg_version, dsc_fname
 
 
-def _get_build_flags(build_only=None, include_orig=False, maintainer=None, extra_flags=[]):
+def _get_build_flags(build_only=None, include_orig=False, maintainer=None,
+                     extra_flags: Iterable[str] = None):
     import shlex
     buildflags = []
+    extra_flags = listify(extra_flags)
 
     if build_only:
         if build_only == 'binary':
@@ -330,7 +333,7 @@ def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     changes_basename = '{}_{}_{}.changes'.format(spkg_name, spkg_version_noepoch, build_arch)
 
     with switch_unprivileged():
-        proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)])
+        proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)], check=False)
         if proc.returncode != 0:
             print_error('Signing failed.')
             return False
@@ -347,9 +350,11 @@ def _print_system_info():
 
 def build_from_directory(osbase, pkg_dir, *,
                          sign=False, build_only=None, include_orig=False, maintainer=None,
-                         clean_source=False, qa_lintian=False, interact=False, log_build=True, extra_dpkg_flags=[]):
+                         clean_source=False, qa_lintian=False, interact=False, log_build=True,
+                         extra_dpkg_flags: list[str] = None):
     ensure_root()
     osbase.ensure_exists()
+    extra_dpkg_flags = listify(extra_dpkg_flags)
 
     if interact and log_build:
         print_warn('Build log and interactive mode can not be enabled at the same time. Disabling build log.')
@@ -388,7 +393,7 @@ def build_from_directory(osbase, pkg_dir, *,
             if not clean_source:
                 cmd.append('-nc')
 
-            proc = subprocess.run(cmd)
+            proc = subprocess.run(cmd, check=False)
             if proc.returncode != 0:
                 return False
 
@@ -407,7 +412,7 @@ def build_from_directory(osbase, pkg_dir, *,
         with cd(pkg_tmp_dir):
             cmd = ['dpkg-source',
                    '-x', os.path.join(pkg_dir, '..', dsc_fname)]
-            proc = subprocess.run(cmd)
+            proc = subprocess.run(cmd, check=False)
             if proc.returncode != 0:
                 return False
 
@@ -443,9 +448,11 @@ def build_from_directory(osbase, pkg_dir, *,
 
 def build_from_dsc(osbase, dsc_fname, *,
                    sign=False, build_only=None, include_orig=False, maintainer=None,
-                   qa_lintian=False, interact=False, log_build=True, extra_dpkg_flags=[]):
+                   qa_lintian=False, interact=False, log_build=True,
+                   extra_dpkg_flags: Iterable[str] = None):
     ensure_root()
     osbase.ensure_exists()
+    extra_dpkg_flags = listify(extra_dpkg_flags)
 
     if interact and log_build:
         print_warn('Build log and interactive mode can not be enabled at the same time. Disabling build log.')
@@ -468,7 +475,7 @@ def build_from_dsc(osbase, dsc_fname, *,
         with cd(pkg_tmp_dir):
             cmd = ['dpkg-source',
                    '-x', dsc_fname]
-            proc = subprocess.run(cmd)
+            proc = subprocess.run(cmd, check=False)
             if proc.returncode != 0:
                 return False
 

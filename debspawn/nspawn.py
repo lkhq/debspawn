@@ -19,8 +19,10 @@
 
 import os
 import platform
+from typing import Union
 from .utils import temp_dir, print_error, print_warn, print_info, safe_run, run_forwarded
 from .utils.env import colored_output_allowed, unicode_allowed
+from .injectpkg import PackageInjector
 
 
 __systemd_version = None
@@ -67,12 +69,18 @@ def get_nspawn_personality(osbase):
     return None
 
 
-def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], syscall_filter=[]):
+def _execute_sdnspawn(osbase, parameters, machine_name,
+                      allow_permissions: list[str] = None, syscall_filter: list[str] = None):
     '''
     Execute systemd-nspawn with the given parameters.
     Mess around with cgroups if necessary.
     '''
     import sys
+
+    if not allow_permissions:
+        allow_permissions = []
+    if not syscall_filter:
+        syscall_filter = []
 
     capabilities = []
     full_dev_access = False
@@ -136,8 +144,10 @@ def _execute_sdnspawn(osbase, parameters, machine_name, allow_permissions=[], sy
     return proc.returncode
 
 
-def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=[], *,
-                       tmp_apt_cache_dir=None, pkginjector=None, allowed=[], syscall_filter=[], verbose=False):
+def nspawn_run_persist(osbase, base_dir, machine_name, chdir,
+                       command: Union[list[str], str] = None, flags: Union[list[str], str] = None, *,
+                       tmp_apt_cache_dir: str = None, pkginjector: PackageInjector = None,
+                       allowed: list[str] = None, syscall_filter: list[str] = None, verbose: bool = False):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
@@ -178,11 +188,17 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir, command=[], flags=
     return ret
 
 
-def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir, command=[], flags=[], allowed=[], syscall_filter=[]):
+def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir,
+                         command: Union[list[str], str] = None, flags: Union[list[str], str] = None,
+                         allowed: list[str] = None, syscall_filter: list[str] = None):
     if isinstance(command, str):
         command = command.split(' ')
     if isinstance(flags, str):
         flags = flags.split(' ')
+    if not flags:
+        flags = []
+    if not command:
+        command = []
 
     personality = get_nspawn_personality(osbase)
 

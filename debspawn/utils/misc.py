@@ -19,12 +19,13 @@
 
 import os
 import shutil
+from typing import Any
 from pathlib import Path
 from contextlib import contextmanager
 from ..config import GlobalConfig
 
 
-def listify(item):
+def listify(item: Any):
     '''
     Return a list of :item, unless :item already is a lit.
     '''

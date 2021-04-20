@@ -210,12 +210,15 @@ class OSBase:
                     os.remove(fname)
 
     def _create_internal(self, mirror=None, components=None,
-                         extra_suites=[], extra_source_lines=None, show_header=True):
+                         extra_suites: list[str] = None, extra_source_lines: str = None,
+                         show_header: bool =True):
         ''' Create new container base image (internal method) '''
 
         if self.exists():
             print_error('An image already exists for this configuration. Can not create a new one.')
             return False
+        if not extra_suites:
+            extra_suites = []
 
         # ensure image location exists
         Path(self._gconf.osroots_dir).mkdir(parents=True, exist_ok=True)
@@ -252,7 +255,7 @@ class OSBase:
                 cmd.append(mirror)
 
             print_section('Bootstrap')
-            proc = subprocess.run(cmd)
+            proc = subprocess.run(cmd, check=False)
             if proc.returncode != 0:
                 return False
 
@@ -324,7 +327,8 @@ class OSBase:
 
         return True
 
-    def create(self, mirror=None, components=None, extra_suites=[], extra_source_lines=None):
+    def create(self, mirror: str = None, components: list[str] = None,
+               extra_suites: list[str] = None, extra_source_lines: str = None):
         ''' Create new container base image (internal method) '''
         ensure_root()
 
@@ -416,7 +420,7 @@ class OSBase:
 
         print_header('Updating container image')
 
-        with self.new_instance() as (instance_dir, machine_name):
+        with self.new_instance() as (instance_dir, _):
             # ensure helper script runner exists and is up to date
             self._copy_helper_script(instance_dir)
 
@@ -513,7 +517,7 @@ class OSBase:
             print_info('Recreation failed.')
             return False
 
-    def login(self, persistent=False, allowed=[]):
+    def login(self, persistent=False, allowed: list[str] = None):
         ''' Interactive shell login into the container '''
         ensure_root()
 
@@ -523,7 +527,7 @@ class OSBase:
 
         print_header('Login (persistent changes) for {}'.format(self.name)
                      if persistent else 'Login for {}'.format(self.name))
-        with self.new_instance() as (instance_dir, machine_name):
+        with self.new_instance() as (instance_dir, _):
             # ensure helper script runner exists and is up to date
             self._copy_helper_script(instance_dir)
 
@@ -566,7 +570,7 @@ class OSBase:
         return os.path.join('/srv', 'tmp', os.path.basename(host_script))
 
     def run(self, command, build_dir, artifacts_dir, init_command=None, copy_command=False,
-            header_msg=None, allowed=[]):
+            header_msg=None, allowed: list[str] = None):
         ''' Run an arbitrary command or script in the container '''
         ensure_root()
 
@@ -583,6 +587,7 @@ class OSBase:
                 import shlex
                 init_command = shlex.split(init_command)
         init_command = listify(init_command)
+        allowed = listify(allowed)
 
         # ensure we have absolute paths
         if build_dir:

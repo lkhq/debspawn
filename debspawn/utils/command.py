@@ -30,9 +30,11 @@ class SubprocessError(Exception):
         self.err = err
         self.ret = ret
         self.cmd = cmd
+        super(SubprocessError, self).__init__(
+            '%s: %d\n%s' % (str(self.cmd), self.ret, str(self.err)))
 
     def __str__(self):
-        return "%s: %d\n%s" % (str(self.cmd), self.ret, str(self.err))
+        return '%s: %d\n%s' % (str(self.cmd), self.ret, str(self.err))
 
 
 # Input may be a byte string, a unicode string, or a file-like object
@@ -92,4 +94,4 @@ def run_forwarded(command):
             sys.stdout.write(str(line, 'utf-8', 'replace'))
         return proc
     else:
-        return subprocess.run(command)
+        return subprocess.run(command, check=False)

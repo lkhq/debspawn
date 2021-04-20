@@ -55,11 +55,14 @@ jobs:
         python -m flake8 ./ --statistics
         python -m flake8 debspawn/dsrun --statistics
 
-    #- name: Lint (pylint)
-    #  run: |
-    #    python -m pylint -f colorized ./debspawn/
-    #    python -m pylint -f colorized ./debspawn/dsrun
+    - name: Lint (pylint)
+      run: |
+        python -m pylint -f colorized ./debspawn
+        python -m pylint -f colorized ./debspawn/dsrun
+        python -m pylint -f colorized ./tests
+        python -m pylint -f colorized setup.py
 
     - name: Lint (mypy)
       run: |
         python -m mypy .
+        python -m mypy ./debspawn/dsrun

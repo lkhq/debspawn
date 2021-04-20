@@ -21,6 +21,8 @@ import os
 import sys
 import pytest
 
+# pylint: disable=redefined-outer-name
+
 
 @pytest.fixture(scope='session', autouse=True)
 def gconfig():
