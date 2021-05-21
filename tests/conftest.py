@@ -72,12 +72,12 @@ def build_arch():
     '''
     from debspawn.utils.command import safe_run
 
-    out, _, ret = safe_run(['dpkg-architecture', '-q', 'DEB_BUILD_ARCH'])
+    out, _, ret = safe_run(['dpkg', '--print-architecture'])
     assert ret == 0
 
     arch = out.strip()
     if not arch:
-        arch = 'amd64'  # assume arm64 as default
+        arch = 'amd64'  # assume amd64 as default
 
     return arch
 
