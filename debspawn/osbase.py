@@ -57,9 +57,9 @@ class OSBase:
 
     def _make_name(self):
         if not self._arch:
-            out, _, ret = safe_run(['dpkg-architecture', '-qDEB_HOST_ARCH'])
+            out, _, ret = safe_run(['dpkg', '--print-architecture'])
             if ret != 0:
-                raise Exception('Running dpkg-architecture failed: {}'.format(out))
+                raise Exception('Running dpkg --print-architecture failed: {}'.format(out))
 
             self._arch = out.strip()
         if self._variant:
