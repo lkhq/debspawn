@@ -1,3 +1,30 @@
+Version 0.4.2
+~~~~~~~~~~~~~~
+Released: 2021-05-24
+
+Features:
+ * Add "maintain" subcommand to migrate or reset settings & state
+ * Configure APT to not install recommends by default (deb: #987312)
+ * Retry apt updates a few times to protect against bad mirrors
+ * Add tmpfiles.d snippet to manage debspawn's temporary directory
+ * Allow defining custom environment variables for package builds (deb: #986967)
+ * Add maintenance action to update all images
+
+Bugfixes:
+ * Interpret EOF as "No" in interactive override question
+ * Implement privileged device access properly
+ * Move images to the right default location
+ * Don't try to bindmound KVM if it doesn't exist
+ * Use dpkg --print-architecture to determine arch (deb: #987547)
+ * run: Mount builddir in initialization step
+ * Don't register any of our nspawn containers by default
+ * Check system encoding properly (deb: #982793)
+ * Atomically and safely copy files into unsafe environments
+ * Run builds as user with a random free UID (deb: #989049)
+
+Contributors:
+  Helmut Grohne, Matthias Klumpp
+
 Version 0.4.1
 ~~~~~~~~~~~~~~
 Released: 2020-12-22
