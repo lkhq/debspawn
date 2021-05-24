@@ -11,7 +11,7 @@ homepage = "https://github.com/lkhq/debspawn"
 repository = "https://github.com/lkhq/debspawn"
 
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools", "wheel", "pkgconfig"]
 build-backend = "setuptools.build_meta"
 
 [tool.pylint.master]
