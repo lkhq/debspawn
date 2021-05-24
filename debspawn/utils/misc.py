@@ -117,6 +117,14 @@ def safe_copy(src, dst, *, preserve_mtime: bool = True):
             pass
 
 
+def maybe_remove(f):
+    ''' Delete a file if it exists, but do nothing if it doesn't. '''
+    try:
+        os.remove(f)
+    except OSError:
+        pass
+
+
 def format_filesize(num, suffix='B'):
     for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:

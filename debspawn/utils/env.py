@@ -147,6 +147,24 @@ def get_owner_uid_gid():
     return _owner_uid, _owner_gid
 
 
+def get_random_free_uid_gid():
+    ''' Get a random unused UID and GID for the current system. '''
+    import pwd
+    import random
+
+    uid = 1000
+    gid = 1000
+    for pw in pwd.getpwall():
+        if pw.pw_uid > uid:
+            uid = pw.pw_uid
+        if pw.pw_gid > gid:
+            gid = pw.pw_gid
+    # we can not use an extremely large number here, as otherwise the container's
+    # lastlog/faillog will grow to insane sizes
+    r = random.randint(100, 2048)
+    return uid + r, gid + r
+
+
 def colored_output_allowed():
     return (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()) or \
            ('TERM' in os.environ and os.environ['TERM'] == 'ANSI')

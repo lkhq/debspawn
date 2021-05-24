@@ -22,7 +22,8 @@ import subprocess
 import platform
 from glob import glob
 from collections.abc import Iterable
-from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_free_space, get_tree_size
+from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_random_free_uid_gid, \
+    get_free_space, get_tree_size
 from .utils.misc import listify, temp_dir, cd, safe_copy, format_filesize, version_noepoch
 from .utils.log import print_header, print_section, print_info, print_warn, print_error, \
     capture_console_output, save_captured_console_output
@@ -153,6 +154,9 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
     if not build_env:
         build_env = {}
 
+    # get a fresh UID to give to our build user within the container
+    builder_uid = get_random_free_uid_gid()[0]
+
     with osbase.new_instance() as (instance_dir, machine_name):
         # first, check basic requirements
 
@@ -187,6 +191,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
                                           machine_name,
                                           prep_flags,
                                           '/srv',
+                                          build_uid=builder_uid,
                                           nspawn_flags=nspawn_flags,
                                           tmp_apt_cache_dir=aptcache_tmp,
                                           pkginjector=pkginjector)
@@ -207,6 +212,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
                                           machine_name,
                                           helper_flags,
                                           '/srv',
+                                          build_uid=builder_uid,
                                           nspawn_flags=nspawn_flags,
                                           tmp_apt_cache_dir=aptcache_tmp,
                                           pkginjector=pkginjector,
@@ -226,6 +232,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
                                               machine_name,
                                               ['--run-qa', '--lintian'],
                                               '/srv',
+                                              build_uid=builder_uid,
                                               nspawn_flags=nspawn_flags,
                                               tmp_apt_cache_dir=aptcache_tmp,
                                               pkginjector=pkginjector)

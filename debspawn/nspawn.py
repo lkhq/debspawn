@@ -241,7 +241,7 @@ def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir,
                              private_users=private_users)
 
 
-def nspawn_make_helper_cmd(flags):
+def nspawn_make_helper_cmd(flags, build_uid: int):
     if isinstance(flags, str):
         flags = flags.split(' ')
 
@@ -250,15 +250,18 @@ def nspawn_make_helper_cmd(flags):
         cmd.append('--no-color')
     if not unicode_allowed():
         cmd.append('--no-unicode')
+    if build_uid > 0:
+        cmd.append('--buid={}'.format(build_uid))
 
     cmd.extend(flags)
     return cmd
 
 
 def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *,
-                                nspawn_flags: Union[list[str], str] = None, allowed: list[str] = None,
-                                env_vars: dict[str, str] = None, private_users: bool = False):
-    cmd = nspawn_make_helper_cmd(helper_flags)
+                                build_uid: int, nspawn_flags: Union[list[str], str] = None,
+                                allowed: list[str] = None, env_vars: dict[str, str] = None,
+                                private_users: bool = False):
+    cmd = nspawn_make_helper_cmd(helper_flags, build_uid)
     return nspawn_run_ephemeral(base_dir,
                                 machine_name,
                                 chdir,
@@ -270,10 +273,10 @@ def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, ch
 
 
 def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *,
-                              nspawn_flags=[], tmp_apt_cache_dir=None, pkginjector=None,
-                              allowed: list[str] = None, syscall_filter: list[str] = None,
+                              build_uid: int, nspawn_flags=[], tmp_apt_cache_dir=None,
+                              pkginjector=None, allowed: list[str] = None, syscall_filter: list[str] = None,
                               env_vars: dict[str, str] = None, private_users: bool = False):
-    cmd = nspawn_make_helper_cmd(helper_flags)
+    cmd = nspawn_make_helper_cmd(helper_flags, build_uid)
     return nspawn_run_persist(osbase,
                               base_dir,
                               machine_name,

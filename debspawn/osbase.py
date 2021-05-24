@@ -26,7 +26,8 @@ from contextlib import contextmanager
 from typing import Optional
 from .utils import temp_dir, print_header, print_section, format_filesize, \
     print_info, print_error, print_warn, listify
-from .utils.env import ensure_root
+from .utils.misc import maybe_remove
+from .utils.env import ensure_root, get_random_free_uid_gid
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
 from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
@@ -51,6 +52,9 @@ class OSBase:
             self._cachekey = self._cachekey.replace(' ', '')
 
         self._aptcache = APTCache(self)
+
+        # get a fresh UID to give to our build user within the container
+        self._builder_uid = get_random_free_uid_gid()[0]
 
         # ensure we can (de)compress zstd tarballs
         ensure_tar_zstd()
@@ -320,14 +324,17 @@ class OSBase:
                     f.write('APT::Install-Suggests "0";\n')
 
             print_section('Configure')
-            if nspawn_run_helper_persist(self, tdir, self.new_nspawn_machine_name(), '--update') != 0:
+            if nspawn_run_helper_persist(self, tdir,
+                                         self.new_nspawn_machine_name(),
+                                         '--update',
+                                         build_uid=self._builder_uid) != 0:
                 return False
 
             # drop machine-id file, if one exists
-            try:
-                os.remove(os.path.join(tdir, 'etc', 'machine-id'))
-            except OSError:
-                pass
+            maybe_remove(os.path.join(tdir, 'etc', 'machine-id'))
+            # drop logfiles which we want to reset
+            maybe_remove(os.path.join(tdir, 'var', 'log', 'lastlog'))
+            maybe_remove(os.path.join(tdir, 'var', 'log', 'faillog'))
 
             print_section('Creating Tarball')
             self._clear_image_tree(tdir)
@@ -439,7 +446,10 @@ class OSBase:
             self._copy_helper_script(instance_dir)
 
             print_section('Update')
-            if nspawn_run_helper_persist(self, instance_dir, self.new_nspawn_machine_name(), '--update') != 0:
+            if nspawn_run_helper_persist(self, instance_dir,
+                                         self.new_nspawn_machine_name(),
+                                         '--update',
+                                         build_uid=self._builder_uid) != 0:
                 return False
 
             # drop machine-id file, if one exists
@@ -633,7 +643,8 @@ class OSBase:
                                               instance_dir,
                                               machine_name,
                                               '--prepare-run',
-                                              '/srv')
+                                              '/srv',
+                                              build_uid=self._builder_uid)
                 if r != 0:
                     print_error('Container setup failed.')
                     return False
@@ -679,7 +690,8 @@ class OSBase:
                                           instance_dir,
                                           machine_name,
                                           '--prepare-run',
-                                          '/srv')
+                                          '/srv',
+                                          build_uid=self._builder_uid)
             if r != 0:
                 print_error('Container setup failed.')
                 return False
