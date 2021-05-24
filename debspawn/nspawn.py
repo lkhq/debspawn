@@ -150,8 +150,12 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir,
                        allowed: list[str] = None, syscall_filter: list[str] = None, verbose: bool = False):
     if isinstance(command, str):
         command = command.split(' ')
+    elif not command:
+        command = []
     if isinstance(flags, str):
         flags = flags.split(' ')
+    elif not flags:
+        flags = []
 
     personality = get_nspawn_personality(osbase)
 
@@ -193,12 +197,12 @@ def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir,
                          allowed: list[str] = None, syscall_filter: list[str] = None):
     if isinstance(command, str):
         command = command.split(' ')
+    elif not command:
+        command = []
     if isinstance(flags, str):
         flags = flags.split(' ')
-    if not flags:
+    elif not flags:
         flags = []
-    if not command:
-        command = []
 
     personality = get_nspawn_personality(osbase)
 
