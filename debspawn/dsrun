@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2020 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2018-2021 Matthias Klumpp <matthias@tenstral.net>
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
@@ -14,8 +14,8 @@
 # See /usr/share/doc/python3.*-minimal/README.Debian for a list of permitted
 # modules.
 # Additionally, the CLI API of this file should remain as stable as possible,
-# to not introduce odd behavior if a container wasn't updated and is used with
-# a newer debspawn version.
+# to not introduce odd behavior if a container image wasn't updated and is used
+# with a newer debspawn version.
 
 import os
 import sys
