@@ -77,8 +77,9 @@ class install_scripts(install_scripts_orig):
             self.outfiles.append(self._create_manpage(page, man_dir))
 
         # try to install configuration snippets and other data
-        if '/usr/' in self.install_dir:
-            install_root = self.install_dir.split('/usr/', 1)[0]
+        bin_install_dir = str(self.install_dir)
+        if '/usr/' in bin_install_dir:
+            install_root = bin_install_dir.split('/usr/', 1)[0]
             if os.path.isfile('./data/install-data.py') and os.path.isdir(install_root):
                 denv = os.environ
                 denv['PREFIX'] = install_root
