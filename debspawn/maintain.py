@@ -20,10 +20,12 @@
 import os
 import sys
 import shutil
+import json
 from glob import glob
 from .config import GlobalConfig
 from .utils.env import ensure_root
 from .utils.log import print_info, print_warn, print_error
+from .osbase import OSBase
 
 
 def ensure_rmtree_symattack_protection():
@@ -115,3 +117,52 @@ def maintain_purge(gconf: GlobalConfig, force: bool = False):
     if os.path.isdir(default_state_dir):
         print_info('Removing: {}'.format(default_state_dir))
         shutil.rmtree(default_state_dir)
+
+
+def maintain_update_all(gconf: GlobalConfig):
+    ''' Update all container images that we know. '''
+
+    ensure_root()
+
+    osroots_dir = gconf.osroots_dir
+    tar_files = []
+    if os.path.isdir(osroots_dir):
+        tar_files = list(glob(os.path.join(osroots_dir, '*.tar.zst')))
+    if not tar_files:
+        print_info('No container base images have been found!')
+        return
+
+    failed_images = []
+    nodata_images = []
+    first_entry = True
+    for tar_fname in tar_files:
+        img_basepath = os.path.splitext(os.path.splitext(tar_fname)[0])[0]
+        config_fname = img_basepath + '.json'
+        imgid = os.path.basename(img_basepath)
+
+        # read configuration data
+        if not os.path.isfile(config_fname):
+            nodata_images.append(imgid)
+            continue
+
+        with open(config_fname, 'rt') as f:
+            cdata = json.loads(f.read())
+
+        if not first_entry:
+            print()
+        first_entry = False
+        print_info(' ● Update: {}'.format(imgid))
+
+        osbase = OSBase(gconf, cdata['Suite'], cdata['Architecture'], cdata.get('Variant'))
+        r = osbase.update()
+        if not r:
+            print_error('Failed to update {}'.format(imgid))
+            failed_images.append(imgid)
+
+    if nodata_images or failed_images:
+        print()
+    for imgid in nodata_images:
+        print_warn('Could not auto-update image {}: Configuration data is missing.'.format(imgid))
+    if failed_images:
+        print_error('Failed to update image(s): {}'.format(', '.join(failed_images)))
+        sys.exit(1)

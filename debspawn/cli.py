@@ -268,6 +268,10 @@ def command_maintain(options):
         from .maintain import maintain_clear_caches
         maintain_clear_caches(gconf)
         return
+    if options.update_all:
+        from .maintain import maintain_update_all
+        maintain_update_all(gconf)
+        return
     if options.purge:
         from .maintain import maintain_purge
         maintain_purge(gconf, options.yes)
@@ -430,11 +434,13 @@ def create_parser(formatter_class=None):
                     help='The command to run.')
 
     # 'maintain' command
-    sp = subparsers.add_parser('maintain', help='Execute verious maintenance actions, affecting all images')
+    sp = subparsers.add_parser('maintain', help='Execute various maintenance actions, affecting all images')
     sp.add_argument('-y', '--yes', action='store_true', dest='yes',
                     help='Perform dangerous actions without asking twice.')
     sp.add_argument('--migrate', action='store_true', dest='migrate',
                     help='Migrate any settings or configuration changes to the current version of debspawn.')
+    sp.add_argument('--update-all', action='store_true', dest='update_all',
+                    help='Update all container images that we know.')
     sp.add_argument('--clear-caches', action='store_true', dest='clear_caches',
                     help='Delete all cached packages for all images.')
     sp.add_argument('--purge', action='store_true', dest='purge',
