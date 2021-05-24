@@ -18,12 +18,12 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import shutil
 import fcntl
-from typing import Any
+from typing import Any, Optional
 from pathlib import Path
 from contextlib import contextmanager
-from .log import print_warn
 from ..config import GlobalConfig
 
 
@@ -45,17 +45,28 @@ def cd(where):
         os.chdir(ncwd)
 
 
-@contextmanager
-def temp_dir(basename=None):
+def random_string(prefix: Optional[str] = None, count: int = 8):
+    '''
+    Create a string of random alphanumeric characters of a given length,
+    separated with a hyphen from an optional prefix.
+    '''
+
     from random import choice
     from string import ascii_lowercase, digits
 
-    rdm_id = ''.join(choice(ascii_lowercase + digits) for _ in range(8))
-    if basename:
-        dir_name = '{}-{}'.format(basename, rdm_id)
-    else:
-        dir_name = rdm_id
+    if count <= 0:
+        count = 1
+    rdm_id = ''.join(choice(ascii_lowercase + digits) for _ in range(count))
+    if prefix:
+        return '{}-{}'.format(prefix, rdm_id)
+    return rdm_id
 
+
+@contextmanager
+def temp_dir(basename=None):
+    ''' Context manager for a temporary directory in debspawn's temp-dir location. '''
+
+    dir_name = random_string(basename)
     temp_basedir = GlobalConfig().temp_dir
     if not temp_basedir:
         temp_basedir = '/var/tmp/debspawn/'
@@ -70,7 +81,9 @@ def temp_dir(basename=None):
         if fd > 0:
             fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
     except (IOError, OSError):
-        print_warn('Unable to lock temporary directory {}'.format(tmp_path))
+        print('WARNING: Unable to lock temporary directory {}'.format(tmp_path),
+              file=sys.stderr)
+        sys.stderr.flush()
 
     try:
         yield tmp_path
@@ -81,6 +94,27 @@ def temp_dir(basename=None):
         finally:
             if fd > 0:
                 os.close(fd)
+
+
+def safe_copy(src, dst, *, preserve_mtime: bool = True):
+    '''
+    Attempt to safely copy a file, by atomically replacing the destination and
+    protecting against symlink attacks.
+    '''
+    dst_tmp = random_string(dst + '.tmp')
+    try:
+        if preserve_mtime:
+            shutil.copy2(src, dst_tmp)
+        else:
+            shutil.copy(src, dst_tmp)
+        if os.path.islink(dst):
+            os.remove(dst)
+        os.replace(dst_tmp, dst)
+    finally:
+        try:
+            os.remove(dst_tmp)
+        except OSError:
+            pass
 
 
 def format_filesize(num, suffix='B'):

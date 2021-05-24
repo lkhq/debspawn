@@ -19,12 +19,11 @@
 
 import os
 import subprocess
-import shutil
 import platform
 from glob import glob
 from collections.abc import Iterable
 from .utils.env import ensure_root, switch_unprivileged, get_owner_uid_gid, get_free_space, get_tree_size
-from .utils.misc import listify, temp_dir, cd, format_filesize, version_noepoch
+from .utils.misc import listify, temp_dir, cd, safe_copy, format_filesize, version_noepoch
 from .utils.log import print_header, print_section, print_info, print_warn, print_error, \
     capture_console_output, save_captured_console_output
 from .utils.command import safe_run
@@ -130,9 +129,7 @@ def interact_with_build_environment(osbase, instance_dir, machine_name, *,
                             os.makedirs(dest_dir, exist_ok=True)
 
                     print('Copy: {}'.format(rel_fname))
-                    shutil.copy2(fname,
-                                 dest_fname,
-                                 follow_symlinks=False)
+                    safe_copy(fname, dest_fname)
                     os.chown(dest_fname, o_uid, o_gid, follow_symlinks=False)
 
             for rel_fname, fname in known_files.items():
@@ -321,7 +318,7 @@ def _retrieve_artifacts(osbase, tmp_dir):
     for f in glob(os.path.join(tmp_dir, '*.*')):
         if os.path.isfile(f):
             target_fname = os.path.join(osbase.results_dir, os.path.basename(f))
-            shutil.copy2(f, target_fname)
+            safe_copy(f, target_fname)
             os.chown(target_fname, o_uid, o_gid, follow_symlinks=False)
             acount += 1
     print_info('Copied {} files.'.format(acount))

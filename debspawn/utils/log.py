@@ -20,8 +20,8 @@
 import os
 import sys
 import re
-import shutil
 from .env import unicode_allowed
+from .misc import safe_copy
 
 
 def console_supports_color():
@@ -137,7 +137,7 @@ class TwoStreamLogger:
 
     def copy_to(self, fname):
         self.flush()
-        shutil.copy(self._fstream.name, fname)
+        safe_copy(self._fstream.name, fname, preserve_mtime=False)
 
     def isatty(self):
         return self._cstream.isatty()
