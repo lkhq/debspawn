@@ -239,6 +239,29 @@ def command_run(options, custom_command):
         sys.exit(2)
 
 
+def command_maintain(options):
+    ''' Execute global maintenance actions '''
+
+    check_print_version(options)
+    gconf = init_config(options)
+
+    if options.migrate:
+        from .maintain import maintain_migrate
+        maintain_migrate(gconf)
+        return
+    if options.clear_caches:
+        from .maintain import maintain_clear_caches
+        maintain_clear_caches(gconf)
+        return
+    if options.purge:
+        from .maintain import maintain_purge
+        maintain_purge(gconf, options.yes)
+        return
+
+    print('No maintenance action selected!')
+    sys.exit(1)
+
+
 class CustomArgparseFormatter(HelpFormatter):
 
     def _split_lines(self, text, width):
@@ -384,6 +407,18 @@ def create_parser(formatter_class=None):
                           'list of capability names.'))
     sp.add_argument('command', action='store', nargs='*', default=None,
                     help='The command to run.')
+
+    # 'maintain' command
+    sp = subparsers.add_parser('maintain', help='Execute verious maintenance actions, affecting all images')
+    sp.add_argument('-y', '--yes', action='store_true', dest='yes',
+                    help='Perform dangerous actions without asking twice.')
+    sp.add_argument('--migrate', action='store_true', dest='migrate',
+                    help='Migrate any settings or configuration changes to the current version of debspawn.')
+    sp.add_argument('--clear-caches', action='store_true', dest='clear_caches',
+                    help='Delete all cached packages for all images.')
+    sp.add_argument('--purge', action='store_true', dest='purge',
+                    help='Remove all images as well as any data associated with them.')
+    sp.set_defaults(func=command_maintain)
 
     return parser
 
