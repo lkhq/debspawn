@@ -19,9 +19,11 @@
 
 import os
 import shutil
+import fcntl
 from typing import Any
 from pathlib import Path
 from contextlib import contextmanager
+from .log import print_warn
 from ..config import GlobalConfig
 
 
@@ -61,10 +63,24 @@ def temp_dir(basename=None):
     tmp_path = os.path.join(temp_basedir, dir_name)
     Path(tmp_path).mkdir(parents=True, exist_ok=True)
 
+    fd = os.open(tmp_path, os.O_RDONLY)
+    # we hold a shared lock on the directory to prevent systemd-tmpfiles
+    # from deleting it, just in case we are building something for days
+    try:
+        if fd > 0:
+            fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
+    except (IOError, OSError):
+        print_warn('Unable to lock temporary directory {}'.format(tmp_path))
+
     try:
         yield tmp_path
     finally:
-        shutil.rmtree(tmp_path)
+        try:
+            fcntl.flock(fd, fcntl.LOCK_UN)
+            shutil.rmtree(tmp_path)
+        finally:
+            if fd > 0:
+                os.close(fd)
 
 
 def format_filesize(num, suffix='B'):
