@@ -152,6 +152,18 @@ def command_build(options):
     gconf = init_config(options)
     osbase = OSBase(gconf, options.suite, options.arch, options.variant)
 
+    # prepare user-defined environment variables
+    env_vars = {}
+    if options.env_vars:
+        for kv in options.env_vars:
+            p = kv.split('=', 1)
+            if len(p) != 2:
+                print('Environment variable definition `{}` is invalid!'.format(kv))
+                print('Can not continue.')
+                sys.exit(1)
+            env_vars[p[0]] = p[1]
+
+    # prepare user-defined buildflags
     buildflags = []
     if options.buildflags:
         buildflags = options.buildflags.split(';')
@@ -177,7 +189,8 @@ def command_build(options):
                                  qa_lintian=options.lintian,
                                  interact=options.interact,
                                  log_build=not options.no_buildlog,
-                                 extra_dpkg_flags=buildflags)
+                                 extra_dpkg_flags=buildflags,
+                                 build_env=env_vars)
     else:
         r = build_from_dsc(osbase,
                            options.target,
@@ -188,7 +201,8 @@ def command_build(options):
                            qa_lintian=options.lintian,
                            interact=options.interact,
                            log_build=not options.no_buildlog,
-                           extra_dpkg_flags=buildflags)
+                           extra_dpkg_flags=buildflags,
+                           build_env=env_vars)
     if not r:
         sys.exit(2)
 
@@ -373,6 +387,9 @@ def create_parser(formatter_class=None):
     sp.add_argument('-i', '--interact', action='store_true', dest='interact',
                     help=('Run an interactive shell in the build environment after build. This implies `--no-buildlog` '
                           'and disables the log.'))
+    sp.add_argument('-e', '--setenv', action='append', dest='env_vars',
+                    help=('Set an environment variable for the build process. Takes a `key=value` pair any may be '
+                          'defined multiple times to set different environment variables.'))
     sp.add_argument('target', action='store', nargs='?', default=None,
                     help='The source package file or source directory to build.')
     sp.set_defaults(func=command_build)

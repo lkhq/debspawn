@@ -143,12 +143,15 @@ def interact_with_build_environment(osbase, instance_dir, machine_name, *,
 
 
 def internal_execute_build(osbase, pkg_dir, build_only=None, *,
-                           qa_lintian=False, interact=False, source_pkg_dir=None, buildflags=[]):
+                           qa_lintian=False, interact=False, source_pkg_dir=None,
+                           buildflags: list[str] = None, build_env: dict[str, str] = None):
     ''' Perform the actual build on an extracted package directory '''
     assert not build_only or isinstance(build_only, str)
     if not pkg_dir:
         raise Exception('Package directory is missing!')
     pkg_dir = os.path.normpath(pkg_dir)
+    if not build_env:
+        build_env = {}
 
     with osbase.new_instance() as (instance_dir, machine_name):
         # first, check basic requirements
@@ -207,6 +210,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
                                           nspawn_flags=nspawn_flags,
                                           tmp_apt_cache_dir=aptcache_tmp,
                                           pkginjector=pkginjector,
+                                          env_vars=build_env,
                                           syscall_filter=osbase.global_config.syscall_filter)
             # exit, unless we are in interactive mode
             if r != 0 and not interact:
@@ -239,7 +243,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
                                                 aptcache_tmp=aptcache_tmp,
                                                 pkginjector=pkginjector,
                                                 prev_exitcode=r)
-                # exit with status of previous exist code
+                # exit with status of previous exit code
                 if r != 0:
                     return False
 
@@ -348,7 +352,7 @@ def _print_system_info():
 def build_from_directory(osbase, pkg_dir, *,
                          sign=False, build_only=None, include_orig=False, maintainer=None,
                          clean_source=False, qa_lintian=False, interact=False, log_build=True,
-                         extra_dpkg_flags: list[str] = None):
+                         extra_dpkg_flags: list[str] = None, build_env: dict[str, str] = None):
     ensure_root()
     osbase.ensure_exists()
     extra_dpkg_flags = listify(extra_dpkg_flags)
@@ -419,7 +423,8 @@ def build_from_directory(osbase, pkg_dir, *,
                                      qa_lintian=qa_lintian,
                                      interact=interact,
                                      source_pkg_dir=pkg_dir,
-                                     buildflags=buildflags)
+                                     buildflags=buildflags,
+                                     build_env=build_env)
         if not ret:
             return False
 
@@ -445,8 +450,8 @@ def build_from_directory(osbase, pkg_dir, *,
 
 def build_from_dsc(osbase, dsc_fname, *,
                    sign=False, build_only=None, include_orig=False, maintainer=None,
-                   qa_lintian=False, interact=False, log_build=True,
-                   extra_dpkg_flags: Iterable[str] = None):
+                   qa_lintian: bool = False, interact: bool = False, log_build: bool = True,
+                   extra_dpkg_flags: Iterable[str] = None, build_env: dict[str, str] = None):
     ensure_root()
     osbase.ensure_exists()
     extra_dpkg_flags = listify(extra_dpkg_flags)
@@ -498,7 +503,8 @@ def build_from_dsc(osbase, dsc_fname, *,
                                      build_only,
                                      qa_lintian=qa_lintian,
                                      interact=interact,
-                                     buildflags=buildflags)
+                                     buildflags=buildflags,
+                                     build_env=build_env)
         if not ret:
             return False
 
