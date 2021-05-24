@@ -20,6 +20,7 @@
 import os
 import sys
 import pwd
+import time
 import subprocess
 from contextlib import contextmanager
 from argparse import ArgumentParser
@@ -44,7 +45,7 @@ unicode_enabled = True
 color_enabled = True
 
 
-def run_command(cmd, env=None):
+def run_command(cmd, env=None, *, check=True):
     if isinstance(cmd, str):
         cmd = cmd.split(' ')
 
@@ -55,8 +56,12 @@ def run_command(cmd, env=None):
 
     p = subprocess.run(cmd, env=proc_env, check=False)
     if p.returncode != 0:
-        print('Command `{}` failed.'.format(' '.join(cmd)))
-        sys.exit(p.returncode)
+        if check:
+            print('Command `{}` failed.'.format(' '.join(cmd)))
+            sys.exit(p.returncode)
+        else:
+            return False
+    return True
 
 
 def run_apt_command(cmd):
@@ -69,7 +74,17 @@ def run_apt_command(cmd):
                '-o Dpkg::Options::="--force-confnew"']
     apt_cmd.extend(cmd)
 
-    run_command(apt_cmd, env)
+    if cmd == 'update':
+        # retry an apt update a few times, to protect a bit against bad
+        # network connections or a flaky mirror / internal build queue repo
+        for i in range(0, 3):
+            is_last = i == 2
+            if run_command(apt_cmd, env, check=is_last):
+                break
+            print('APT update failed, retrying...')
+            time.sleep(5)
+    else:
+        run_command(apt_cmd, env)
 
 
 def print_textbox(title, tl, hline, tr, vline, bl, br):
