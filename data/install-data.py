@@ -36,7 +36,7 @@ class Installer:
         dst_full = os.path.join(self._prefix, dst, os.path.basename(src))
         Path(os.path.dirname(dst_full)).mkdir(mode=0o755, parents=True, exist_ok=True)
         shutil.copy(src, dst_full)
-        os.chmod(dst_full, 0o755)
+        os.chmod(dst_full, 0o644)
         print('{}\t{}'.format(src, dst_full))
 
 

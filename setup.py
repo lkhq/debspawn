@@ -77,13 +77,14 @@ class install_scripts(install_scripts_orig):
             self.outfiles.append(self._create_manpage(page, man_dir))
 
         # try to install configuration snippets and other data
-        install_root = os.path.normpath(os.path.join(self.install_dir, '..', '..', '..'))
-        if os.path.isfile('./data/install-data.py') and os.path.isdir(install_root):
-            denv = os.environ
-            denv['PREFIX'] = install_root
-            check_call(['./data/install-data.py'], env=denv)
-        else:
-            print('Unable to install externally managed data!')
+        if '/usr/' in self.install_dir:
+            install_root = self.install_dir.split('/usr/', 1)[0]
+            if os.path.isfile('./data/install-data.py') and os.path.isdir(install_root):
+                denv = os.environ
+                denv['PREFIX'] = install_root
+                check_call(['./data/install-data.py'], env=denv)
+            else:
+                print('Unable to install externally managed data!')
 
 
 cmdclass = {
