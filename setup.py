@@ -54,7 +54,7 @@ class install_scripts(install_scripts_orig):
                    'location as well.'), file=sys.stderr)
             print(('Currently, no workarounds for this issue have been implemented in Debspawn itself, so please '
                    'run setup.py with `--single-version-externally-managed`.'), file=sys.stderr)
-            print('If you are using pip, try `sudo pip3 install --no-binary debspawn .`', file=sys.stderr)
+            print('If you are using pip, try `sudo pip install --no-binary debspawn .`', file=sys.stderr)
             sys.exit(1)
 
         self.mkpath(self.install_dir)
@@ -76,6 +76,15 @@ class install_scripts(install_scripts_orig):
         for page in pages:
             self.outfiles.append(self._create_manpage(page, man_dir))
 
+        # try to install configuration snippets and other data
+        install_root = os.path.normpath(os.path.join(self.install_dir, '..', '..', '..'))
+        if os.path.isfile('./data/install-data.py') and os.path.isdir(install_root):
+            denv = os.environ
+            denv['PREFIX'] = install_root
+            check_call(['./data/install-data.py'], env=denv)
+        else:
+            print('Unable to install externally managed data!')
+
 
 cmdclass = {
     'install_scripts': install_scripts,
@@ -90,7 +99,8 @@ package_data = {'': ['debspawn/dsrun']}
 
 scripts = ['debspawn.py']
 
-install_requires = ['toml>=0.10']
+install_requires = ['toml>=0.10',
+                    'pkgconfig']
 
 setup(
     name=__appname__,

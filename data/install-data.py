@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2018-2021 Matthias Klumpp <matthias@tenstral.net>
@@ -12,9 +12,11 @@ from pathlib import Path
 try:
     import pkgconfig
 except ImportError:
+    print()
     print(('Unable to import pkgconfig. Please install the module '
            '(apt install python3-pkgconfig or pip install pkgconfig) '
            'to continue.'))
+    print()
     sys.exit(4)
 
 
@@ -49,5 +51,5 @@ if not pkgconfig.installed('systemd', '>= 240'):
     sys.exit(4)
 
 inst = Installer()
-tmpfiles_dir = pkgconfig.variables('systemd')['tmpfiles_dir']
+tmpfiles_dir = pkgconfig.variables('systemd')['tmpfilesdir']
 inst.install('tmpfiles.d/debspawn.conf', tmpfiles_dir)
