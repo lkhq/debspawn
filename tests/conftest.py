@@ -101,8 +101,7 @@ def testing_container(gconfig, build_arch):
                     base_suite=None)
     r = osbase.create(None,
                       components,
-                      extra_suites,
-                      None)
+                      extra_suites=extra_suites)
     assert r
 
     return (suite, build_arch, variant)
