@@ -69,8 +69,9 @@ def get_nspawn_personality(osbase):
     return None
 
 
-def _execute_sdnspawn(osbase, parameters, machine_name,
-                      allow_permissions: list[str] = None, syscall_filter: list[str] = None):
+def _execute_sdnspawn(osbase, parameters, machine_name, *,
+                      allow_permissions: list[str] = None, syscall_filter: list[str] = None,
+                      private_users: bool = False):
     '''
     Execute systemd-nspawn with the given parameters.
     Mess around with cgroups if necessary.
@@ -116,6 +117,8 @@ def _execute_sdnspawn(osbase, parameters, machine_name,
     cmd = ['systemd-nspawn']
     cmd.extend(['-M', machine_name])
     cmd.append('--register=no')
+    if private_users:
+        cmd.append('-U')  # User namespaces with --private-users=pick --private-users-chown, if possible
     if full_dev_access:
         cmd.extend(['--bind', '/dev'])
         if systemd_version_atleast(244):
@@ -147,7 +150,8 @@ def _execute_sdnspawn(osbase, parameters, machine_name,
 def nspawn_run_persist(osbase, base_dir, machine_name, chdir,
                        command: Union[list[str], str] = None, flags: Union[list[str], str] = None, *,
                        tmp_apt_cache_dir: str = None, pkginjector: PackageInjector = None,
-                       allowed: list[str] = None, syscall_filter: list[str] = None, verbose: bool = False):
+                       allowed: list[str] = None, syscall_filter: list[str] = None,
+                       private_users: bool = False, verbose: bool = False):
     if isinstance(command, str):
         command = command.split(' ')
     elif not command:
@@ -176,7 +180,12 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir,
         osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
 
         # run command in container
-        ret = _execute_sdnspawn(osbase, params, machine_name, allowed, syscall_filter)
+        ret = _execute_sdnspawn(osbase,
+                                params,
+                                machine_name,
+                                allow_permissions=allowed,
+                                syscall_filter=syscall_filter,
+                                private_users=private_users)
 
         # archive APT cache, so future runs of this command are faster
         osbase.aptcache.merge_from_dir(aptcache_tmp_dir)
@@ -194,7 +203,8 @@ def nspawn_run_persist(osbase, base_dir, machine_name, chdir,
 
 def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir,
                          command: Union[list[str], str] = None, flags: Union[list[str], str] = None,
-                         allowed: list[str] = None, syscall_filter: list[str] = None):
+                         allowed: list[str] = None, syscall_filter: list[str] = None,
+                         private_users: bool = False):
     if isinstance(command, str):
         command = command.split(' ')
     elif not command:
@@ -214,7 +224,12 @@ def nspawn_run_ephemeral(osbase, base_dir, machine_name, chdir,
     params.extend(['-aqxD', base_dir])
     params.extend(command)
 
-    return _execute_sdnspawn(osbase, params, machine_name, allowed, syscall_filter)
+    return _execute_sdnspawn(osbase,
+                             params,
+                             machine_name,
+                             allow_permissions=allowed,
+                             syscall_filter=syscall_filter,
+                             private_users=private_users)
 
 
 def nspawn_make_helper_cmd(flags):
@@ -232,18 +247,20 @@ def nspawn_make_helper_cmd(flags):
 
 
 def nspawn_run_helper_ephemeral(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *,
-                                nspawn_flags=[], allowed=[]):
+                                nspawn_flags=[], allowed=[], private_users: bool = False):
     cmd = nspawn_make_helper_cmd(helper_flags)
     return nspawn_run_ephemeral(base_dir,
                                 machine_name,
                                 chdir,
                                 cmd,
-                                nspawn_flags,
-                                allowed)
+                                flags=nspawn_flags,
+                                allowed=allowed,
+                                private_users=private_users)
 
 
 def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdir='/tmp', *,
-                              nspawn_flags=[], tmp_apt_cache_dir=None, pkginjector=None, allowed=[], syscall_filter=[]):
+                              nspawn_flags=[], tmp_apt_cache_dir=None, pkginjector=None,
+                              allowed=[], syscall_filter=[], private_users: bool = False):
     cmd = nspawn_make_helper_cmd(helper_flags)
     return nspawn_run_persist(osbase,
                               base_dir,
@@ -254,4 +271,5 @@ def nspawn_run_helper_persist(osbase, base_dir, machine_name, helper_flags, chdi
                               tmp_apt_cache_dir=tmp_apt_cache_dir,
                               pkginjector=pkginjector,
                               allowed=allowed,
-                              syscall_filter=syscall_filter)
+                              syscall_filter=syscall_filter,
+                              private_users=private_users)
