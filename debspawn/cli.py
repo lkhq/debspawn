@@ -38,8 +38,11 @@ def init_config(options):
     if options.no_unicode:
         set_unicode_allowed(False)
     else:
-        if 'utf-8' not in os.environ.get('LANG', 'utf-8').lower():
-            log.warning('Building with unicode support, but your environment does not seem to support unicode.')
+        import locale
+        current_encoding = locale.getpreferredencoding()
+        if current_encoding.lower() != 'utf-8':
+            log.warning(('Building with unicode support, but your environment does not seem to support unicode. '
+                         '(Encoding is {})').format(current_encoding))
         set_unicode_allowed(True)
 
     if options.owner:
