@@ -92,8 +92,9 @@ def command_create(options):
                     base_suite=options.base_suite)
     r = osbase.create(options.mirror,
                       components,
-                      extra_suites,
-                      options.extra_source_lines)
+                      extra_suites=extra_suites,
+                      extra_source_lines=options.extra_source_lines,
+                      allow_recommends=options.allow_recommends)
     if not r:
         sys.exit(2)
 
@@ -318,6 +319,9 @@ def create_parser(formatter_class=None):
     sp.add_argument('--extra-sourceslist-lines', action='store', dest='extra_source_lines', default=None,
                     help=('Lines that should be added to the build environments source.list verbatim. '
                           'Separate lines by linebreaks.'))
+    sp.add_argument('--allow-recommends', action='store', dest='allow_recommends', default=None,
+                    help=('Do not disable APT installing "recommends"-type dependencies by default, and instead use '
+                          'the default behavior for full, normal system installations with "recommends" enabled.'))
     sp.set_defaults(func=command_create)
 
     # 'delete' command

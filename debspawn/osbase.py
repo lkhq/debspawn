@@ -211,6 +211,7 @@ class OSBase:
 
     def _create_internal(self, mirror=None, components=None,
                          extra_suites: list[str] = None, extra_source_lines: str = None,
+                         allow_recommends: bool = False,
                          show_header: bool = True):
         ''' Create new container base image (internal method) '''
 
@@ -307,6 +308,17 @@ class OSBase:
                         for line in extra_source_lines.split('\\n'):
                             f.write('{}\n'.format(line.strip()))
 
+            # write our default APT settings for this container
+            aptconf_fname = os.path.join(tdir, 'etc', 'apt', 'apt.conf.d', '99debspawn')
+            with open(aptconf_fname, 'w') as f:
+                # fail immediately with a proper exit code when e.g. apt update fails,
+                # so we can retry and don't silently use old packages
+                # (only available with newer APT versions)
+                f.write('APT::Update::Error-Mode "any";\n')
+                if not allow_recommends:
+                    f.write('APT::Install-Recommends "0";\n')
+                    f.write('APT::Install-Suggests "0";\n')
+
             print_section('Configure')
             if nspawn_run_helper_persist(self, tdir, self.new_nspawn_machine_name(), '--update') != 0:
                 return False
@@ -327,8 +339,9 @@ class OSBase:
 
         return True
 
-    def create(self, mirror: str = None, components: list[str] = None,
-               extra_suites: list[str] = None, extra_source_lines: str = None):
+    def create(self, mirror: str = None, components: list[str] = None, *,
+               extra_suites: list[str] = None, extra_source_lines: str = None,
+               allow_recommends: bool = False):
         ''' Create new container base image (internal method) '''
         ensure_root()
 
@@ -340,6 +353,7 @@ class OSBase:
                                     components=components,
                                     extra_suites=extra_suites,
                                     extra_source_lines=extra_source_lines,
+                                    allow_recommends=allow_recommends,
                                     show_header=True)
         if ret:
             print_info('Done.')
@@ -471,6 +485,7 @@ class OSBase:
             components = cdata.get('Components')
             extra_suites = cdata.get('ExtraSuites', [])
             extra_source_lines = cdata.get('ExtraSourceLines')
+            allow_recommends = cdata.get('AllowRecommends', False)
 
         print_section('Deleting cache')
         cache_size = self._aptcache.clear()
@@ -493,6 +508,7 @@ class OSBase:
                                         components=components,
                                         extra_suites=extra_suites,
                                         extra_source_lines=extra_source_lines,
+                                        allow_recommends=allow_recommends,
                                         show_header=False)
         except Exception as e:
             print_error('Error while trying to create image: {}'.format(str(e)))
