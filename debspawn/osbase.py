@@ -34,6 +34,18 @@ from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
 from .aptcache import APTCache
 
 
+def debootstrap_version():
+    ds_version = 'unknown'
+    try:
+        out, _, _ = safe_run(['debootstrap', '--version'])
+        parts = out.strip().split(' ', 2)
+        ds_version = parts[0 if len(parts) < 2 else 1]
+    except Exception as e:
+        print_warn('Unable to determine debootstrap version: {}'.format(e))
+
+    return ds_version
+
+
 class OSBase:
     '''
     Describes an OS base registered with debspawn

@@ -176,7 +176,7 @@ def maintain_print_status(gconf: GlobalConfig):
     '''
     import platform
     from . import __version__
-    from .osbase import print_container_base_image_info
+    from .osbase import print_container_base_image_info, debootstrap_version
     from .nspawn import systemd_version, systemd_detect_virt
 
     print('Debspawn version:', __version__, end='')
@@ -195,8 +195,9 @@ def maintain_print_status(gconf: GlobalConfig):
     print_section('Host System')
     print('OS:', os_release.get('NAME', 'Unknown'), os_release.get('VERSION', '<?>'))
     print('Platform:', platform.platform(aliased=True))
-    print('Systemd-nspawn version:', systemd_version())
     print('Virtualization:', systemd_detect_virt())
+    print('Systemd-nspawn version:', systemd_version())
+    print('Debootstrap version:', debootstrap_version())
 
     print_section('Debspawn')
     print('Version:', __version__)
