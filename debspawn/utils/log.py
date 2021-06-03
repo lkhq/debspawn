@@ -101,6 +101,34 @@ def print_error(*arg):
     sys.stderr.flush()
 
 
+def print_bullet(*arg, large: bool = False, indent: int = 0):
+    '''
+    Prints a bullet point to the console, with a set
+    indentation and style.
+    '''
+    if unicode_allowed():
+        b = '●' if large else '•'
+    else:
+        b = '*'
+    print((' ' * indent) + b, *arg)
+
+
+def print_bool_item(prefix: str, b: bool,
+                    text_true: str = 'yes', text_false: str = 'no'):
+    '''
+    Prints a (colored, if possible) boolean item with a given prefix.
+    '''
+    if console_supports_color():
+        s = '\033[92m{}\033[0m'.format(text_true) if b else '\033[91m{}\033[0m'.format(text_false)
+    else:
+        s = text_true if b else text_false
+    if prefix:
+        print(prefix, s)
+    else:
+        print(prefix)
+    sys.stdout.flush()
+
+
 class TwoStreamLogger:
     '''
     Permits logging messages to stdout/stderr as well as to a file.

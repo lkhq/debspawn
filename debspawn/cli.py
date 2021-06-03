@@ -276,6 +276,10 @@ def command_maintain(options):
         from .maintain import maintain_purge
         maintain_purge(gconf, options.yes)
         return
+    if options.status:
+        from .maintain import maintain_print_status
+        maintain_print_status(gconf)
+        return
 
     print('No maintenance action selected!')
     sys.exit(1)
@@ -445,6 +449,8 @@ def create_parser(formatter_class=None):
                     help='Delete all cached packages for all images.')
     sp.add_argument('--purge', action='store_true', dest='purge',
                     help='Remove all images as well as any data associated with them.')
+    sp.add_argument('--status', action='store_true', dest='status',
+                    help='Display a status summary about this installation, highlighting potential issues.')
     sp.set_defaults(func=command_maintain)
 
     return parser

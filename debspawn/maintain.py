@@ -24,7 +24,8 @@ import json
 from glob import glob
 from .config import GlobalConfig
 from .utils.env import ensure_root
-from .utils.log import print_info, print_warn, print_error
+from .utils.log import print_info, print_warn, print_error, print_bullet, print_section, \
+    print_bool_item
 from .osbase import OSBase
 
 
@@ -151,7 +152,7 @@ def maintain_update_all(gconf: GlobalConfig):
         if not first_entry:
             print()
         first_entry = False
-        print_info(' ● Update: {}'.format(imgid))
+        print_bullet('Update: {}'.format(imgid), indent=1, large=True)
 
         osbase = OSBase(gconf, cdata['Suite'], cdata['Architecture'], cdata.get('Variant'))
         r = osbase.update()
@@ -166,3 +167,47 @@ def maintain_update_all(gconf: GlobalConfig):
     if failed_images:
         print_error('Failed to update image(s): {}'.format(', '.join(failed_images)))
         sys.exit(1)
+
+
+def maintain_print_status(gconf: GlobalConfig):
+    '''
+    Print status information about this Debspawn installation
+    that may be useful for debugging issues.
+    '''
+    import platform
+    from . import __version__
+    from .osbase import print_container_base_image_info
+    from .nspawn import systemd_version, systemd_detect_virt
+
+    print('Debspawn version:', __version__, end='')
+    sys.stdout.flush()
+    print_section('Container image list')
+    print_container_base_image_info(gconf)
+
+    # read distribution information
+    os_release = {}
+    if os.path.exists('/etc/os-release'):
+        with open('/etc/os-release') as f:
+            for line in f:
+                k, v = line.rstrip().split("=")
+                os_release[k] = v.strip('"')
+
+    print_section('Host System')
+    print('OS:', os_release.get('NAME', 'Unknown'), os_release.get('VERSION', '<?>'))
+    print('Platform:', platform.platform(aliased=True))
+    print('Systemd-nspawn version:', systemd_version())
+    print('Virtualization:', systemd_detect_virt())
+
+    print_section('Debspawn')
+    print('Version:', __version__)
+    print_bool_item('Tmpfiles.d configuration:', os.path.isfile('/usr/lib/tmpfiles.d/debspawn.conf'),
+                    text_true='installed', text_false='missing')
+    print_bool_item('Manual pages:', len(glob('/usr/share/man/man1/debspawn*.1.*')) >= 8,
+                    text_true='installed', text_false='missing')
+    if not os.path.isfile('/etc/debspawn/global.toml'):
+        print('Global configuration: default')
+    else:
+        print('Global configuration:')
+        with open('/etc/debspawn/global.toml', 'r') as f:
+            for line in f:
+                print('    ', line)

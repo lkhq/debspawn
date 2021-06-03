@@ -22,6 +22,7 @@ import platform
 from typing import Union
 from .utils import temp_dir, print_error, print_warn, print_info, safe_run, run_forwarded
 from .utils.env import colored_output_allowed, unicode_allowed
+from .utils.command import run_command
 from .injectpkg import PackageInjector
 
 
@@ -43,6 +44,17 @@ def systemd_version():
         print_warn('Unable to determine systemd version: {}'.format(e))
 
     return __systemd_version
+
+
+def systemd_detect_virt():
+    vm_name = 'unknown'
+    try:
+        out, _, _ = run_command(['systemd-detect-virt'])
+        vm_name = out.strip()
+    except Exception as e:
+        print_warn('Unable to determine current virtualization: {}'.format(e))
+
+    return vm_name
 
 
 def systemd_version_atleast(expected_version: int):
