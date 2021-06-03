@@ -145,7 +145,7 @@ The config is a TOML file containing any of the following (all optional) keys:
 * `APTCacheDir`: directory for debspawn's own package cache (`/var/lib/debspawn/aptcache/`)
 * `InjectedPkgsDir`: packages placed in this directory will be available as dependencies for builds (`/var/lib/debspawn/injected-pkgs/`)
 * `TempDir`: temporary directory used for running containers (`/var/tmp/debspawn/`)
-* `AllowUnsafePermissions`: allow usage of risker container permissions, such as binding the host `/dev` and `/proc` into the container (`false`)
+* `AllowUnsafePermissions`: allow usage of riskier container permissions, such as binding the host `/dev` and `/proc` into the container (`false`)
 
 ## FAQ
 
