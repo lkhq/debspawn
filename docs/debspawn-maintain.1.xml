@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!ENTITY date        "<date>18 August, 2018</date>">
+
+  <!ENTITY pagename    "debspawn-maintain">
+  <!ENTITY command     "debspawn maintain">
+]>
+
+<refentry>
+	<refentryinfo>
+	<title>&command;</title>
+	<copyright>
+		<year>2018-2021</year>
+		<holder>Matthias Klumpp</holder>
+	</copyright>
+	<productname>Debspawn</productname>
+	&date;
+	</refentryinfo>
+
+	<refmeta>
+		<refentrytitle>&pagename;</refentrytitle>
+		<manvolnum>1</manvolnum>
+	</refmeta>
+	<refnamediv>
+		<refname>&pagename;</refname>
+		<refpurpose>Run various maintenance actions</refpurpose>
+	</refnamediv>
+
+       <refsynopsisdiv>
+	       <cmdsynopsis>
+		       <command>&command;</command>
+		       @MAINTAIN_FLAGS_SYNOPSIS@
+		</cmdsynopsis>
+	</refsynopsisdiv>
+
+	<refsect1>
+		<title>Description</title>
+		<para>
+			Perform various maintenance actions on <command>debspawn</command>. Actions this subcommand allows
+			will affect generic settings of <command>debspawn</command> or all of its container images at once.
+			It can also be used to display general, useful information about the system and
+			<command>debspawn</command> installation to help with finding setup issues.
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Examples</title>
+		<para>
+			You can update all container images that <command>debspawn</command> knows of in one go:
+		</para>
+		<para>
+			<prompt>$</prompt> <command>&command;</command> --update-all
+		</para>
+		<para>
+			If you want to get information about the current <command>debspawn</command> installation
+			(useful when reporting an issue against it), the <option>--status</option> option will print a
+			status summary and highlight issues:
+		</para>
+		<para>
+			<prompt>$</prompt> <command>&command;</command> --status
+		</para>
+		<para>
+			You can clear all caches for all images to free up disk space (missing data will be downloaded
+			or regenerated again when it is needed):
+		</para>
+		<para>
+			<prompt>$</prompt> <command>&command;</command> --clear-caches
+		</para>
+	</refsect1>
+
+	<refsect1>
+		<title>Options</title>
+
+		<variablelist>
+			@MAINTAIN_FLAGS_ENTRIES@
+		</variablelist>
+	</refsect1>
+
+	<refsect1>
+		<title>See Also</title>
+		<para>debspawn-build(1), debootstrap(1), systemd-nspawn(1).</para>
+	</refsect1>
+<refsect1>
+<title>AUTHOR</title>
+<para>
+	This manual page was written by Matthias Klumpp <email>mak@debian.org</email>.
+</para>
+</refsect1>
+</refentry>
