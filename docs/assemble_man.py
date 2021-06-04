@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2018-2021 Matthias Klumpp <matthias@tenstral.net>
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
 import os
 import sys
 from xml.sax.saxutils import escape as xml_escape
 from functools import reduce
+from subprocess import check_call
 
 sys.path.append("..")
 
@@ -96,6 +102,22 @@ def generate_docbook_pages(build_dir):
                                                 os.path.join(build_dir, os.path.basename(template_fname))))
 
     return xml_manpages
+
+
+def create_manpage(xml_src, out_dir):
+    man_name = os.path.splitext(os.path.basename(xml_src))[0]
+    out_fname = os.path.join(out_dir, man_name)
+
+    print('Generating manual page {}'.format(man_name))
+    check_call(['xsltproc',
+                '--nonet',
+                '--stringparam', 'man.output.quietly', '1',
+                '--stringparam', 'funcsynopsis.style', 'ansi',
+                '--stringparam', 'man.th.extra1.suppress', '1',
+                '-o', out_fname,
+                'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
+                xml_src])
+    return out_fname
 
 
 if __name__ == '__main__':

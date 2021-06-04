@@ -4,30 +4,34 @@ import os
 import sys
 import platform
 import shutil
-
-from debspawn import __appname__, __version__
 from setuptools import setup
 from setuptools.command.install_scripts import install_scripts as install_scripts_orig
 from subprocess import check_call
-from docs.assemble_man import generate_docbook_pages
+
+sys.path.append(os.getcwd())
+from debspawn import __appname__, __version__
+
+
+thisfile = __file__
+if not os.path.isabs(thisfile):
+    thisfile = os.path.normpath(os.path.join(os.getcwd(), thisfile))
+source_root = os.path.dirname(thisfile)
 
 
 class install_scripts(install_scripts_orig):
 
-    def _create_manpage(self, xml_src, out_dir):
-        man_name = os.path.splitext(os.path.basename(xml_src))[0]
-        out_fname = os.path.join(out_dir, man_name)
+    def _check_command(self, command):
+        if not shutil.which(command):
+            print('The "{}" binary was not found. Please install it to continue!'.format(command),
+                  file=sys.stderr)
+            sys.exit(1)
 
-        print('Generating manual page {}'.format(man_name))
-        check_call(['xsltproc',
-                    '--nonet',
-                    '--stringparam', 'man.output.quietly', '1',
-                    '--stringparam', 'funcsynopsis.style', 'ansi',
-                    '--stringparam', 'man.th.extra1.suppress', '1',
-                    '-o', out_fname,
-                    'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
-                    xml_src])
-        return out_fname
+    def _check_commands_available(self):
+        ''' Check if certain commands are available that debspawn needs to work. '''
+        self._check_command('systemd-nspawn')
+        self._check_command('zstd')
+        self._check_command('debootstrap')
+        self._check_command('dpkg')
 
     def run(self):
         if platform.system() == 'Windows':
@@ -38,28 +42,11 @@ class install_scripts(install_scripts_orig):
             self.run_command('build_scripts')
         self.outfiles = []
 
-        # check for xsltproc, we need it to build manual pages
-        if not shutil.which('xsltproc'):
-            print('The "xsltproc" binary was not found. Please install it to continue!')
-            sys.exit(1)
-
         if self.dry_run:
             return
 
-        if '--single-version-externally-managed' not in sys.argv:
-            print()
-            print('Attempting to install Debspawn as binary distribution may not yield a working installation.',
-                  file=sys.stderr)
-            print(('We require a file to be installed in a system location, and manual pages are in an external '
-                   'location as well.'), file=sys.stderr)
-            print(('Currently, no workarounds for this issue have been implemented in Debspawn itself, so please '
-                   'run setup.py with `--single-version-externally-managed`.'), file=sys.stderr)
-            print('If you are using pip, try `sudo pip install --no-binary debspawn .`', file=sys.stderr)
-            sys.exit(1)
-
-        self.mkpath(self.install_dir)
-
         # We want the files to be installed without a suffix on Unix
+        self.mkpath(self.install_dir)
         for infile in self.get_inputs():
             infile = os.path.basename(infile)
             in_built = os.path.join(self.build_dir, infile)
@@ -69,23 +56,30 @@ class install_scripts(install_scripts_orig):
             self.copy_file(in_built, outfile)
             self.outfiles.append(outfile)
 
-        # handle generation of manual pages
-        man_dir = os.path.normpath(os.path.join(self.install_dir, '..', 'share', 'man', 'man1'))
-        self.mkpath(man_dir)
-        pages = generate_docbook_pages(self.build_dir)
-        for page in pages:
-            self.outfiles.append(self._create_manpage(page, man_dir))
-
-        # try to install configuration snippets and other data
+        # try to install configuration snippets, manual pages and other external data
         bin_install_dir = str(self.install_dir)
         if '/usr/' in bin_install_dir:
             install_root = bin_install_dir.split('/usr/', 1)[0]
-            if os.path.isfile('./data/install-data.py') and os.path.isdir(install_root):
-                denv = os.environ
-                denv['PREFIX'] = install_root
-                check_call(['./data/install-data.py'], env=denv)
+            prefix = '/usr/local' if '/usr/local/' in bin_install_dir else '/usr'
+            sysdata_install_script = os.path.join(source_root, 'install-sysdata.py')
+            if os.path.isfile(sysdata_install_script) and os.path.isdir(install_root):
+                check_call([sys.executable,
+                            sysdata_install_script,
+                            '--root', install_root,
+                            '--prefix', prefix])
             else:
-                print('Unable to install externally managed data!')
+                print('Unable to install externally managed data!', file=sys.stderr)
+        else:
+            print(('\n\n ------------------------\n'
+                   'Unable to install external configuration and manual pages!\n'
+                   'While these files are not essential to work with debspawn, they will improve how it runs '
+                   'or are useful as documentation. Please install these files manually by running the `install-sysdata.py` script '
+                   'from debspawn\'s source directory manually as root.\n'
+                   'Installing these external files is not possible when installing e.g. with pip. If `setup.py` is used '
+                   'directly we make an attempt to install the files, but this attempt has failed.'
+                   '\n ------------------------\n\n'),
+                  file=sys.stderr)
+
 
 
 cmdclass = {
@@ -108,9 +102,10 @@ setup(
     version=__version__,
     author="Matthias Klumpp",
     author_email="matthias@tenstral.net",
-    description='Debian package builder and build helper using systemd-nspawn',
+    description='Build Debian packages automatically or interactively in systemd-nspawn containers',
     license="LGPL-3.0+",
     url="https://github.com/lkhq/debspawn",
+    long_description=open(os.path.join(source_root, 'README.md')).read(),
 
     python_requires='>=3.9',
     platforms=['any'],
