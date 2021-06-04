@@ -225,6 +225,19 @@ class OSBase:
                 if os.path.lexists(fname) and not os.path.isdir(fname) and not os.path.ismount(fname):
                     os.remove(fname)
 
+    def _remove_unwanted_files(self, instance_dir):
+        ''' Delete unwanted files from a base image '''
+
+        # drop resolv.conf: Some OSes set this to a symlink, which will lead to nowhere
+        # in the container and may cause issues when bindmounting over it
+        maybe_remove(os.path.join(instance_dir, 'etc', 'resolv.conf'))
+
+        # drop machine-id file, if one exists
+        maybe_remove(os.path.join(instance_dir, 'etc', 'machine-id'))
+        # drop logfiles which we want to reset
+        maybe_remove(os.path.join(instance_dir, 'var', 'log', 'lastlog'))
+        maybe_remove(os.path.join(instance_dir, 'var', 'log', 'faillog'))
+
     def _create_internal(self, mirror=None, components=None,
                          extra_suites: list[str] = None, extra_source_lines: str = None,
                          allow_recommends: bool = False,
@@ -335,6 +348,10 @@ class OSBase:
                     f.write('APT::Install-Recommends "0";\n')
                     f.write('APT::Install-Suggests "0";\n')
 
+            # delete unwanted files, especially resolv.conf as a broken one will
+            # mess with the next step
+            self._remove_unwanted_files(tdir)
+
             print_section('Configure')
             if nspawn_run_helper_persist(self, tdir,
                                          self.new_nspawn_machine_name(),
@@ -342,11 +359,8 @@ class OSBase:
                                          build_uid=self._builder_uid) != 0:
                 return False
 
-            # drop machine-id file, if one exists
-            maybe_remove(os.path.join(tdir, 'etc', 'machine-id'))
-            # drop logfiles which we want to reset
-            maybe_remove(os.path.join(tdir, 'var', 'log', 'lastlog'))
-            maybe_remove(os.path.join(tdir, 'var', 'log', 'faillog'))
+            # drop any unwanted files (again) before building the tarball
+            self._remove_unwanted_files(tdir)
 
             print_section('Creating Tarball')
             self._clear_image_tree(tdir)
@@ -464,11 +478,8 @@ class OSBase:
                                          build_uid=self._builder_uid) != 0:
                 return False
 
-            # drop machine-id file, if one exists
-            try:
-                os.remove(os.path.join(instance_dir, 'etc', 'machine-id'))
-            except OSError:
-                pass
+            # drop unwanted files from the image
+            self._remove_unwanted_files(instance_dir)
 
             print_section('Recreating tarball')
             self.make_instance_permanent(instance_dir)
