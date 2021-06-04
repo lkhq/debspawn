@@ -42,7 +42,7 @@ class Installer:
             prefix = prefix[1:]
         self.prefix = prefix
 
-    def install(self, src, dst):
+    def install(self, src, dst, replace_vars=False):
         if dst.startswith('/'):
             dst = dst[1:]
             dst_full = os.path.join(self.root, dst, os.path.basename(src))
@@ -50,7 +50,13 @@ class Installer:
             dst_full = os.path.join(self.root, self.prefix, dst, os.path.basename(src))
 
         Path(os.path.dirname(dst_full)).mkdir(mode=0o755, parents=True, exist_ok=True)
-        shutil.copy(src, dst_full)
+        if replace_vars:
+            with open(src, 'r') as f_src:
+                with open(dst_full, 'w') as f_dst:
+                    for line in f_src:
+                        f_dst.write(line.replace('@PREFIX@', '/' + self.prefix))
+        else:
+            shutil.copy(src, dst_full)
         os.chmod(dst_full, 0o644)
         print('{}\t\t{}'.format(os.path.basename(src), dst_full))
 
@@ -92,10 +98,13 @@ def install_data(temp_dir: str, root_dir: str, prefix_dir: str):
 
     print('Installing data')
     inst = Installer(root_dir, prefix_dir)
-    tmpfiles_dir = pkgconfig.variables('systemd')['tmpfilesdir']
+    sd_tmpfiles_dir = pkgconfig.variables('systemd')['tmpfilesdir']
+    sd_system_unit_dir = pkgconfig.variables('systemd')['systemdsystemunitdir']
     man_dir = os.path.join('share', 'man', 'man1')
 
-    inst.install('data/tmpfiles.d/debspawn.conf', tmpfiles_dir)
+    inst.install('data/tmpfiles.d/debspawn.conf', sd_tmpfiles_dir)
+    inst.install('data/services/debspawn-clear-caches.timer', sd_system_unit_dir)
+    inst.install('data/services/debspawn-clear-caches.service', sd_system_unit_dir, replace_vars=True)
     for mf in manpage_files:
         inst.install(mf, man_dir)
 

@@ -1,9 +1,18 @@
-# This file is part of debspawn.
+#  This file is part of debspawn.
 #
 # Debspawn is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the license, or
 # (at your option) any later version.
 
-# Ensure debspawn temporary directory is only owned by root and cleaned regularly
-D /var/tmp/debspawn 0755 root root 2d
+[Unit]
+Description=Clear debspawn caches
+Wants=debspawn-clear-caches.timer
+
+[Service]
+Type=oneshot
+ExecStart=@PREFIX@/bin/debspawn maintain --clear-caches
+
+PrivateTmp=true
+PrivateDevices=true
+PrivateNetwork=true

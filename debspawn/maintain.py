@@ -179,10 +179,8 @@ def maintain_print_status(gconf: GlobalConfig):
     from .osbase import print_container_base_image_info, debootstrap_version
     from .nspawn import systemd_version, systemd_detect_virt
 
-    print('Debspawn version:', __version__, end='')
+    print('Debspawn Status Report', end='')
     sys.stdout.flush()
-    print_section('Container image list')
-    print_container_base_image_info(gconf)
 
     # read distribution information
     os_release = {}
@@ -199,10 +197,15 @@ def maintain_print_status(gconf: GlobalConfig):
     print('Systemd-nspawn version:', systemd_version())
     print('Debootstrap version:', debootstrap_version())
 
+    print_section('Container image list')
+    print_container_base_image_info(gconf)
+
     print_section('Debspawn')
     print('Version:', __version__)
     print_bool_item('Tmpfiles.d configuration:', os.path.isfile('/usr/lib/tmpfiles.d/debspawn.conf'),
                     text_true='installed', text_false='missing')
+    print_bool_item('Monthly cache cleanup timer:', os.path.isfile('/lib/systemd/system/debspawn-clear-caches.timer'),
+                    text_true='available', text_false='missing')
     print_bool_item('Manual pages:', len(glob('/usr/share/man/man1/debspawn*.1.*')) >= 8,
                     text_true='installed', text_false='missing')
     if not os.path.isfile('/etc/debspawn/global.toml'):
