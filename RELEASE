@@ -2,10 +2,10 @@ Debspawn Release Notes
 
 1. Write NEWS entries for Debspawn in the same format as usual.
 
-git shortlog v0.4.2.. | grep -i -v trivial | grep -v Merge > NEWS.new
+git shortlog v0.5.0.. | grep -i -v trivial | grep -v Merge > NEWS.new
 
 --------------------------------------------------------------------------------
-Version 0.4.3
+Version 0.5.1
 ~~~~~~~~~~~~~~
 Released: 2021-xx-xx
 
@@ -18,14 +18,19 @@ Bugfixes:
 
 2. Commit changes in Git:
 
-git commit -a -m "Release version 0.4.3"
-git tag -s -f -m "Release 0.4.3" v0.4.3 <gpg password>
+git commit -a -m "Release version 0.5.1"
+git tag -s -f -m "Release 0.5.1" v0.5.1 <gpg password>
 git push --tags
 git push
 
-3. Do post release version bump in `RELEASE` and `debspawn/__init__.py`
+3. Upload to PyPI:
 
-4. Commit trivial changes:
+python setup.py sdist
+twine upload dist/*
+
+4. Do post release version bump in `RELEASE` and `debspawn/__init__.py`
+
+5. Commit trivial changes:
 
 git commit -a -m "trivial: post release version bump"
 git push
