@@ -6,7 +6,7 @@
 # (at your option) any later version.
 
 [Unit]
-Description=Clear all debspawn caches monthly
+Description=Clear all debspawn caches regularly
 
 [Timer]
 OnCalendar=monthly
