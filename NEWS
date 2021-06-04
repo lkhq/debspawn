@@ -1,3 +1,20 @@
+Version 0.5.0
+~~~~~~~~~~~~~~
+Released: 2021-06-04
+
+Features:
+ * First release also available on PyPI!
+ * maintain: Add new flag to print status information
+ * maintain: status: Include debootstrap version in reports
+ * docs: Document the `maintain` subcommand
+ * Install systemd timer to clear all caches monthly
+ * Unconditionally save buildlog
+
+Bugfixes:
+ * Rework how external system files are installed
+ * Include extra data in manifest as well
+ * Fix image creation if resolv.conf is a symlink
+
 Version 0.4.2
 ~~~~~~~~~~~~~~
 Released: 2021-05-24
