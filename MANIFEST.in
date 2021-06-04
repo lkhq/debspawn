@@ -1,1 +1,5 @@
 include debspawn/dsrun
+include install-sysdata.py
+include docs/*
+include data/services/*
+include data/tmpfiles.d/*
