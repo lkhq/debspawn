@@ -9,7 +9,7 @@ from setuptools.command.install_scripts import install_scripts as install_script
 from subprocess import check_call
 
 sys.path.append(os.getcwd())
-from debspawn import __appname__, __version__
+from debspawn import __appname__, __version__  # noqa: E402
 
 
 thisfile = __file__
@@ -73,13 +73,12 @@ class install_scripts(install_scripts_orig):
             print(('\n\n ------------------------\n'
                    'Unable to install external configuration and manual pages!\n'
                    'While these files are not essential to work with debspawn, they will improve how it runs '
-                   'or are useful as documentation. Please install these files manually by running the `install-sysdata.py` script '
-                   'from debspawn\'s source directory manually as root.\n'
-                   'Installing these external files is not possible when installing e.g. with pip. If `setup.py` is used '
-                   'directly we make an attempt to install the files, but this attempt has failed.'
+                   'or are useful as documentation. Please install these files manually by running the '
+                   '`install-sysdata.py` script from debspawn\'s source directory manually as root.\n'
+                   'Installing these external files is not possible when installing e.g. with pip. If `setup.py` is '
+                   'used directly we make an attempt to install the files, but this attempt has failed.'
                    '\n ------------------------\n\n'),
                   file=sys.stderr)
-
 
 
 cmdclass = {
