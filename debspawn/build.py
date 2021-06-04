@@ -416,6 +416,7 @@ def build_from_directory(osbase, pkg_dir, *,
     print_header('Package build')
     print_build_detail(osbase, pkg_sourcename, pkg_version)
 
+    success = False
     with temp_dir(pkg_sourcename) as pkg_tmp_dir:
         with cd(pkg_tmp_dir):
             cmd = ['dpkg-source',
@@ -424,25 +425,28 @@ def build_from_directory(osbase, pkg_dir, *,
             if proc.returncode != 0:
                 return False
 
-        ret = internal_execute_build(osbase,
-                                     pkg_tmp_dir,
-                                     build_only,
-                                     qa_lintian=qa_lintian,
-                                     interact=interact,
-                                     source_pkg_dir=pkg_dir,
-                                     buildflags=buildflags,
-                                     build_env=build_env)
-        if not ret:
-            return False
+        success = internal_execute_build(osbase,
+                                         pkg_tmp_dir,
+                                         build_only,
+                                         qa_lintian=qa_lintian,
+                                         interact=interact,
+                                         source_pkg_dir=pkg_dir,
+                                         buildflags=buildflags,
+                                         build_env=build_env)
 
         # copy build results
-        _retrieve_artifacts(osbase, pkg_tmp_dir)
+        if success:
+            _retrieve_artifacts(osbase, pkg_tmp_dir)
 
     # save buildlog, if we generated one
     log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename,
                                                                             version_noepoch(pkg_version),
                                                                             osbase.arch))
     save_captured_console_output(log_fname)
+
+    # exit, there is nothing more to do if no package was built
+    if not success:
+        return False
 
     # sign the resulting package
     if sign:
@@ -478,6 +482,7 @@ def build_from_dsc(osbase, dsc_fname, *,
 
     _print_system_info()
 
+    success = False
     dsc_fname = os.path.abspath(os.path.normpath(dsc_fname))
     tmp_prefix = os.path.basename(dsc_fname).replace('.dsc', '').replace(' ', '-')
     with temp_dir(tmp_prefix) as pkg_tmp_dir:
@@ -505,24 +510,27 @@ def build_from_dsc(osbase, dsc_fname, *,
             print_header('Package build')
             print_build_detail(osbase, pkg_sourcename, pkg_version)
 
-        ret = internal_execute_build(osbase,
-                                     pkg_tmp_dir,
-                                     build_only,
-                                     qa_lintian=qa_lintian,
-                                     interact=interact,
-                                     buildflags=buildflags,
-                                     build_env=build_env)
-        if not ret:
-            return False
+        success = internal_execute_build(osbase,
+                                         pkg_tmp_dir,
+                                         build_only,
+                                         qa_lintian=qa_lintian,
+                                         interact=interact,
+                                         buildflags=buildflags,
+                                         build_env=build_env)
 
         # copy build results
-        _retrieve_artifacts(osbase, pkg_tmp_dir)
+        if success:
+            _retrieve_artifacts(osbase, pkg_tmp_dir)
 
     # save buildlog, if we generated one
     log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename,
                                                                             version_noepoch(pkg_version),
                                                                             osbase.arch))
     save_captured_console_output(log_fname)
+
+    # build log is saved, but no artifacts are available, so there's nothing more to do
+    if not success:
+        return False
 
     # sign the resulting package
     if sign:
