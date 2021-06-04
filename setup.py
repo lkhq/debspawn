@@ -101,10 +101,11 @@ setup(
     version=__version__,
     author="Matthias Klumpp",
     author_email="matthias@tenstral.net",
-    description='Build Debian packages automatically or interactively in systemd-nspawn containers',
+    description='Easily build Debian packages in systemd-nspawn containers',
     license="LGPL-3.0+",
     url="https://github.com/lkhq/debspawn",
     long_description=open(os.path.join(source_root, 'README.md')).read(),
+    long_description_content_type='text/markdown',
 
     python_requires='>=3.9',
     platforms=['any'],
