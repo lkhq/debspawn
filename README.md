@@ -41,9 +41,9 @@ to start using Debspawn.
 #### Via PyPI
 
 > **⚠ WARNING: Careful when installing via PyPI!**
-> While we do ship `debspawn` on PyPI installable via pip, installing it via pip will not install
-> certain system services to automate cache cleanup and temp data cleanup. In addition to that,
-> all manual pages will be missing. This is due to intentional limitations of packages installed via pip.
+> While we do ship `debspawn` on PyPI, installing it via `pip` will not install certain system services
+> to automate cache cleanup and temp data cleanup. In addition to that, all manual pages will be missing.
+> This is due to intentional limitations of Python packages installed via pip.
 
 If you want to install Debspawn via PyPI anyway, you can use `pip install debspawn`.
 You can decide to install the system data files manually later by running the `install-sysdata.py` script from the
