@@ -151,6 +151,7 @@ def _execute_sdnspawn(osbase, parameters, machine_name, *,
             print_warn('Container has access to host /proc')
     if ro_kmods_access:
         cmd.extend(['--bind-ro', '/lib/modules/'])
+        cmd.extend(['--bind-ro', '/boot/'])
     if capabilities:
         cmd.extend(['--capability', ','.join(capabilities)])
     if syscall_filter:
