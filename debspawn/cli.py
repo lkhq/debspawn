@@ -243,12 +243,21 @@ def command_run(options, custom_command):
     if options.allow:
         allowed = [s.strip() for s in options.allow.split(',')]
 
+    bind_build_dir = options.bind_build_dir
+    if bind_build_dir == 'y':
+        bind_build_dir = 'ro'
+    elif bind_build_dir == 'rw' or bind_build_dir == 'ro':
+        pass
+    else:
+        bind_build_dir = 'n'
+
     r = osbase.run(custom_command,
                    options.build_dir,
                    options.artifacts_dir,
                    init_command=options.init_command,
                    copy_command=options.external_commad,
                    header_msg=options.header,
+                   bind_build_dir=bind_build_dir,
                    allowed=allowed)
     if not r:
         sys.exit(2)
@@ -418,7 +427,11 @@ def create_parser(formatter_class=None):
     sp.add_argument('--artifacts-out', action='store', dest='artifacts_dir', default=None,
                     help='Directory on the host where artifacts can be stored. Mounted to /srv/artifacts in the guest.')
     sp.add_argument('--build-dir', action='store', dest='build_dir', default=None,
-                    help='Select a host directory that gets bind mounted to /srv/build.')
+                    help='Select a host directory that gets copied to /srv/build.')
+    sp.add_argument('--bind-build-dir', action='store', dest='bind_build_dir', default='n',
+                    choices=['y', 'n', 'ro', 'rw'],
+                    help=('Bindmount build directory instead of copying it. Mounts read-only by default, but can mount '
+                          'as writable as well if \'rw\' is passed as value.'))
     sp.add_argument('--cachekey', action='store', dest='cachekey', default=None,
                     help=('If set, use the specified cache-ID to store an initialized container image for faster '
                           'initialization times.\n'

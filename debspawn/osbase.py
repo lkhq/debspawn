@@ -619,7 +619,7 @@ class OSBase:
         return os.path.join('/srv', 'tmp', os.path.basename(host_script))
 
     def run(self, command, build_dir, artifacts_dir, init_command=None, copy_command=False,
-            header_msg=None, allowed: list[str] = None):
+            header_msg=None, bind_build_dir: Optional[str] = None, allowed: list[str] = None):
         ''' Run an arbitrary command or script in the container '''
         ensure_root()
 
@@ -637,10 +637,12 @@ class OSBase:
                 init_command = shlex.split(init_command)
         init_command = listify(init_command)
         allowed = listify(allowed)
+        if bind_build_dir == 'n':
+            bind_build_dir = None
 
         # ensure we have absolute paths
         if build_dir:
-            build_dir = os.path.abspath(build_dir)
+            build_dir = os.path.normpath(os.path.abspath(build_dir))
         if artifacts_dir:
             artifacts_dir = os.path.abspath(artifacts_dir)
 
@@ -652,7 +654,6 @@ class OSBase:
                 # ensure helper script runner exists and is up to date
                 self._copy_helper_script(instance_dir)
 
-                init_nspawn_flags = ['--bind={}:/srv/build/'.format(os.path.normpath(build_dir))]
                 if copy_command:
                     # copy initialization script from host to container
                     host_script = init_command[0]
@@ -678,6 +679,16 @@ class OSBase:
                 for perm in allowed:
                     if perm not in banned_permissions:
                         filtered_allowed.append(perm)
+
+                init_nspawn_flags = []
+                if build_dir:
+                    if not bind_build_dir:
+                        shutil.copytree(build_dir, os.path.join(instance_dir, 'srv', 'build'), dirs_exist_ok=True)
+                    else:
+                        if bind_build_dir == 'rw':
+                            init_nspawn_flags = ['--bind={}:/srv/build/'.format(build_dir)]
+                        elif bind_build_dir == 'ro':
+                            init_nspawn_flags = ['--bind-ro={}:/srv/build/'.format(build_dir)]
                 r = nspawn_run_persist(self,
                                        instance_dir,
                                        machine_name,
@@ -719,6 +730,13 @@ class OSBase:
                 print_error('Container setup failed.')
                 return False
 
+            # Create a few directories we may use for bindmounting if some allow-flags are set,
+            # and which are not commonly present in the base image.
+            # This is only needed for `run` actions, and regular package builds should not require
+            # bindmounts to these directories.
+            os.makedirs(os.path.join(instance_dir, 'lib', 'modules'), exist_ok=True)
+            os.makedirs(os.path.join(instance_dir, 'boot'), exist_ok=True)
+
             print_section('Running Task')
 
             nspawn_flags = []
@@ -726,8 +744,14 @@ class OSBase:
             if artifacts_dir:
                 nspawn_flags.extend(['--bind={}:/srv/artifacts/'.format(os.path.normpath(artifacts_dir))])
             if build_dir:
-                nspawn_flags.extend(['--bind={}:/srv/build/'.format(os.path.normpath(build_dir))])
                 chdir = '/srv/build'
+                if not bind_build_dir:
+                    shutil.copytree(build_dir, os.path.join(instance_dir, 'srv', 'build'), dirs_exist_ok=True)
+                else:
+                    if bind_build_dir == 'rw':
+                        nspawn_flags.extend(['--bind={}:/srv/build/'.format(build_dir)])
+                    elif bind_build_dir == 'ro':
+                        nspawn_flags.extend(['--bind-ro={}:/srv/build/'.format(build_dir)])
 
             r = nspawn_run_persist(self,
                                    instance_dir,
