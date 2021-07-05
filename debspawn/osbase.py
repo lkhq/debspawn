@@ -26,8 +26,8 @@ from contextlib import contextmanager
 from typing import Optional
 from .utils import temp_dir, print_header, print_section, format_filesize, \
     print_info, print_error, print_warn, listify
-from .utils.misc import maybe_remove
-from .utils.env import ensure_root, get_random_free_uid_gid
+from .utils.misc import maybe_remove, safe_copy
+from .utils.env import ensure_root, get_random_free_uid_gid, get_owner_uid_gid
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
 from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
@@ -597,6 +597,23 @@ class OSBase:
         print_info('Done.')
         return True
 
+    def retrieve_artifacts(self, src_dir: str, dest_dir: Optional[str] = None):
+        from glob import glob
+
+        print_section('Retrieving build artifacts')
+        if not dest_dir:
+            dest_dir = self.results_dir
+
+        o_uid, o_gid = get_owner_uid_gid()
+        acount = 0
+        for f in glob(os.path.join(src_dir, '*.*')):
+            if os.path.isfile(f):
+                target_fname = os.path.join(dest_dir, os.path.basename(f))
+                safe_copy(f, target_fname)
+                os.chown(target_fname, o_uid, o_gid, follow_symlinks=False)
+                acount += 1
+        print_info('Copied {} files.'.format(acount))
+
     def _copy_command_script_to_instance_dir(self, instance_dir: str, command_script: str) -> Optional[str]:
         '''
         Copy a script from the host to the current instance directory and make it
@@ -644,7 +661,7 @@ class OSBase:
         if build_dir:
             build_dir = os.path.normpath(os.path.abspath(build_dir))
         if artifacts_dir:
-            artifacts_dir = os.path.abspath(artifacts_dir)
+            artifacts_dir = os.path.normpath(os.path.abspath(artifacts_dir))
 
         if self._cachekey and init_command and not self.cacheimg_exists():
             print_header('Preparing template for `{}`'.format(self._cachekey))
@@ -736,13 +753,11 @@ class OSBase:
             # bindmounts to these directories.
             os.makedirs(os.path.join(instance_dir, 'lib', 'modules'), exist_ok=True)
             os.makedirs(os.path.join(instance_dir, 'boot'), exist_ok=True)
+            os.makedirs(os.path.join(instance_dir, 'srv', 'artifacts'), exist_ok=True)
 
             print_section('Running Task')
-
             nspawn_flags = []
             chdir = '/srv'
-            if artifacts_dir:
-                nspawn_flags.extend(['--bind={}:/srv/artifacts/'.format(os.path.normpath(artifacts_dir))])
             if build_dir:
                 chdir = '/srv/build'
                 if not bind_build_dir:
@@ -762,6 +777,9 @@ class OSBase:
                                    allowed=allowed)
             if r != 0:
                 return False
+
+            # copy results to target directory
+            self.retrieve_artifacts(os.path.join(instance_dir, 'srv', 'artifacts'), artifacts_dir)
 
         print_info('Done.')
         return True

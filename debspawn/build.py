@@ -321,20 +321,6 @@ def _get_build_flags(build_only=None, include_orig=False, maintainer=None,
     return True, buildflags
 
 
-def _retrieve_artifacts(osbase, tmp_dir):
-    print_section('Retrieving build artifacts')
-
-    o_uid, o_gid = get_owner_uid_gid()
-    acount = 0
-    for f in glob(os.path.join(tmp_dir, '*.*')):
-        if os.path.isfile(f):
-            target_fname = os.path.join(osbase.results_dir, os.path.basename(f))
-            safe_copy(f, target_fname)
-            os.chown(target_fname, o_uid, o_gid, follow_symlinks=False)
-            acount += 1
-    print_info('Copied {} files.'.format(acount))
-
-
 def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
     print_section('Signing Package')
     spkg_version_noepoch = version_noepoch(spkg_version)
@@ -436,7 +422,7 @@ def build_from_directory(osbase, pkg_dir, *,
 
         # copy build results
         if success:
-            _retrieve_artifacts(osbase, pkg_tmp_dir)
+            osbase.retrieve_artifacts(pkg_tmp_dir)
 
     # save buildlog, if we generated one
     log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename,
@@ -520,7 +506,7 @@ def build_from_dsc(osbase, dsc_fname, *,
 
         # copy build results
         if success:
-            _retrieve_artifacts(osbase, pkg_tmp_dir)
+            osbase.retrieve_artifacts(pkg_tmp_dir)
 
     # save buildlog, if we generated one
     log_fname = os.path.join(osbase.results_dir, '{}_{}_{}.buildlog'.format(pkg_sourcename,
