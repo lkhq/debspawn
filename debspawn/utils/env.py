@@ -112,9 +112,6 @@ def switch_unprivileged():
     '''
     import pwd
 
-    global _owner_uid
-    global _owner_gid
-
     if _owner_uid == 0 and _owner_gid == 0:
         # we can't really do much here, we have to run
         # as root, as we don't know an unprivileged user
@@ -141,9 +138,6 @@ def switch_unprivileged():
 
 
 def get_owner_uid_gid():
-    global _owner_uid
-    global _owner_gid
-
     return _owner_uid, _owner_gid
 
 
@@ -171,7 +165,6 @@ def colored_output_allowed():
 
 
 def unicode_allowed():
-    global _unicode_allowed
     return _unicode_allowed
 
 

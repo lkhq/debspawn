@@ -30,6 +30,7 @@ disable = [
     'protected-access',
     'broad-except',
     'redefined-builtin',
+    'unspecified-encoding',
 ]
 
 [tool.pylint.reports]

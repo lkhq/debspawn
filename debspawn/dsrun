@@ -108,8 +108,6 @@ def print_textbox(title, tl, hline, tr, vline, bl, br):
 
 
 def print_header(title):
-    global unicode_enabled
-
     if unicode_enabled:
         print_textbox(title, '╔', '═', '╗', '║', '╚', '╝')
     else:
@@ -117,8 +115,6 @@ def print_header(title):
 
 
 def print_section(title):
-    global unicode_enabled
-
     if unicode_enabled:
         print_textbox(title, '┌', '─', '┐', '│', '└', '┘')
     else:
