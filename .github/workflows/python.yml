@@ -72,5 +72,5 @@ jobs:
 
     - name: Lint (mypy)
       run: |
-        python -m mypy --install-types .
+        python -m mypy --install-types --non-interactive .
         python -m mypy ./debspawn/dsrun
