@@ -18,7 +18,7 @@
 from .log import print_info, print_warn, print_error, print_header, print_section
 from .env import colored_output_allowed, unicode_allowed
 from .command import safe_run, run_forwarded
-from .misc import listify, temp_dir, cd, hardlink_or_copy, format_filesize
+from .misc import listify, temp_dir, cd, hardlink_or_copy, format_filesize, rmtree_mntsafe
 
 __all__ = ['print_info',
            'print_warn',
@@ -33,4 +33,5 @@ __all__ = ['print_info',
            'temp_dir',
            'cd',
            'hardlink_or_copy',
-           'format_filesize']
+           'format_filesize',
+           'rmtree_mntsafe']
