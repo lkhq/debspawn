@@ -282,11 +282,36 @@ class OSBase:
         # in the container and may cause issues when bindmounting over it
         maybe_remove(os.path.join(instance_dir, 'etc', 'resolv.conf'))
 
+        # our APT proxy connfiguration should also not be stored, we will reset it every time
+        maybe_remove(os.path.join(instance_dir, 'etc', 'apt', 'apt.conf.d', '98debspawn_proxy'))
+
         # drop machine-id file, if one exists
         maybe_remove(os.path.join(instance_dir, 'etc', 'machine-id'))
         # drop logfiles which we want to reset
         maybe_remove(os.path.join(instance_dir, 'var', 'log', 'lastlog'))
         maybe_remove(os.path.join(instance_dir, 'var', 'log', 'faillog'))
+
+    def _setup_apt_proxy(self, instance_dir):
+        ''' Setup APT proxy configuration.
+        APT needs special treatment even in the container to work with a company proxy (yuck!),
+        so we do this here so the user does not need to care about it.
+        '''
+
+        http_proxy = os.getenv('HTTP_PROXY', os.getenv('http_proxy'))
+        https_proxy = os.getenv('HTTPS_PROXY', os.getenv('https_proxy'))
+        if not http_proxy and not https_proxy:
+            return
+        if http_proxy:
+            http_proxy = http_proxy.replace('"', '')
+        if https_proxy:
+            https_proxy = https_proxy.replace('"', '')
+
+        proxyconf_fname = os.path.join(instance_dir, 'etc', 'apt', 'apt.conf.d', '98debspawn_proxy')
+        with open(proxyconf_fname, 'w') as f:
+            if http_proxy:
+                f.write('Acquire::http::Proxy "{}";\n'.format(http_proxy))
+            if https_proxy:
+                f.write('Acquire::https::Proxy "{}";\n'.format(https_proxy))
 
     def _create_internal(self, mirror=None, components=None,
                          extra_suites: list[str] = None, extra_source_lines: str = None,
@@ -404,6 +429,9 @@ class OSBase:
             # mess with the next step
             self._remove_unwanted_files(tdir)
 
+            # configure APT proxy, so the configure operation will work behind proxys
+            self._setup_apt_proxy(tdir)
+
             print_section('Configure')
             if nspawn_run_helper_persist(self, tdir,
                                          self.new_nspawn_machine_name(),
@@ -482,7 +510,10 @@ class OSBase:
                 image_fname = self.get_cache_image_location()
             else:
                 image_fname = self.get_image_location()
+
             decompress_tarball(image_fname, tdir)
+            self._setup_apt_proxy(tdir)
+
             yield tdir, self.new_nspawn_machine_name()
 
     def make_instance_permanent(self, instance_dir):

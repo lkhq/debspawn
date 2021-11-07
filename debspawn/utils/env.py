@@ -96,6 +96,10 @@ def ensure_root():
         filter_env_far(env, 'DEBFULLNAME')
         filter_env_far(env, 'GPGKEY')
         filter_env_far(env, 'GPG_AGENT_INFO')
+        filter_env_far(env, 'HTTP_PROXY')
+        filter_env_far(env, 'HTTPS_PROXY')
+        filter_env_far(env, 'http_proxy')
+        filter_env_far(env, 'https_proxy')
 
         os.execvp("sudo", ["sudo"] + env + args)
     else:
