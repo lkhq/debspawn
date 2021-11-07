@@ -57,7 +57,8 @@ class OSBase:
         self._suite = suite
         self._base_suite = base_suite
         self._arch = arch
-        self._variant = variant
+
+        self._variant = variant if variant else 'buildd'  # we use the 'buildd' variant by default
         if self._variant == 'default':
             # "default" is an alias to "don't set a variant when invoking debootstrap"
             self._variant = None
