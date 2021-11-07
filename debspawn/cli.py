@@ -89,7 +89,8 @@ def command_create(options):
                     options.suite,
                     options.arch,
                     variant=options.variant,
-                    base_suite=options.base_suite)
+                    base_suite=options.base_suite,
+                    custom_name=options.name)
     r = osbase.create(options.mirror,
                       components,
                       extra_suites=extra_suites,
@@ -107,7 +108,11 @@ def command_delete(options):
         print('No suite name was specified!')
         sys.exit(1)
     gconf = init_config(options)
-    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    osbase = OSBase(gconf,
+                    options.suite,
+                    options.arch,
+                    options.variant,
+                    custom_name=options.name)
     r = osbase.delete()
     if not r:
         sys.exit(2)
@@ -121,7 +126,11 @@ def command_update(options):
         print('Need at least a suite name for update!')
         sys.exit(1)
     gconf = init_config(options)
-    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    osbase = OSBase(gconf,
+                    options.suite,
+                    options.arch,
+                    options.variant,
+                    custom_name=options.name)
     if options.recreate:
         r = osbase.recreate()
     else:
@@ -150,7 +159,11 @@ def command_build(options):
         print('Need at least a suite name for building!')
         sys.exit(1)
     gconf = init_config(options)
-    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    osbase = OSBase(gconf,
+                    options.suite,
+                    options.arch,
+                    options.variant,
+                    custom_name=options.name)
 
     # prepare user-defined environment variables
     env_vars = {}
@@ -215,7 +228,11 @@ def command_login(options):
         print('Need at least a suite name!')
         sys.exit(1)
     gconf = init_config(options)
-    osbase = OSBase(gconf, options.suite, options.arch, options.variant)
+    osbase = OSBase(gconf,
+                    options.suite,
+                    options.arch,
+                    options.variant,
+                    custom_name=options.name)
 
     allowed = []
     if options.allow:
@@ -237,6 +254,7 @@ def command_run(options, custom_command):
                     options.suite,
                     options.arch,
                     options.variant,
+                    custom_name=options.name,
                     cachekey=options.cachekey)
 
     allowed = []
@@ -307,6 +325,8 @@ def add_container_select_arguments(parser):
                         help='Set the bootstrap script variant.')
     parser.add_argument('-a', '--arch', action='store', dest='arch', default=None,
                         help='The architecture of the container.')
+    parser.add_argument('-n', '--name', action='store', dest='name', default=None,
+                        help='Explicitly set a container name (instead of having it derived from the suite name).')
     parser.add_argument('suite', action='store', nargs='?', default=None,
                         help='The suite name of the container.')
 

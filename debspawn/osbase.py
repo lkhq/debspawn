@@ -51,18 +51,24 @@ class OSBase:
     Describes an OS base registered with debspawn
     '''
 
-    def __init__(self, gconf, suite, arch, variant=None, base_suite=None, cachekey=None):
+    def __init__(self, gconf, suite, arch, variant=None, *,
+                 base_suite=None, custom_name=None, cachekey=None):
         self._gconf = gconf
         self._suite = suite
         self._base_suite = base_suite
         self._arch = arch
         self._variant = variant
+        if self._variant == 'default':
+            # "default" is an alias to "don't set a variant when invoking debootstrap"
+            self._variant = None
+        self._custom_name = custom_name
         self._name = self._make_name()
         self._results_dir = self._gconf.results_dir
         self._cachekey = cachekey
         if self._cachekey:
             self._cachekey = self._cachekey.replace(' ', '')
 
+        self._parameters_checked = False
         self._aptcache = APTCache(self)
 
         # get a fresh UID to give to our build user within the container
@@ -78,10 +84,47 @@ class OSBase:
                 raise Exception('Running dpkg --print-architecture failed: {}'.format(out))
 
             self._arch = out.strip()
-        if self._variant:
-            return '{}-{}-{}'.format(self._suite, self._arch, self._variant)
+        if self._custom_name:
+            return self._custom_name
+        elif self._variant:
+            return '{}-{}-{}'.format(self._suite, self._variant, self._arch)
         else:
             return '{}-{}'.format(self._suite, self._arch)
+
+    def _custom_name_parameter_check(self):
+        ''' Read parameters in case a custom name was passed, and perform basic sanity checks. '''
+        import sys
+
+        if self._parameters_checked:
+            return
+        if not self._custom_name:
+            return
+
+        config_fname = self.get_config_location()
+        if not os.path.isfile(config_fname):
+            print_error('No configuration data found for image "{}"!'.format(self.name))
+            sys.exit(3)
+
+        with open(config_fname, 'rt') as f:
+            cdata = json.loads(f.read())
+            if self.suite != cdata.get('Suite', self.suite):
+                print_error('Expected suite name "{}" for image "{}", but got "{}" instead.'.format(
+                    cdata.get('Suite'), self.name, self.suite))
+                sys.exit(1)
+            c_arch = cdata.get('Architecture', self.arch)
+            c_variant = cdata.get('Variant', self.variant)
+
+            if self.arch and self.arch != c_arch:
+                print_warn(('Expected architecture "{}" for image "{}", but got "{}" instead. '
+                            'Using expected value.').format(
+                                c_arch, self.name, self.arch))
+            if self.variant and self.variant != c_variant:
+                print_warn(('Expected variant "{}" for image "{}", but got "{}" instead. '
+                            'Using expected value.').format(
+                                c_variant, self.name, self.variant))
+            self._arch = c_arch
+            self._variant = c_variant
+        self._parameters_checked = True
 
     @property
     def name(self) -> str:
@@ -167,9 +210,16 @@ class OSBase:
         program with an error code in case it does not.
         '''
         import sys
-        if not self.exists():
+        if not self._load_existent():
             print_error('The container image for "{}" does not exist. Please create it first.'.format(self.name))
             sys.exit(3)
+
+    def _load_existent(self) -> bool:
+        ''' Check if image exists, and if so load some essential data and return True. '''
+        # ensure the set config values are sane if the user is using a custom container name
+        if self._custom_name:
+            self._custom_name_parameter_check()
+        return self.exists()
 
     def new_nspawn_machine_name(self):
         import platform
@@ -258,6 +308,8 @@ class OSBase:
         else:
             print_section('Creating new base: {} [{}]'.format(self.suite, self.arch))
 
+        if self._custom_name:
+            print('Custom name: {}'.format(self.name))
         print('Using mirror: {}'.format(mirror if mirror else 'default'))
         if self.variant:
             print('variant: {}'.format(self.variant))
@@ -397,8 +449,8 @@ class OSBase:
         ''' Remove container base image '''
         ensure_root()
 
-        if not self.exists():
-            print_error('Can not delete "{}": The configuration does not exist.'.format(self.name))
+        if not self._load_existent():
+            print_error('Can not delete "{}": This configuration does not exist.'.format(self.name))
             return False
 
         print_header('Removing base image {}'.format(self.name))
@@ -461,8 +513,8 @@ class OSBase:
         ''' Update container base image '''
         ensure_root()
 
-        if not self.exists():
-            print_error('Can not update "{}": The configuration does not exist.'.format(self.name))
+        if not self._load_existent():
+            print_error('Can not update "{}": This configuration does not exist.'.format(self.name))
             return False
 
         print_header('Updating container image')
@@ -497,7 +549,7 @@ class OSBase:
         ''' Recreate a container base image '''
         ensure_root()
 
-        if not self.exists():
+        if not self._load_existent():
             print_error('Can not recreate "{}": The image does not exist.'.format(self.name))
             return False
 
@@ -570,8 +622,8 @@ class OSBase:
         ''' Interactive shell login into the container '''
         ensure_root()
 
-        if not self.exists():
-            print_info('Can not enter "{}": The configuration does not exist.'.format(self.name))
+        if not self._load_existent():
+            print_info('Can not enter "{}": This configuration does not exist.'.format(self.name))
             return False
 
         print_header('Login (persistent changes) for {}'.format(self.name)
@@ -640,7 +692,7 @@ class OSBase:
         ''' Run an arbitrary command or script in the container '''
         ensure_root()
 
-        if not self.exists():
+        if not self._load_existent():
             print_error('Can not run command in "{}": The base image does not exist.'.format(self.name))
             return False
 
