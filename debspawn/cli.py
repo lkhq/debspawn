@@ -397,7 +397,7 @@ def create_parser(formatter_class=None):
     sp = subparsers.add_parser('build', help='Build a package in an isolated environment',
                                formatter_class=formatter_class, aliases=['b'])
     add_container_select_arguments(sp)
-    sp.add_argument('-s', '--sign', action='store_true', dest='sign',
+    sp.add_argument('--sign', action='store_true', dest='sign',
                     help='Sign the resulting package.')
     sp.add_argument('--only', choices=['binary', 'arch', 'indep', 'source'], dest='build_only',
                     help=('CF|Select only a specific set of packages to be built. Choices are:\n'
