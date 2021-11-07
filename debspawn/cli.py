@@ -22,6 +22,7 @@ import sys
 import logging as log
 from argparse import ArgumentParser, HelpFormatter
 from .config import GlobalConfig
+from .utils import print_error
 from .utils.env import set_unicode_allowed, set_owning_user
 from .osbase import OSBase
 
@@ -48,7 +49,7 @@ def init_config(options):
     if options.owner:
         info = options.owner.split(':')
         if len(info) > 2:
-            print('You can only use one colon to split user:group when using the --owner flag.')
+            print_error('You can only use one colon to split user:group when using the --owner flag.')
             sys.exit(1)
         if len(info) == 2:
             user = info[0]
@@ -72,8 +73,8 @@ def command_create(options):
     ''' Create new container image '''
 
     check_print_version(options)
-    if not options.suite:
-        print('Need at least a suite name to bootstrap!')
+    if not options.name:
+        print_error('Need at least a container name (suite name) to bootstrap!')
         sys.exit(1)
     gconf = init_config(options)
 
@@ -104,8 +105,8 @@ def command_delete(options):
     ''' Delete container image '''
 
     check_print_version(options)
-    if not options.suite:
-        print('No suite name was specified!')
+    if not options.name:
+        print_error('No container image name was specified!')
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf,
@@ -122,8 +123,8 @@ def command_update(options):
     ''' Update container image '''
 
     check_print_version(options)
-    if not options.suite:
-        print('Need at least a suite name for update!')
+    if not options.name:
+        print_error('Need at least a container image name for update!')
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf,
@@ -155,8 +156,8 @@ def command_build(options):
     from .build import build_from_directory, build_from_dsc
 
     check_print_version(options)
-    if not options.suite:
-        print('Need at least a suite name for building!')
+    if not options.name:
+        print_error('Need at least a container image or suite name for building!')
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf,
@@ -181,8 +182,8 @@ def command_build(options):
     if options.buildflags:
         buildflags = options.buildflags.split(';')
 
-    if not options.target and os.path.isdir(options.suite):
-        print('A directory is given as parameter, but you are missing a suite parameter to build for.')
+    if not options.target and os.path.isdir(options.name):
+        print('A directory is given as parameter, but you are missing a container-name parameter to build for.')
         print('Can not continue.')
         sys.exit(1)
 
@@ -224,8 +225,8 @@ def command_login(options):
     ''' Open interactive session in a container '''
 
     check_print_version(options)
-    if not options.suite:
-        print('Need at least a suite name!')
+    if not options.name:
+        print_error('Need at least a container image name!')
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf,
@@ -246,8 +247,8 @@ def command_run(options, custom_command):
     ''' Run arbitrary command in container session '''
 
     check_print_version(options)
-    if not options.suite:
-        print('Need at least a suite name!')
+    if not options.name:
+        print_error('Need at least a container image name!')
         sys.exit(1)
     gconf = init_config(options)
     osbase = OSBase(gconf,
@@ -308,7 +309,7 @@ def command_maintain(options):
         maintain_print_status(gconf)
         return
 
-    print('No maintenance action selected!')
+    print_error('No maintenance action selected!')
     sys.exit(1)
 
 
@@ -325,10 +326,10 @@ def add_container_select_arguments(parser):
                         help='Set the bootstrap script variant.')
     parser.add_argument('-a', '--arch', action='store', dest='arch', default=None,
                         help='The architecture of the container.')
-    parser.add_argument('-n', '--name', action='store', dest='name', default=None,
-                        help='Explicitly set a container name (instead of having it derived from the suite name).')
-    parser.add_argument('suite', action='store', nargs='?', default=None,
-                        help='The suite name of the container.')
+    parser.add_argument('--suite', action='store', dest='suite', default=None,
+                        help='Explicitly set a suite name (instead of having it derived from the container name).')
+    parser.add_argument('name', action='store', nargs='?', default=None,
+                        help='The name of the container image (usually a distribution suite name).')
 
 
 def create_parser(formatter_class=None):
@@ -491,7 +492,7 @@ def create_parser(formatter_class=None):
 
 def run(mainfile, args):
     if len(args) == 0:
-        print('Need a subcommand to proceed!')
+        print_error('Need a subcommand to proceed!')
         sys.exit(1)
 
     parser = create_parser()
@@ -503,7 +504,7 @@ def run(mainfile, args):
         for i, arg in enumerate(args):
             if arg == '---':
                 if i + 1 == len(args):
-                    print('No command was given after "---", can not continue.')
+                    print_error('No command was given after "---", can not continue.')
                     sys.exit(1)
                 custom_command = args[i + 1:]
                 args = args[:i]
@@ -517,6 +518,6 @@ def run(mainfile, args):
         command_run(args, custom_command)
     else:
         if not hasattr(args, 'func'):
-            print('Unknown or no subcommand was provided. Can not proceed.')
+            print_error('Unknown or no subcommand was provided. Can not proceed.')
             sys.exit(1)
         args.func(args)

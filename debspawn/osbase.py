@@ -61,6 +61,7 @@ class OSBase:
         if self._variant == 'default':
             # "default" is an alias to "don't set a variant when invoking debootstrap"
             self._variant = None
+
         self._custom_name = custom_name
         self._name = self._make_name()
         self._results_dir = self._gconf.results_dir
@@ -78,6 +79,20 @@ class OSBase:
         ensure_tar_zstd()
 
     def _make_name(self):
+        ''' Configure a unique-ish name based on user defined data,
+        and tweak the custom name and suite values to match. '''
+
+        if self._custom_name and not self._suite:
+            # if we have a custom name but no suite name, the custom name is treated
+            # as our suite name *if* no image exists with the custom name
+            # (this is for backwards compatibility)
+            self._name = self._custom_name
+            if not self.exists():
+                self._suite = self._custom_name
+                self._custom_name = None
+        if self._custom_name == self._suite:
+            self._custom_name = None
+
         if not self._arch:
             out, _, ret = safe_run(['dpkg', '--print-architecture'])
             if ret != 0:
@@ -107,7 +122,14 @@ class OSBase:
 
         with open(config_fname, 'rt') as f:
             cdata = json.loads(f.read())
-            if self.suite != cdata.get('Suite', self.suite):
+
+            c_suite = cdata.get('Suite', self.suite)
+            if not self._suite:
+                # if no suite was set, but we have one in the manifest file,
+                # we will always use it to fill in the gap
+                self._suite = c_suite
+
+            if self.suite != c_suite:
                 print_error('Expected suite name "{}" for image "{}", but got "{}" instead.'.format(
                     cdata.get('Suite'), self.name, self.suite))
                 sys.exit(1)
