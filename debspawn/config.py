@@ -62,6 +62,7 @@ class GlobalConfig:
             self._aptcache_dir = cdata.get('APTCacheDir', '/var/lib/debspawn/aptcache/')
             self._injected_pkgs_dir = cdata.get('InjectedPkgsDir', '/var/lib/debspawn/injected-pkgs/')
             self._temp_dir = cdata.get('TempDir', '/var/tmp/debspawn/')
+            self._default_bootstrap_variant = cdata.get('DefaultBootstrapVariant', 'buildd')
             self._allow_unsafe_perms = cdata.get('AllowUnsafePermissions', False)
 
             self._syscall_filter = cdata.get('SyscallFilter', 'compat')
@@ -109,6 +110,10 @@ class GlobalConfig:
         @property
         def temp_dir(self) -> str:
             return self._temp_dir
+
+        @property
+        def default_bootstrap_variant(self) -> str:
+            return self._default_bootstrap_variant
 
         @property
         def syscall_filter(self) -> list:

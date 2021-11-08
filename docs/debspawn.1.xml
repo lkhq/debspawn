@@ -205,7 +205,18 @@
 			<varlistentry>
 				<term><option>TempDir</option></term>
 				<listitem>
-					<para>Temporary data location (Default: <filename>/var/tmp/debspawn/</filename>)</para>
+					<para>Temporary data location (Default: <filename>/var/tmp/debspawn/</filename>).</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>DefaultBootstrapVariant</option></term>
+				<listitem>
+					<para>
+						Set a default variant used for bootstrapping with debootstrap that gets
+						used if no variant is explicitly set when creating a new image
+						(Default: <literal>buildd</literal>).
+					</para>
 				</listitem>
 			</varlistentry>
 
