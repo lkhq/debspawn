@@ -51,13 +51,19 @@
 			your current machine architecture, you can use:
 		</para>
 		<para>
-			<prompt>$</prompt> <command>&command;</command> sid
+			<prompt>$</prompt> <command>&command;</command> unstable
 		</para>
 		<para>
 			A more advanced example, for building on Ubuntu 18.10 on the x86 architecture:
 		</para>
 		<para>
 			<prompt>$</prompt> <command>&command;</command> --arch=i386 cosmic
+		</para>
+		<para>
+			The suite name is inferred from the container image name given as positional parameter. If it can not be inferred,
+			you will need to pass the <option>--suite</option> parameter with the primary suite name for this image.
+			If a <option>--base-suite</option> is passed and no <option>--suite</option> is set, the image name will automatically
+			be assumed to be for an overlay suite, which may not always be the desired result.
 		</para>
 	</refsect1>
 
