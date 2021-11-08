@@ -154,7 +154,11 @@ def maintain_update_all(gconf: GlobalConfig):
         first_entry = False
         print_bullet('Update: {}'.format(imgid), indent=1, large=True)
 
-        osbase = OSBase(gconf, cdata['Suite'], cdata['Architecture'], cdata.get('Variant'))
+        osbase = OSBase(gconf,
+                        cdata['Suite'],
+                        cdata['Architecture'],
+                        cdata.get('Variant'),
+                        custom_name=os.path.basename(img_basepath))
         r = osbase.update()
         if not r:
             print_error('Failed to update {}'.format(imgid))
