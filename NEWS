@@ -1,3 +1,29 @@
+Version 0.5.1
+~~~~~~~~~~~~~~
+Released: 2021-11-08
+
+Notes:
+ * This release changes the default bootstrap variant to `buildd`, which may result
+   in users needing to pass `--variant=none` to build with existing images, or change
+   the default via Debspawn's global settings.
+ * The image name and suite name have been decoupled, so users can now give images
+   arbitrary names and create multiple ones for different purposes.
+
+Features:
+ * Allow custom container image names, decoupling them from being suite-based
+ * Propagate proxy settings through to APT, debootstrap and nspawn
+ * Default to the 'buildd' bootstrap variant
+ * Make update-all command work with custom image names
+ * Add global config option for default bootstrap variant
+
+Bugfixes:
+ * Give access to /boot as well if read-kmods is passed
+ * run: Copy build directory by default, instead of bindmounting it
+ * run: Retrieve artifacts the same way as regular build artifacts
+ * Unmount any bindmounds when cleaning up temporary directories
+ * man: Document the SyscallFilter config option
+ * man: Clarify new image name / suite relations in ds-create manual page
+
 Version 0.5.0
 ~~~~~~~~~~~~~~
 Released: 2021-06-04
