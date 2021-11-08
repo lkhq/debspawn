@@ -221,6 +221,26 @@
 			</varlistentry>
 
 			<varlistentry>
+				<term><option>SyscallFilter</option></term>
+				<listitem>
+					<para>
+						Set the system call filter used by <command>&package;</command> containers.
+						This will take a list of system call names or set names as described in the
+						"System Call Filtering" section of <literal>systemd.exec(5)</literal>.
+					</para>
+					<para>
+						It also recognizes the special string-only values <code>compat</code> and
+						<code>nspawn-default</code>, where <code>compat</code> will allow
+						enough system calls to permit many builds and tests that would run in a
+						regular <literal>sbuild(1)</literal> chroot to work with <command>&package;</command>
+						as well. By setting <code>nspawn-default</code>, the more restrictive defaults
+						of <literal>systemd-nspawn(1)</literal> are applied.
+						(Default: <literal>compat</literal>)
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
 				<term><option>AllowUnsafePermissions</option></term>
 				<listitem>
 					<para>
