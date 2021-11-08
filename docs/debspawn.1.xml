@@ -214,8 +214,9 @@
 				<listitem>
 					<para>
 						Set a default variant used for bootstrapping with debootstrap that gets
-						used if no variant is explicitly set when creating a new image
-						(Default: <literal>buildd</literal>).
+						used if no variant is explicitly set when creating a new image.
+						Set to <literal>none</literal> to make "no variant" the default.
+						(Default: <literal>buildd</literal>)
 					</para>
 				</listitem>
 			</varlistentry>

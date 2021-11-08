@@ -60,8 +60,8 @@ class OSBase:
 
         # if variant is not passed, we use the configured default
         self._variant = variant if variant else gconf.default_bootstrap_variant
-        if self._variant == 'default':
-            # "default" is an alias to "don't set a variant when invoking debootstrap"
+        if self._variant == 'none':
+            # "none" is an alias to "don't set a variant when invoking debootstrap"
             self._variant = None
 
         self._custom_name = custom_name

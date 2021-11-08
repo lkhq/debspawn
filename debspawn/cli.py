@@ -323,7 +323,7 @@ class CustomArgparseFormatter(HelpFormatter):
 
 def add_container_select_arguments(parser):
     parser.add_argument('--variant', action='store', dest='variant', default=None,
-                        help='Set the bootstrap script variant.')
+                        help='Set the bootstrap script variant (use `none` to use no variant").')
     parser.add_argument('-a', '--arch', action='store', dest='arch', default=None,
                         help='The architecture of the container.')
     parser.add_argument('--suite', action='store', dest='suite', default=None,
