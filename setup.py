@@ -29,6 +29,7 @@ class install_scripts(install_scripts_orig):
     def _check_commands_available(self):
         ''' Check if certain commands are available that debspawn needs to work. '''
         self._check_command('systemd-nspawn')
+        self._check_command('findmnt')
         self._check_command('zstd')
         self._check_command('debootstrap')
         self._check_command('dpkg')
