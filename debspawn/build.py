@@ -184,6 +184,7 @@ def internal_execute_build(osbase, pkg_dir, build_only=None, *,
             # set up the build environment
             nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir)]
             prep_flags = ['--build-prepare']
+            prep_flags.extend(['--suite', osbase.suite])
             if build_only == 'arch':
                 prep_flags.append('--arch-only')
             r = nspawn_run_helper_persist(osbase,

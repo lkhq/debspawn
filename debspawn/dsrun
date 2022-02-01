@@ -168,7 +168,7 @@ def prepare_run():
     return True
 
 
-def prepare_package_build(arch_only=False):
+def prepare_package_build(arch_only=False, suite=None):
     print_section('Preparing container for build')
 
     with eatmydata():
@@ -215,6 +215,11 @@ def prepare_package_build(arch_only=False):
     print_section('Installing package build-dependencies')
     with eatmydata():
         cmd = ['build-dep']
+        # allow installations of packages from the suite we are building
+        # for, needed to use dependencies from a `NotAutomatic` suite
+        # like "experimental".
+        if suite:
+            cmd.extend(['-t', suite])
         if arch_only:
             cmd.append('--arch-only')
         cmd.append('./')
@@ -346,7 +351,7 @@ def main():
         if not r:
             return 2
     elif options.build_prepare:
-        r = prepare_package_build(options.arch_only)
+        r = prepare_package_build(options.arch_only, options.suite)
         if not r:
             return 2
     elif options.build_run:
