@@ -26,7 +26,7 @@ from contextlib import contextmanager
 from typing import Optional
 from .utils import temp_dir, print_header, print_section, format_filesize, \
     print_info, print_error, print_warn, listify
-from .utils.misc import maybe_remove, safe_copy
+from .utils.misc import maybe_remove, safe_copy, rmtree_mntsafe
 from .utils.env import ensure_root, get_random_free_uid_gid, get_owner_uid_gid
 from .utils.command import safe_run
 from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
@@ -314,6 +314,11 @@ class OSBase:
         # drop logfiles which we want to reset
         maybe_remove(os.path.join(instance_dir, 'var', 'log', 'lastlog'))
         maybe_remove(os.path.join(instance_dir, 'var', 'log', 'faillog'))
+
+        # drop APT package caches, we do not want them in the tarballs
+        apt_pkg_cache_dir = os.path.join(instance_dir, 'var', 'cache', 'apt', 'archives')
+        if os.path.isdir(apt_pkg_cache_dir):
+            rmtree_mntsafe(apt_pkg_cache_dir, ignore_errors=True)
 
     def _setup_apt_proxy(self, instance_dir):
         ''' Setup APT proxy configuration.
