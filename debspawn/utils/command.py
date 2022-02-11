@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016-2021 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2016-2022 Matthias Klumpp <matthias@tenstral.net>
 # Copyright (C) 2012-2013 Paul Tagliamonte <paultag@debian.org>
 #
 # Licensed under the GNU Lesser General Public License Version 3
