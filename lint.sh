@@ -20,3 +20,10 @@ echo "=== MyPy ==="
 python -m mypy .
 python -m mypy ./debspawn/dsrun
 echo "✓"
+
+echo "=== Isort ==="
+isort --diff .
+echo "✓"
+
+echo "=== Black ==="
+black --diff .

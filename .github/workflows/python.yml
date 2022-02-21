@@ -47,6 +47,8 @@ jobs:
                pytest
                pylint
                mypy
+               isort
+               black
 
     - name: Build & Install
       run: |
@@ -75,3 +77,9 @@ jobs:
       run: |
         python -m mypy --install-types --non-interactive .
         python -m mypy ./debspawn/dsrun
+
+    - name: Lint (isort)
+      run: isort --diff .
+
+    - name: Lint (black)
+      run: black --diff .
