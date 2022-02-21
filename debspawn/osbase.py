@@ -282,7 +282,9 @@ class OSBase:
 
         return '{}-{}'.format(node_name_prefix, uniq_suffix)
 
-    def _write_config_json(self, mirror, components, extra_suites, extra_source_lines):
+    def _write_config_json(
+        self, mirror, components, extra_suites, extra_source_lines, *, allow_recommends: bool, with_init: bool
+    ):
         '''
         Create configuration file for this container base image
         '''
@@ -299,6 +301,10 @@ class OSBase:
             data['ExtraSuites'] = extra_suites
         if extra_source_lines:
             data['ExtraSourceLines'] = extra_source_lines
+        if allow_recommends:
+            data['AllowRecommends'] = True
+        if with_init:
+            data['IncludesInit'] = True
 
         with open(self.get_config_location(), 'wt') as f:
             f.write(json.dumps(data, sort_keys=True, indent=4))
@@ -364,9 +370,11 @@ class OSBase:
         self,
         mirror=None,
         components=None,
+        *,
         extra_suites: list[str] = None,
         extra_source_lines: str = None,
         allow_recommends: bool = False,
+        with_init: bool = False,
         show_header: bool = True,
     ):
         '''Create new container base image (internal method)'''
@@ -389,8 +397,14 @@ class OSBase:
             print('Custom name: {}'.format(self.name))
         print('Using mirror: {}'.format(mirror if mirror else 'default'))
         if self.variant:
-            print('variant: {}'.format(self.variant))
-        cmd = ['debootstrap', '--arch={}'.format(self.arch), '--include=python3-minimal,eatmydata']
+            print('Variant: {}'.format(self.variant))
+        if with_init:
+            print('Includes init: yes')
+
+        include_pkgs = ['python3-minimal', 'eatmydata']
+        if with_init:
+            include_pkgs.append('systemd-sysv')
+        cmd = ['debootstrap', '--arch={}'.format(self.arch), '--include=' + ','.join(include_pkgs)]
         if components:
             cmd.append('--components={}'.format(','.join(components)))
         if self.variant:
@@ -480,6 +494,27 @@ class OSBase:
                     f.write('APT::Install-Recommends "0";\n')
                     f.write('APT::Install-Suggests "0";\n')
 
+            if with_init:
+                # if we are allowing to boot this container, add a passwordless root login
+                # hack so the user gets a root shell instead of a login prompt
+                getty_override_fname = os.path.join(
+                    tdir, 'etc', 'systemd', 'system', 'console-getty.service.d', 'autorootlogin.conf'
+                )
+                os.makedirs(os.path.dirname(getty_override_fname), exist_ok=True)
+                with open(getty_override_fname, 'w') as f:
+                    # fail immediately with a proper exit code when e.g. apt update fails,
+                    # so we can retry and don't silently use old packages
+                    # (only available with newer APT versions)
+                    f.write(
+                        (
+                            '[Service]\n'
+                            'ExecStart=\n'
+                            'ExecStartPre=-/usr/bin/sed -i \'/pam_loginuid.so/d\' /etc/pam.d/login\n'
+                            'ExecStart=-/sbin/agetty --autologin root --noclear '
+                            '--keep-baud - 115200,38400,9600 $TERM\n'
+                        )
+                    )
+
             # delete unwanted files, especially resolv.conf as a broken one will
             # mess with the next step
             self._remove_unwanted_files(tdir)
@@ -505,7 +540,14 @@ class OSBase:
 
         # store configuration settings, so we can later recreate this tarball
         # or just display information about it
-        self._write_config_json(mirror, components, extra_suites, extra_source_lines)
+        self._write_config_json(
+            mirror,
+            components,
+            extra_suites,
+            extra_source_lines,
+            allow_recommends=allow_recommends,
+            with_init=with_init,
+        )
 
         return True
 
@@ -517,6 +559,7 @@ class OSBase:
         extra_suites: list[str] = None,
         extra_source_lines: str = None,
         allow_recommends: bool = False,
+        with_init: bool = False,
     ):
         '''Create new container base image (internal method)'''
         ensure_root()
@@ -531,6 +574,7 @@ class OSBase:
             extra_suites=extra_suites,
             extra_source_lines=extra_source_lines,
             allow_recommends=allow_recommends,
+            with_init=with_init,
             show_header=True,
         )
         if ret:
@@ -677,6 +721,7 @@ class OSBase:
             extra_suites = cdata.get('ExtraSuites', [])
             extra_source_lines = cdata.get('ExtraSourceLines')
             allow_recommends = cdata.get('AllowRecommends', False)
+            with_init = cdata.get('IncludesInit', False)
 
         print_section('Deleting cache')
         cache_size = self._aptcache.clear()
@@ -701,6 +746,7 @@ class OSBase:
                 extra_suites=extra_suites,
                 extra_source_lines=extra_source_lines,
                 allow_recommends=allow_recommends,
+                with_init=with_init,
                 show_header=False,
             )
         except Exception as e:
@@ -726,7 +772,7 @@ class OSBase:
             print_info('Recreation failed.')
             return False
 
-    def login(self, persistent=False, allowed: list[str] = None):
+    def login(self, persistent=False, *, allowed: list[str] = None, boot: bool = False):
         '''Interactive shell login into the container'''
         ensure_root()
 
@@ -745,7 +791,13 @@ class OSBase:
 
             # run an interactive shell in the new container
             nspawn_run_persist(
-                self, instance_dir, self.new_nspawn_machine_name(), '/srv', verbose=True, allowed=allowed
+                self,
+                instance_dir,
+                self.new_nspawn_machine_name(),
+                '/srv',
+                verbose=True,
+                allowed=allowed,
+                boot=boot,
             )
 
             if persistent:

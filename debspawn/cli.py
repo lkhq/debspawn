@@ -107,6 +107,7 @@ def command_create(options):
         extra_suites=extra_suites,
         extra_source_lines=options.extra_source_lines,
         allow_recommends=options.allow_recommends,
+        with_init=options.with_init,
     )
     if not r:
         sys.exit(2)
@@ -239,7 +240,7 @@ def command_login(options):
     allowed = []
     if options.allow:
         allowed = [s.strip() for s in options.allow.split(',')]
-    r = osbase.login(options.persistent, allowed)
+    r = osbase.login(options.persistent, allowed=allowed, boot=options.boot)
     if not r:
         sys.exit(2)
 
@@ -442,6 +443,12 @@ def create_parser(formatter_class=None):
             'the default behavior for full, normal system installations with "recommends" enabled.'
         ),
     )
+    sp.add_argument(
+        '--with-init',
+        action='store_true',
+        dest='with_init',
+        help='Include an init system in this image, so it is bootable.',
+    )
     sp.set_defaults(func=command_create)
 
     # 'delete' command
@@ -580,6 +587,12 @@ def create_parser(formatter_class=None):
             'List one or more additional permissions to grant the container. Takes a comma-separated '
             'list of capability names.'
         ),
+    )
+    sp.add_argument(
+        '--boot',
+        action='store_true',
+        dest='boot',
+        help='Boot container image (requires the image to contain an init system).',
     )
     sp.set_defaults(func=command_login)
 

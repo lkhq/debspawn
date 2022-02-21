@@ -93,6 +93,7 @@ def _execute_sdnspawn(
     parameters,
     machine_name,
     *,
+    boot: bool = False,
     allow_permissions: list[str] = None,
     syscall_filter: list[str] = None,
     env_vars: dict[str, str] = None,
@@ -147,7 +148,13 @@ def _execute_sdnspawn(
 
     cmd = ['systemd-nspawn']
     cmd.extend(['-M', machine_name])
-    cmd.append('--register=no')
+    if boot:
+        # if we boot the container, we also register it with machinectl, otherwise
+        # we run an unregistered container with the command as PID2
+        cmd.append('-b')
+    else:
+        cmd.append('--register=no')
+        cmd.append('-a')
     if private_users:
         cmd.append('-U')  # User namespaces with --private-users=pick --private-users-chown, if possible
     if full_dev_access:
@@ -198,6 +205,7 @@ def nspawn_run_persist(
     syscall_filter: list[str] = None,
     env_vars: dict[str, str] = None,
     private_users: bool = False,
+    boot: bool = False,
     verbose: bool = False,
 ):
     if isinstance(command, str):
@@ -223,7 +231,7 @@ def nspawn_run_persist(
         if personality:
             params.append('--personality={}'.format(personality))
         params.extend(flags)
-        params.extend(['-a{}D'.format('' if verbose else 'q'), base_dir])
+        params.extend(['-{}D'.format('' if verbose else 'q'), base_dir])
         params.extend(command)
 
         # ensure the temporary apt cache is up-to-date
@@ -238,6 +246,7 @@ def nspawn_run_persist(
             syscall_filter=syscall_filter,
             env_vars=env_vars,
             private_users=private_users,
+            boot=boot,
         )
 
         # archive APT cache, so future runs of this command are faster
@@ -265,6 +274,7 @@ def nspawn_run_ephemeral(
     syscall_filter: list[str] = None,
     env_vars: dict[str, str] = None,
     private_users: bool = False,
+    boot: bool = False,
 ):
     if isinstance(command, str):
         command = command.split(' ')
@@ -281,7 +291,7 @@ def nspawn_run_ephemeral(
     if personality:
         params.append('--personality={}'.format(personality))
     params.extend(flags)
-    params.extend(['-aqxD', base_dir])
+    params.extend(['-qxD', base_dir])
     params.extend(command)
 
     return _execute_sdnspawn(
