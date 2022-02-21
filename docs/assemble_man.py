@@ -7,15 +7,14 @@
 
 import os
 import sys
-from xml.sax.saxutils import escape as xml_escape
 from functools import reduce
 from subprocess import check_call
+from xml.sax.saxutils import escape as xml_escape
 
 sys.path.append("..")
 
 
 class DocbookEditor:
-
     def __init__(self):
         self._replacements = {}
 
@@ -58,7 +57,9 @@ class DocbookEditor:
                                       {}
                                       </para>
                                  </listitem>
-                              </varlistentry>'''.format(options_text, desc_text)
+                              </varlistentry>'''.format(
+                options_text, desc_text
+            )
 
         self.add_substvar('{}_FLAGS_SYNOPSIS'.format(command_name.upper()), flags_text)
         self.add_substvar('{}_FLAGS_ENTRIES'.format(command_name.upper()), flags_entries)
@@ -68,7 +69,9 @@ class DocbookEditor:
         with open(input_fname, 'r') as f:
             template_content = f.read()
 
-        result = reduce(lambda x, y: x.replace(y, self._replacements[y]), self._replacements, template_content)
+        result = reduce(
+            lambda x, y: x.replace(y, self._replacements[y]), self._replacements, template_content
+        )
 
         with open(output_fname, 'w') as f:
             f.write(result)
@@ -98,8 +101,9 @@ def generate_docbook_pages(build_dir):
             print('Manual page template {} is missing! Skipping it.'.format(template_fname))
             continue
 
-        xml_manpages.append(editor.process_file(template_fname,
-                                                os.path.join(build_dir, os.path.basename(template_fname))))
+        xml_manpages.append(
+            editor.process_file(template_fname, os.path.join(build_dir, os.path.basename(template_fname)))
+        )
 
     return xml_manpages
 
@@ -109,14 +113,25 @@ def create_manpage(xml_src, out_dir):
     out_fname = os.path.join(out_dir, man_name)
 
     print('Generating manual page {}'.format(man_name))
-    check_call(['xsltproc',
-                '--nonet',
-                '--stringparam', 'man.output.quietly', '1',
-                '--stringparam', 'funcsynopsis.style', 'ansi',
-                '--stringparam', 'man.th.extra1.suppress', '1',
-                '-o', out_fname,
-                'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
-                xml_src])
+    check_call(
+        [
+            'xsltproc',
+            '--nonet',
+            '--stringparam',
+            'man.output.quietly',
+            '1',
+            '--stringparam',
+            'funcsynopsis.style',
+            'ansi',
+            '--stringparam',
+            'man.th.extra1.suppress',
+            '1',
+            '-o',
+            out_fname,
+            'http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl',
+            xml_src,
+        ]
+    )
     return out_fname
 
 

@@ -20,12 +20,13 @@
 import os
 import sys
 import stat
-import shutil
 import fcntl
+import shutil
 import subprocess
 from typing import Any, Optional
 from pathlib import Path
 from contextlib import contextmanager
+
 from ..config import GlobalConfig
 
 
@@ -54,7 +55,7 @@ def random_string(prefix: Optional[str] = None, count: int = 8):
     '''
 
     from random import choice
-    from string import ascii_lowercase, digits
+    from string import digits, ascii_lowercase
 
     if count <= 0:
         count = 1
@@ -66,7 +67,7 @@ def random_string(prefix: Optional[str] = None, count: int = 8):
 
 @contextmanager
 def temp_dir(basename=None):
-    ''' Context manager for a temporary directory in debspawn's temp-dir location.
+    '''Context manager for a temporary directory in debspawn's temp-dir location.
 
     This function will also ensure that we will not jump into possibly still
     bind-mounted directories upon deletion, and will unmount those directories
@@ -88,8 +89,7 @@ def temp_dir(basename=None):
         if fd > 0:
             fcntl.flock(fd, fcntl.LOCK_SH | fcntl.LOCK_NB)
     except (IOError, OSError):
-        print('WARNING: Unable to lock temporary directory {}'.format(tmp_path),
-              file=sys.stderr)
+        print('WARNING: Unable to lock temporary directory {}'.format(tmp_path), file=sys.stderr)
         sys.stderr.flush()
 
     try:
@@ -125,7 +125,7 @@ def safe_copy(src, dst, *, preserve_mtime: bool = True):
 
 
 def maybe_remove(f):
-    ''' Delete a file if it exists, but do nothing if it doesn't. '''
+    '''Delete a file if it exists, but do nothing if it doesn't.'''
     try:
         os.remove(f)
     except OSError:
@@ -141,15 +141,16 @@ def format_filesize(num, suffix='B'):
 
 
 def current_time_string():
-    ''' Get the current time as human-readable string. '''
+    '''Get the current time as human-readable string.'''
 
     from datetime import datetime, timezone
+
     utc_dt = datetime.now(timezone.utc)
     return utc_dt.astimezone().strftime('%Y-%m-%d %H:%M:%S UTC%z')
 
 
 def version_noepoch(version):
-    ''' Return version from :version without epoch. '''
+    '''Return version from :version without epoch.'''
 
     version_noe = version
     if ':' in version_noe:
@@ -158,7 +159,7 @@ def version_noepoch(version):
 
 
 def hardlink_or_copy(src, dst):
-    ''' Hardlink a file :src to :dst or copy the file in case linking is not possible '''
+    '''Hardlink a file :src to :dst or copy the file in case linking is not possible'''
 
     try:
         os.link(src, dst)
@@ -179,22 +180,19 @@ def is_mountpoint(path) -> bool:
     if os.path.ismount(path):
         return True
 
-    ret = subprocess.run(['findmnt', '-M', str(path)],
-                         capture_output=True,
-                         check=False)
+    ret = subprocess.run(['findmnt', '-M', str(path)], capture_output=True, check=False)
     if ret.returncode == 0:
         return True
     return False
 
 
 def bindmount(from_path, to_path):
-    ''' Create a bindmount point.'''
+    '''Create a bindmount point.'''
 
     cmd = ['mount', '--bind', from_path, to_path]
     ret = subprocess.run(cmd, capture_output=True, check=False)
     if ret.returncode != 0:
-        raise Exception('Unable to create bindmount {} -> {}'.format(
-            from_path, to_path))
+        raise Exception('Unable to create bindmount {} -> {}'.format(from_path, to_path))
 
 
 def umount(path, lazy: bool = True):
@@ -262,8 +260,7 @@ def _rmtree_mntsafe_fd(topfd, path, onerror):
                             # This can only happen if someone replaces
                             # a directory with a symlink after the call to
                             # os.scandir or stat.S_ISDIR above.
-                            raise OSError("Cannot call rmtree on a symbolic "
-                                          "link")
+                            raise OSError("Cannot call rmtree on a symbolic " "link")
                         except OSError:
                             onerror(os.path.islink, fullname, sys.exc_info())
                 finally:
@@ -292,6 +289,7 @@ def rmtree_mntsafe(path, ignore_errors=False, onerror=None):
         # pylint: disable=function-redefined
         def onerror(*args):
             pass
+
     elif onerror is None:
         # pylint: disable=misplaced-bare-raise
         def onerror(*args):

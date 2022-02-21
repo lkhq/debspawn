@@ -28,7 +28,7 @@ def test_container_create_delete(gconfig, testing_container):
 
 
 def test_container_update(gconfig, testing_container):
-    ''' Update a container '''
+    '''Update a container'''
 
     suite, arch, variant = testing_container
     osbase = OSBase(gconfig, suite, arch, variant)
@@ -36,7 +36,7 @@ def test_container_update(gconfig, testing_container):
 
 
 def test_container_recreate(gconfig, testing_container):
-    ''' Test recreating a container '''
+    '''Test recreating a container'''
 
     suite, arch, variant = testing_container
     osbase = OSBase(gconfig, suite, arch, variant)

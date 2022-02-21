@@ -19,8 +19,8 @@
 
 import os
 import sys
-import toml
 
+import toml
 
 thisfile = __file__
 if not os.path.isabs(thisfile):
@@ -48,13 +48,20 @@ class GlobalConfig:
                     try:
                         cdata = toml.load(f)
                     except toml.TomlDecodeError as e:
-                        print('Unable to parse global configuration (global.toml): {}'.format(str(e)), file=sys.stderr)
+                        print(
+                            'Unable to parse global configuration (global.toml): {}'.format(str(e)),
+                            file=sys.stderr,
+                        )
                         sys.exit(8)
 
             self._dsrun_path = os.path.normpath(os.path.join(thisfile, '..', 'dsrun'))
             if not os.path.isfile(self._dsrun_path):
-                print('Debspawn is not set up properly: Unable to find file "{}". Can not continue.'.format(
-                    self._dsrun_path), file=sys.stderr)
+                print(
+                    'Debspawn is not set up properly: Unable to find file "{}". Can not continue.'.format(
+                        self._dsrun_path
+                    ),
+                    file=sys.stderr,
+                )
                 sys.exit(4)
 
             self._osroots_dir = cdata.get('OSImagesDir', '/var/lib/debspawn/images/')
@@ -69,18 +76,20 @@ class GlobalConfig:
             if self._syscall_filter == 'compat':
                 # permit some system calls known to be needed by packages that sbuild & Co.
                 # build without problems.
-                self._syscall_filter = ['@memlock',
-                                        '@pkey',
-                                        '@clock',
-                                        '@cpu-emulation']
+                self._syscall_filter = ['@memlock', '@pkey', '@clock', '@cpu-emulation']
             elif self._syscall_filter == 'nspawn-default':
                 # make no additional changes, so nspawn's built-in defaults are used
                 self._syscall_filter = []
             else:
                 if type(self._syscall_filter) is not list:
-                    print(('Configuration error (global.toml): Entry "SyscallFilter" needs to be either a string value '
-                           '("compat" or "nspawn-default"), or a list of permissible system call names as listed by '
-                           'the syscall-filter command of systemd-analyze(1)'), file=sys.stderr)
+                    print(
+                        (
+                            'Configuration error (global.toml): Entry "SyscallFilter" needs to be either a '
+                            'string value ("compat" or "nspawn-default"), or a list of permissible '
+                            'system call names as listed by the syscall-filter command of systemd-analyze(1)'
+                        ),
+                        file=sys.stderr,
+                    )
                     sys.exit(8)
 
         @property

@@ -14,18 +14,23 @@ import os
 import sys
 import shutil
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from argparse import ArgumentParser
+from tempfile import TemporaryDirectory
+
 try:
     import pkgconfig
 except ImportError:
     print()
-    print(('Unable to import pkgconfig. Please install the module '
-           '(apt install python3-pkgconfig or pip install pkgconfig) '
-           'to continue.'))
+    print(
+        (
+            'Unable to import pkgconfig. Please install the module '
+            '(apt install python3-pkgconfig or pip install pkgconfig) '
+            'to continue.'
+        )
+    )
     print()
     sys.exit(4)
-from docs.assemble_man import generate_docbook_pages, create_manpage
+from docs.assemble_man import create_manpage, generate_docbook_pages
 
 
 class Installer:
@@ -69,7 +74,7 @@ def chdir_to_source_root():
 
 
 def make_manpages(temp_dir):
-    ''' Build manual pages '''
+    '''Build manual pages'''
 
     # check for xsltproc, we need it to build manual pages
     if not shutil.which('xsltproc'):
@@ -112,10 +117,16 @@ def install_data(temp_dir: str, root_dir: str, prefix_dir: str):
 def main():
     parser = ArgumentParser(description='Debspawn system data installer')
 
-    parser.add_argument('--root', action='store', dest='root', default=None,
-                        help='Root directory to install into.')
-    parser.add_argument('--prefix', action='store', dest='prefix', default=None,
-                        help='Directory prefix (usually `/usr` or `/usr/local`).')
+    parser.add_argument(
+        '--root', action='store', dest='root', default=None, help='Root directory to install into.'
+    )
+    parser.add_argument(
+        '--prefix',
+        action='store',
+        dest='prefix',
+        default=None,
+        help='Directory prefix (usually `/usr` or `/usr/local`).',
+    )
 
     options = parser.parse_args(sys.argv[1:])
     with TemporaryDirectory(prefix='dsinstall-') as temp_dir:

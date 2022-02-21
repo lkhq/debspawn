@@ -19,6 +19,7 @@
 
 import os
 import sys
+
 import pytest
 
 # pylint: disable=redefined-outer-name
@@ -30,7 +31,9 @@ def gconfig():
     Ensure the global config object is set up properly for unit-testing.
     '''
     import shutil
+
     import debspawn.cli
+
     from . import source_root
 
     debspawn.cli.__mainfile = os.path.join(source_root, 'debspawn.py')
@@ -94,14 +97,8 @@ def testing_container(gconfig, build_arch):
     components = ['main', 'contrib', 'non-free']
     extra_suites = []
 
-    osbase = OSBase(gconfig,
-                    suite,
-                    build_arch,
-                    variant=variant,
-                    base_suite=None)
-    r = osbase.create(None,
-                      components,
-                      extra_suites=extra_suites)
+    osbase = OSBase(gconfig, suite, build_arch, variant=variant, base_suite=None)
+    r = osbase.create(None, components, extra_suites=extra_suites)
     assert r
 
     return (suite, build_arch, variant)

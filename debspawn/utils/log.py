@@ -18,8 +18,9 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import re
+import sys
+
 from .env import unicode_allowed
 from .misc import safe_copy
 
@@ -113,8 +114,7 @@ def print_bullet(*arg, large: bool = False, indent: int = 0):
     print((' ' * indent) + b, *arg)
 
 
-def print_bool_item(prefix: str, b: bool,
-                    text_true: str = 'yes', text_false: str = 'no'):
+def print_bool_item(prefix: str, b: bool, text_true: str = 'yes', text_false: str = 'no'):
     '''
     Prints a (colored, if possible) boolean item with a given prefix.
     '''
@@ -188,6 +188,7 @@ def capture_console_output():
 
 def save_captured_console_output(fname):
     from .env import get_owner_uid_gid
+
     if hasattr(sys.stdout, 'copy_to'):
         o_uid, o_gid = get_owner_uid_gid()
         sys.stdout.copy_to(fname)

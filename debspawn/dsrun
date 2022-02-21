@@ -18,14 +18,13 @@
 # with a newer debspawn version.
 
 import os
-import sys
 import pwd
+import sys
 import time
 import subprocess
-from contextlib import contextmanager
-from argparse import ArgumentParser
 from glob import glob
-
+from argparse import ArgumentParser
+from contextlib import contextmanager
 
 # the user performing builds in the container
 BUILD_USER = 'builder'

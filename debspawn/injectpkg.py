@@ -18,10 +18,11 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from pathlib import Path
 from glob import glob
+from pathlib import Path
 from contextlib import contextmanager
-from .utils import hardlink_or_copy, temp_dir, print_info
+
+from .utils import temp_dir, print_info, hardlink_or_copy
 
 
 class PackageInjector:
@@ -36,7 +37,7 @@ class PackageInjector:
         self._instance_repo_dir = None
 
     def has_injectables(self):
-        ''' Return True if we actually have any packages ready to inject '''
+        '''Return True if we actually have any packages ready to inject'''
 
         if type(self._has_injectables) is bool:
             return self._has_injectables
@@ -97,7 +98,7 @@ def package_injector(osbase, machine_name=None):
 
     if not machine_name:
         from random import choice
-        from string import ascii_lowercase, digits
+        from string import digits, ascii_lowercase
 
         nid = ''.join(choice(ascii_lowercase + digits) for _ in range(4))
         machine_name = '{}-{}'.format(osbase.name, nid)

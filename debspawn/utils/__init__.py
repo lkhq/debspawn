@@ -15,23 +15,32 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+from .env import unicode_allowed, colored_output_allowed
 from .log import print_info, print_warn, print_error, print_header, print_section
-from .env import colored_output_allowed, unicode_allowed
+from .misc import (
+    cd,
+    listify,
+    temp_dir,
+    rmtree_mntsafe,
+    format_filesize,
+    hardlink_or_copy,
+)
 from .command import safe_run, run_forwarded
-from .misc import listify, temp_dir, cd, hardlink_or_copy, format_filesize, rmtree_mntsafe
 
-__all__ = ['print_info',
-           'print_warn',
-           'print_error',
-           'print_header',
-           'print_section',
-           'colored_output_allowed',
-           'unicode_allowed',
-           'safe_run',
-           'run_forwarded',
-           'listify',
-           'temp_dir',
-           'cd',
-           'hardlink_or_copy',
-           'format_filesize',
-           'rmtree_mntsafe']
+__all__ = [
+    'print_info',
+    'print_warn',
+    'print_error',
+    'print_header',
+    'print_section',
+    'colored_output_allowed',
+    'unicode_allowed',
+    'safe_run',
+    'run_forwarded',
+    'listify',
+    'temp_dir',
+    'cd',
+    'hardlink_or_copy',
+    'format_filesize',
+    'rmtree_mntsafe',
+]

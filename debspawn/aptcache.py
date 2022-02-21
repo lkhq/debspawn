@@ -19,8 +19,9 @@
 
 import os
 import shutil
-from pathlib import Path
 from glob import glob
+from pathlib import Path
+
 from .utils.misc import hardlink_or_copy
 
 
@@ -38,7 +39,7 @@ class APTCache:
         '''
 
         from random import choice
-        from string import ascii_lowercase, digits
+        from string import digits, ascii_lowercase
 
         Path(self._cache_dir).mkdir(parents=True, exist_ok=True)
         for pkg_fname in glob(os.path.join(tmp_cache_dir, '*.deb')):
@@ -46,7 +47,9 @@ class APTCache:
             pkg_cachepath = os.path.join(self._cache_dir, pkg_basename)
 
             if not os.path.isfile(pkg_cachepath):
-                pkg_tmp_name = pkg_cachepath + '.tmp-' + ''.join(choice(ascii_lowercase + digits) for _ in range(8))
+                pkg_tmp_name = (
+                    pkg_cachepath + '.tmp-' + ''.join(choice(ascii_lowercase + digits) for _ in range(8))
+                )
                 shutil.copy2(pkg_fname, pkg_tmp_name)
                 try:
                     os.rename(pkg_tmp_name, pkg_cachepath)

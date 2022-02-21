@@ -19,19 +19,28 @@
 
 import os
 import json
-import subprocess
 import shutil
+import subprocess
+from typing import Optional
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Optional
-from .utils import temp_dir, print_header, print_section, format_filesize, \
-    print_info, print_error, print_warn, listify
-from .utils.misc import maybe_remove, safe_copy, rmtree_mntsafe
-from .utils.env import ensure_root, get_random_free_uid_gid, get_owner_uid_gid
-from .utils.command import safe_run
-from .utils.zstd_tar import compress_directory, decompress_tarball, ensure_tar_zstd
-from .nspawn import nspawn_run_helper_persist, nspawn_run_persist
+
+from .utils import (
+    listify,
+    temp_dir,
+    print_info,
+    print_warn,
+    print_error,
+    print_header,
+    print_section,
+    format_filesize,
+)
+from .nspawn import nspawn_run_persist, nspawn_run_helper_persist
 from .aptcache import APTCache
+from .utils.env import ensure_root, get_owner_uid_gid, get_random_free_uid_gid
+from .utils.misc import safe_copy, maybe_remove, rmtree_mntsafe
+from .utils.command import safe_run
+from .utils.zstd_tar import ensure_tar_zstd, compress_directory, decompress_tarball
 
 
 def debootstrap_version():
@@ -51,8 +60,7 @@ class OSBase:
     Describes an OS base registered with debspawn
     '''
 
-    def __init__(self, gconf, suite, arch, variant=None, *,
-                 base_suite=None, custom_name=None, cachekey=None):
+    def __init__(self, gconf, suite, arch, variant=None, *, base_suite=None, custom_name=None, cachekey=None):
         self._gconf = gconf
         self._suite = suite
         self._base_suite = base_suite
@@ -81,8 +89,8 @@ class OSBase:
         ensure_tar_zstd()
 
     def _make_name(self):
-        ''' Configure a unique-ish name based on user defined data,
-        and tweak the custom name and suite values to match. '''
+        '''Configure a unique-ish name based on user defined data,
+        and tweak the custom name and suite values to match.'''
 
         if self._custom_name and not self._suite:
             # if we have a custom name but no suite name, the custom name is treated
@@ -109,7 +117,7 @@ class OSBase:
             return '{}-{}'.format(self._suite, self._arch)
 
     def _custom_name_parameter_check(self):
-        ''' Read parameters in case a custom name was passed, and perform basic sanity checks. '''
+        '''Read parameters in case a custom name was passed, and perform basic sanity checks.'''
         import sys
 
         if self._parameters_checked:
@@ -132,20 +140,28 @@ class OSBase:
                 self._suite = c_suite
 
             if self.suite != c_suite:
-                print_error('Expected suite name "{}" for image "{}", but got "{}" instead.'.format(
-                    cdata.get('Suite'), self.name, self.suite))
+                print_error(
+                    'Expected suite name "{}" for image "{}", but got "{}" instead.'.format(
+                        cdata.get('Suite'), self.name, self.suite
+                    )
+                )
                 sys.exit(1)
             c_arch = cdata.get('Architecture', self.arch)
             c_variant = cdata.get('Variant', self.variant)
 
             if self.arch and self.arch != c_arch:
-                print_warn(('Expected architecture "{}" for image "{}", but got "{}" instead. '
-                            'Using expected value.').format(
-                                c_arch, self.name, self.arch))
+                print_warn(
+                    (
+                        'Expected architecture "{}" for image "{}", but got "{}" instead. '
+                        'Using expected value.'
+                    ).format(c_arch, self.name, self.arch)
+                )
             if self.variant and self.variant != c_variant:
-                print_warn(('Expected variant "{}" for image "{}", but got "{}" instead. '
-                            'Using expected value.').format(
-                                c_variant, self.name, self.variant))
+                print_warn(
+                    (
+                        'Expected variant "{}" for image "{}", but got "{}" instead. ' 'Using expected value.'
+                    ).format(c_variant, self.name, self.variant)
+                )
             self._arch = c_arch
             self._variant = c_variant
         self._parameters_checked = True
@@ -234,12 +250,15 @@ class OSBase:
         program with an error code in case it does not.
         '''
         import sys
+
         if not self._load_existent():
-            print_error('The container image for "{}" does not exist. Please create it first.'.format(self.name))
+            print_error(
+                'The container image for "{}" does not exist. Please create it first.'.format(self.name)
+            )
             sys.exit(3)
 
     def _load_existent(self) -> bool:
-        ''' Check if image exists, and if so load some essential data and return True. '''
+        '''Check if image exists, and if so load some essential data and return True.'''
         # ensure the set config values are sane if the user is using a custom container name
         if self._custom_name:
             self._custom_name_parameter_check()
@@ -248,7 +267,7 @@ class OSBase:
     def new_nspawn_machine_name(self):
         import platform
         from random import choice
-        from string import ascii_lowercase, digits
+        from string import digits, ascii_lowercase
 
         nid = ''.join(choice(ascii_lowercase + digits) for _ in range(4))
 
@@ -259,7 +278,7 @@ class OSBase:
         uniq_suffix = '{}-{}'.format(self.name, nid)
         if len(uniq_suffix) > 48:
             uniq_suffix = ''.join(choice(ascii_lowercase + digits) for _ in range(12))
-        node_name_prefix = platform.node()[:63 - len(uniq_suffix)]
+        node_name_prefix = platform.node()[: 63 - len(uniq_suffix)]
 
         return '{}-{}'.format(node_name_prefix, uniq_suffix)
 
@@ -269,8 +288,7 @@ class OSBase:
         '''
 
         print_info('Saving configuration settings.')
-        data = {'Suite': self.suite,
-                'Architecture': self.arch}
+        data = {'Suite': self.suite, 'Architecture': self.arch}
         if self.variant:
             data['Variant'] = self.variant
         if mirror:
@@ -287,7 +305,7 @@ class OSBase:
             f.write('\n')
 
     def _clear_image_tree(self, image_dir):
-        ''' Clear files from a directory tree that we don't want in the tarball. '''
+        '''Clear files from a directory tree that we don't want in the tarball.'''
 
         if os.path.ismount(image_dir):
             print_warn('Preparing OS tree for compression, but /dev is still mounted.')
@@ -300,7 +318,7 @@ class OSBase:
                     os.remove(fname)
 
     def _remove_unwanted_files(self, instance_dir):
-        ''' Delete unwanted files from a base image '''
+        '''Delete unwanted files from a base image'''
 
         # drop resolv.conf: Some OSes set this to a symlink, which will lead to nowhere
         # in the container and may cause issues when bindmounting over it
@@ -321,7 +339,7 @@ class OSBase:
             rmtree_mntsafe(apt_pkg_cache_dir, ignore_errors=True)
 
     def _setup_apt_proxy(self, instance_dir):
-        ''' Setup APT proxy configuration.
+        '''Setup APT proxy configuration.
         APT needs special treatment even in the container to work with a company proxy (yuck!),
         so we do this here so the user does not need to care about it.
         '''
@@ -342,11 +360,16 @@ class OSBase:
             if https_proxy:
                 f.write('Acquire::https::Proxy "{}";\n'.format(https_proxy))
 
-    def _create_internal(self, mirror=None, components=None,
-                         extra_suites: list[str] = None, extra_source_lines: str = None,
-                         allow_recommends: bool = False,
-                         show_header: bool = True):
-        ''' Create new container base image (internal method) '''
+    def _create_internal(
+        self,
+        mirror=None,
+        components=None,
+        extra_suites: list[str] = None,
+        extra_source_lines: str = None,
+        allow_recommends: bool = False,
+        show_header: bool = True,
+    ):
+        '''Create new container base image (internal method)'''
 
         if self.exists():
             print_error('An image already exists for this configuration. Can not create a new one.')
@@ -367,9 +390,7 @@ class OSBase:
         print('Using mirror: {}'.format(mirror if mirror else 'default'))
         if self.variant:
             print('variant: {}'.format(self.variant))
-        cmd = ['debootstrap',
-               '--arch={}'.format(self.arch),
-               '--include=python3-minimal,eatmydata']
+        cmd = ['debootstrap', '--arch={}'.format(self.arch), '--include=python3-minimal,eatmydata']
         if components:
             cmd.append('--components={}'.format(','.join(components)))
         if self.variant:
@@ -409,7 +430,8 @@ class OSBase:
                         contents = f.read()
                         matches = re.findall(
                             'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
-                            contents)
+                            contents,
+                        )
                         if not matches:
                             print_error('Unable to detect default APT repository URL (no regex matches).')
                             return False
@@ -424,9 +446,11 @@ class OSBase:
                     components = ['main']
                 with open(sourceslist_fname, 'a') as f:
                     if self.has_base_suite:
-                        f.write('deb {mirror} {suite} {components}\n'.format(mirror=mirror,
-                                                                             suite=self.suite,
-                                                                             components=' '.join(components)))
+                        f.write(
+                            'deb {mirror} {suite} {components}\n'.format(
+                                mirror=mirror, suite=self.suite, components=' '.join(components)
+                            )
+                        )
 
                     if extra_suites:
                         f.write('\n')
@@ -434,9 +458,11 @@ class OSBase:
                             if esuite == self.suite or esuite == bootstrap_suite:
                                 # don't add existing suites multiple times
                                 continue
-                            f.write('deb {mirror} {esuite} {components}\n'.format(mirror=mirror,
-                                                                                  esuite=esuite,
-                                                                                  components=' '.join(components)))
+                            f.write(
+                                'deb {mirror} {esuite} {components}\n'.format(
+                                    mirror=mirror, esuite=esuite, components=' '.join(components)
+                                )
+                            )
 
                     if extra_source_lines:
                         f.write('\n')
@@ -462,10 +488,12 @@ class OSBase:
             self._setup_apt_proxy(tdir)
 
             print_section('Configure')
-            if nspawn_run_helper_persist(self, tdir,
-                                         self.new_nspawn_machine_name(),
-                                         '--update',
-                                         build_uid=self._builder_uid) != 0:
+            if (
+                nspawn_run_helper_persist(
+                    self, tdir, self.new_nspawn_machine_name(), '--update', build_uid=self._builder_uid
+                )
+                != 0
+            ):
                 return False
 
             # drop any unwanted files (again) before building the tarball
@@ -481,29 +509,37 @@ class OSBase:
 
         return True
 
-    def create(self, mirror: str = None, components: list[str] = None, *,
-               extra_suites: list[str] = None, extra_source_lines: str = None,
-               allow_recommends: bool = False):
-        ''' Create new container base image (internal method) '''
+    def create(
+        self,
+        mirror: str = None,
+        components: list[str] = None,
+        *,
+        extra_suites: list[str] = None,
+        extra_source_lines: str = None,
+        allow_recommends: bool = False,
+    ):
+        '''Create new container base image (internal method)'''
         ensure_root()
 
         if self.exists():
             print_error('This configuration has already been created. You can only delete or update it.')
             return False
 
-        ret = self._create_internal(mirror=mirror,
-                                    components=components,
-                                    extra_suites=extra_suites,
-                                    extra_source_lines=extra_source_lines,
-                                    allow_recommends=allow_recommends,
-                                    show_header=True)
+        ret = self._create_internal(
+            mirror=mirror,
+            components=components,
+            extra_suites=extra_suites,
+            extra_source_lines=extra_source_lines,
+            allow_recommends=allow_recommends,
+            show_header=True,
+        )
         if ret:
             print_info('Done.')
 
         return ret
 
     def delete(self):
-        ''' Remove container base image '''
+        '''Remove container base image'''
         ensure_root()
 
         if not self._load_existent():
@@ -546,7 +582,7 @@ class OSBase:
             yield tdir, self.new_nspawn_machine_name()
 
     def make_instance_permanent(self, instance_dir):
-        ''' Add changes done in the current instance to the main tarball of this OS tree, replacing it. '''
+        '''Add changes done in the current instance to the main tarball of this OS tree, replacing it.'''
 
         # remove unwanted files from the tarball
         self._clear_image_tree(instance_dir)
@@ -565,12 +601,14 @@ class OSBase:
 
         tar_size = os.path.getsize(tarball_name)
         if self._cachekey:
-            print_info('New compressed tarball size (for {}) is {}'.format(self._cachekey, format_filesize(tar_size)))
+            print_info(
+                'New compressed tarball size (for {}) is {}'.format(self._cachekey, format_filesize(tar_size))
+            )
         else:
             print_info('New compressed tarball size is {}'.format(format_filesize(tar_size)))
 
     def update(self):
-        ''' Update container base image '''
+        '''Update container base image'''
         ensure_root()
 
         if not self._load_existent():
@@ -584,10 +622,16 @@ class OSBase:
             self._copy_helper_script(instance_dir)
 
             print_section('Update')
-            if nspawn_run_helper_persist(self, instance_dir,
-                                         self.new_nspawn_machine_name(),
-                                         '--update',
-                                         build_uid=self._builder_uid) != 0:
+            if (
+                nspawn_run_helper_persist(
+                    self,
+                    instance_dir,
+                    self.new_nspawn_machine_name(),
+                    '--update',
+                    build_uid=self._builder_uid,
+                )
+                != 0
+            ):
                 return False
 
             # drop unwanted files from the image
@@ -606,7 +650,7 @@ class OSBase:
         return True
 
     def recreate(self):
-        ''' Recreate a container base image '''
+        '''Recreate a container base image'''
         ensure_root()
 
         if not self._load_existent():
@@ -615,7 +659,9 @@ class OSBase:
 
         config_fname = self.get_config_location()
         if not os.path.isfile(config_fname):
-            print_error('Can not recreate "{}": Unable to find configuration data for this image.'.format(self.name))
+            print_error(
+                'Can not recreate "{}": Unable to find configuration data for this image.'.format(self.name)
+            )
             return False
 
         print_header('Recreating container image')
@@ -649,12 +695,14 @@ class OSBase:
 
         # ty to create the tarball again
         try:
-            ret = self._create_internal(mirror=mirror,
-                                        components=components,
-                                        extra_suites=extra_suites,
-                                        extra_source_lines=extra_source_lines,
-                                        allow_recommends=allow_recommends,
-                                        show_header=False)
+            ret = self._create_internal(
+                mirror=mirror,
+                components=components,
+                extra_suites=extra_suites,
+                extra_source_lines=extra_source_lines,
+                allow_recommends=allow_recommends,
+                show_header=False,
+            )
         except Exception as e:
             print_error('Error while trying to create image: {}'.format(str(e)))
             ret = False
@@ -679,26 +727,26 @@ class OSBase:
             return False
 
     def login(self, persistent=False, allowed: list[str] = None):
-        ''' Interactive shell login into the container '''
+        '''Interactive shell login into the container'''
         ensure_root()
 
         if not self._load_existent():
             print_info('Can not enter "{}": This configuration does not exist.'.format(self.name))
             return False
 
-        print_header('Login (persistent changes) for {}'.format(self.name)
-                     if persistent else 'Login for {}'.format(self.name))
+        print_header(
+            'Login (persistent changes) for {}'.format(self.name)
+            if persistent
+            else 'Login for {}'.format(self.name)
+        )
         with self.new_instance() as (instance_dir, _):
             # ensure helper script runner exists and is up to date
             self._copy_helper_script(instance_dir)
 
             # run an interactive shell in the new container
-            nspawn_run_persist(self,
-                               instance_dir,
-                               self.new_nspawn_machine_name(),
-                               '/srv',
-                               verbose=True,
-                               allowed=allowed)
+            nspawn_run_persist(
+                self, instance_dir, self.new_nspawn_machine_name(), '/srv', verbose=True, allowed=allowed
+            )
 
             if persistent:
                 print_section('Recreating tarball')
@@ -747,9 +795,18 @@ class OSBase:
 
         return os.path.join('/srv', 'tmp', os.path.basename(host_script))
 
-    def run(self, command, build_dir, artifacts_dir, init_command=None, copy_command=False,
-            header_msg=None, bind_build_dir: Optional[str] = None, allowed: list[str] = None):
-        ''' Run an arbitrary command or script in the container '''
+    def run(
+        self,
+        command,
+        build_dir,
+        artifacts_dir,
+        init_command=None,
+        copy_command=False,
+        header_msg=None,
+        bind_build_dir: Optional[str] = None,
+        allowed: list[str] = None,
+    ):
+        '''Run an arbitrary command or script in the container'''
         ensure_root()
 
         if not self._load_existent():
@@ -763,6 +820,7 @@ class OSBase:
         if isinstance(init_command, str):
             if init_command:
                 import shlex
+
                 init_command = shlex.split(init_command)
         init_command = listify(init_command)
         allowed = listify(allowed)
@@ -788,16 +846,17 @@ class OSBase:
                     host_script = init_command[0]
                     init_command[0] = self._copy_command_script_to_instance_dir(instance_dir, host_script)
                     if not init_command[0]:
-                        print_error(('Unable to find initialization script "{}", '
-                                     'can not copy it to the container. Exiting.').format(host_script))
+                        print_error(
+                            (
+                                'Unable to find initialization script "{}", '
+                                'can not copy it to the container. Exiting.'
+                            ).format(host_script)
+                        )
                         return False
 
-                r = nspawn_run_helper_persist(self,
-                                              instance_dir,
-                                              machine_name,
-                                              '--prepare-run',
-                                              '/srv',
-                                              build_uid=self._builder_uid)
+                r = nspawn_run_helper_persist(
+                    self, instance_dir, machine_name, '--prepare-run', '/srv', build_uid=self._builder_uid
+                )
                 if r != 0:
                     print_error('Container setup failed.')
                     return False
@@ -812,19 +871,23 @@ class OSBase:
                 init_nspawn_flags = []
                 if build_dir:
                     if not bind_build_dir:
-                        shutil.copytree(build_dir, os.path.join(instance_dir, 'srv', 'build'), dirs_exist_ok=True)
+                        shutil.copytree(
+                            build_dir, os.path.join(instance_dir, 'srv', 'build'), dirs_exist_ok=True
+                        )
                     else:
                         if bind_build_dir == 'rw':
                             init_nspawn_flags = ['--bind={}:/srv/build/'.format(build_dir)]
                         elif bind_build_dir == 'ro':
                             init_nspawn_flags = ['--bind-ro={}:/srv/build/'.format(build_dir)]
-                r = nspawn_run_persist(self,
-                                       instance_dir,
-                                       machine_name,
-                                       '/srv',
-                                       init_command,
-                                       init_nspawn_flags,
-                                       allowed=filtered_allowed)
+                r = nspawn_run_persist(
+                    self,
+                    instance_dir,
+                    machine_name,
+                    '/srv',
+                    init_command,
+                    init_nspawn_flags,
+                    allowed=filtered_allowed,
+                )
                 if r != 0:
                     return False
 
@@ -845,16 +908,16 @@ class OSBase:
                 host_script = command[0]
                 command[0] = self._copy_command_script_to_instance_dir(instance_dir, host_script)
                 if not command[0]:
-                    print_error(('Unable to find script "{}", can not copy it to the container. '
-                                 'Exiting.').format(host_script))
+                    print_error(
+                        ('Unable to find script "{}", can not copy it to the container. ' 'Exiting.').format(
+                            host_script
+                        )
+                    )
                     return False
 
-            r = nspawn_run_helper_persist(self,
-                                          instance_dir,
-                                          machine_name,
-                                          '--prepare-run',
-                                          '/srv',
-                                          build_uid=self._builder_uid)
+            r = nspawn_run_helper_persist(
+                self, instance_dir, machine_name, '--prepare-run', '/srv', build_uid=self._builder_uid
+            )
             if r != 0:
                 print_error('Container setup failed.')
                 return False
@@ -880,13 +943,9 @@ class OSBase:
                     elif bind_build_dir == 'ro':
                         nspawn_flags.extend(['--bind-ro={}:/srv/build/'.format(build_dir)])
 
-            r = nspawn_run_persist(self,
-                                   instance_dir,
-                                   machine_name,
-                                   chdir,
-                                   command,
-                                   nspawn_flags,
-                                   allowed=allowed)
+            r = nspawn_run_persist(
+                self, instance_dir, machine_name, chdir, command, nspawn_flags, allowed=allowed
+            )
             if r != 0:
                 return False
 

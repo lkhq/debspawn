@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 from debspawn import cli
 
 thisfile = __file__

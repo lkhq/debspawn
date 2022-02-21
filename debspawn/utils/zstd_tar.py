@@ -18,27 +18,30 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import shutil
+
 from .command import run_command
 
 
 def ensure_tar_zstd():
-    ''' Check if the required binaries for compression are available '''
+    '''Check if the required binaries for compression are available'''
 
     if not shutil.which('zstd'):
-        raise Exception(('The "zsdt" binary was not found, we can not compress tarballs. '
-                         'Please install zstd to continue!'))
+        raise Exception(
+            (
+                'The "zsdt" binary was not found, we can not compress tarballs. '
+                'Please install zstd to continue!'
+            )
+        )
     if not shutil.which('tar'):
-        raise Exception('The "tar" binary was not found, we can not create tarballs. Please install tar to continue!')
+        raise Exception(
+            'The "tar" binary was not found, we can not create tarballs. Please install tar to continue!'
+        )
 
 
 def compress_directory(dirname, tarname):
-    ''' Compress a directory to a given tarball '''
+    '''Compress a directory to a given tarball'''
 
-    cmd = ['tar',
-           '-C', dirname,
-           '-I', 'zstd',
-           '-cf', tarname,
-           '.']
+    cmd = ['tar', '-C', dirname, '-I', 'zstd', '-cf', tarname, '.']
 
     out, err, ret = run_command(cmd)
 
@@ -47,12 +50,9 @@ def compress_directory(dirname, tarname):
 
 
 def decompress_tarball(tarname, dirname):
-    ''' Compress a directory to a given tarball '''
+    '''Compress a directory to a given tarball'''
 
-    cmd = ['tar',
-           '-C', dirname,
-           '-I', 'zstd',
-           '-xf', tarname]
+    cmd = ['tar', '-C', dirname, '-I', 'zstd', '-xf', tarname]
 
     out, err, ret = run_command(cmd)
 

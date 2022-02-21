@@ -19,25 +19,32 @@
 
 import os
 import sys
-import shutil
 import json
+import shutil
 from glob import glob
+
 from .config import GlobalConfig
-from .utils.env import ensure_root
-from .utils.log import print_info, print_warn, print_error, print_bullet, print_section, \
-    print_bool_item
 from .osbase import OSBase
+from .utils.env import ensure_root
+from .utils.log import (
+    print_info,
+    print_warn,
+    print_error,
+    print_bullet,
+    print_section,
+    print_bool_item,
+)
 
 
 def ensure_rmtree_symattack_protection():
-    ''' Exit the program with an error if rmtree does not protect against symlink attacks '''
+    '''Exit the program with an error if rmtree does not protect against symlink attacks'''
     if not shutil.rmtree.avoids_symlink_attacks:
         print_error('Will not continue: rmtree does not run in symlink-attack protected mode.')
         sys.exit(1)
 
 
 def maintain_migrate(gconf: GlobalConfig):
-    ''' Migrate configuration from older versions of debspawn to the latest version '''
+    '''Migrate configuration from older versions of debspawn to the latest version'''
 
     ensure_root()
 
@@ -51,7 +58,7 @@ def maintain_migrate(gconf: GlobalConfig):
 
 
 def maintain_clear_caches(gconf: GlobalConfig):
-    ''' Delete all cache data for all images '''
+    '''Delete all cache data for all images'''
 
     ensure_root()
     ensure_rmtree_symattack_protection()
@@ -72,14 +79,18 @@ def maintain_clear_caches(gconf: GlobalConfig):
 
 
 def maintain_purge(gconf: GlobalConfig, force: bool = False):
-    ''' Remove all images as well as any data associated with them '''
+    '''Remove all images as well as any data associated with them'''
 
     ensure_root()
     ensure_rmtree_symattack_protection()
 
     if not force:
-        print_warn(('This action will delete ALL your images as well as their configuration, build results and other '
-                    'associated data and will clear all data from the directories you may have configured as default.'))
+        print_warn(
+            (
+                'This action will delete ALL your images as well as their configuration, build results and other '
+                'associated data and will clear all data from the directories you may have configured as default.'
+            )
+        )
         delete_all = False
         while True:
             try:
@@ -121,7 +132,7 @@ def maintain_purge(gconf: GlobalConfig, force: bool = False):
 
 
 def maintain_update_all(gconf: GlobalConfig):
-    ''' Update all container images that we know. '''
+    '''Update all container images that we know.'''
 
     ensure_root()
 
@@ -154,11 +165,13 @@ def maintain_update_all(gconf: GlobalConfig):
         first_entry = False
         print_bullet('Update: {}'.format(imgid), indent=1, large=True)
 
-        osbase = OSBase(gconf,
-                        cdata['Suite'],
-                        cdata['Architecture'],
-                        cdata.get('Variant'),
-                        custom_name=os.path.basename(img_basepath))
+        osbase = OSBase(
+            gconf,
+            cdata['Suite'],
+            cdata['Architecture'],
+            cdata.get('Variant'),
+            custom_name=os.path.basename(img_basepath),
+        )
         r = osbase.update()
         if not r:
             print_error('Failed to update {}'.format(imgid))
@@ -179,9 +192,10 @@ def maintain_print_status(gconf: GlobalConfig):
     that may be useful for debugging issues.
     '''
     import platform
+
     from . import __version__
-    from .osbase import print_container_base_image_info, debootstrap_version
     from .nspawn import systemd_version, systemd_detect_virt
+    from .osbase import debootstrap_version, print_container_base_image_info
 
     print('Debspawn Status Report', end='')
     sys.stdout.flush()
@@ -206,12 +220,24 @@ def maintain_print_status(gconf: GlobalConfig):
 
     print_section('Debspawn')
     print('Version:', __version__)
-    print_bool_item('Tmpfiles.d configuration:', os.path.isfile('/usr/lib/tmpfiles.d/debspawn.conf'),
-                    text_true='installed', text_false='missing')
-    print_bool_item('Monthly cache cleanup timer:', os.path.isfile('/lib/systemd/system/debspawn-clear-caches.timer'),
-                    text_true='available', text_false='missing')
-    print_bool_item('Manual pages:', len(glob('/usr/share/man/man1/debspawn*.1.*')) >= 8,
-                    text_true='installed', text_false='missing')
+    print_bool_item(
+        'Tmpfiles.d configuration:',
+        os.path.isfile('/usr/lib/tmpfiles.d/debspawn.conf'),
+        text_true='installed',
+        text_false='missing',
+    )
+    print_bool_item(
+        'Monthly cache cleanup timer:',
+        os.path.isfile('/lib/systemd/system/debspawn-clear-caches.timer'),
+        text_true='available',
+        text_false='missing',
+    )
+    print_bool_item(
+        'Manual pages:',
+        len(glob('/usr/share/man/man1/debspawn*.1.*')) >= 8,
+        text_true='installed',
+        text_false='missing',
+    )
     if not os.path.isfile('/etc/debspawn/global.toml'):
         print('Global configuration: default')
     else:

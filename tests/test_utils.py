@@ -19,7 +19,8 @@
 
 import os
 import tempfile
-from debspawn.utils.misc import bindmount, umount, is_mountpoint, rmtree_mntsafe
+
+from debspawn.utils.misc import umount, bindmount, is_mountpoint, rmtree_mntsafe
 
 
 def test_bindmount_umount(gconfig):

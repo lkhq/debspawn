@@ -22,7 +22,6 @@ import sys
 import shutil
 from contextlib import contextmanager
 
-
 _unicode_allowed = True  # store whether we are allowed to use unicode
 _owner_uid = 0  # uid of the user on whose behalf we are running
 _owner_gid = 0  # gid of the user on whose behalf we are running
@@ -34,8 +33,8 @@ def set_owning_user(user, group=None):
     This is useful so we can drop privileges to
     the perticular user in many cases.
     '''
-    from pwd import getpwnam, getpwuid
     from grp import getgrnam
+    from pwd import getpwnam, getpwuid
 
     if user.isdecimal():
         uid = int(user)
@@ -91,6 +90,7 @@ def ensure_root():
         # Most of those are standard variables affecting debsign bahevior later, in case
         # the user has requested signing
         import shlex
+
         env = []
         filter_env_far(env, 'DEBEMAIL')
         filter_env_far(env, 'DEBFULLNAME')
@@ -146,7 +146,7 @@ def get_owner_uid_gid():
 
 
 def get_random_free_uid_gid():
-    ''' Get a random unused UID and GID for the current system. '''
+    '''Get a random unused UID and GID for the current system.'''
     import pwd
     import random
 
@@ -164,8 +164,9 @@ def get_random_free_uid_gid():
 
 
 def colored_output_allowed():
-    return (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()) or \
-           ('TERM' in os.environ and os.environ['TERM'] == 'ANSI')
+    return (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()) or (
+        'TERM' in os.environ and os.environ['TERM'] == 'ANSI'
+    )
 
 
 def unicode_allowed():
