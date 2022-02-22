@@ -1,3 +1,15 @@
+Version 0.5.2
+~~~~~~~~~~~~~~
+Released: 2022-02-22
+
+Features:
+ * Format source code with Black
+ * Allow to boot a container for interactive logins
+
+Bugfixes:
+ * Set suite explicitly when resolving build-deps
+ * Do not include APT package caches in tarballs
+
 Version 0.5.1
 ~~~~~~~~~~~~~~
 Released: 2021-11-08
