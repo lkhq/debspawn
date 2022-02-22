@@ -20,8 +20,8 @@
 import os
 import json
 import shutil
+import typing as T
 import subprocess
-from typing import Optional
 from pathlib import Path
 from contextlib import contextmanager
 
@@ -290,7 +290,7 @@ class OSBase:
         '''
 
         print_info('Saving configuration settings.')
-        data = {'Suite': self.suite, 'Architecture': self.arch}
+        data: T.Dict[str, T.Union[str, bool]] = {'Suite': self.suite, 'Architecture': self.arch}
         if self.variant:
             data['Variant'] = self.variant
         if mirror:
@@ -712,7 +712,7 @@ class OSBase:
 
         # read configuration data
         with open(config_fname, 'rt') as f:
-            cdata = json.loads(f.read())
+            cdata: T.Dict[str, T.Union[str, bool]] = json.loads(f.read())
             self._suite = cdata.get('Suite', self.suite)
             self._arch = cdata.get('Architecture', self.arch)
             self._variant = cdata.get('Variant', self.variant)
@@ -809,7 +809,7 @@ class OSBase:
         print_info('Done.')
         return True
 
-    def retrieve_artifacts(self, src_dir: str, dest_dir: Optional[str] = None):
+    def retrieve_artifacts(self, src_dir: str, dest_dir: T.Optional[str] = None):
         from glob import glob
 
         print_section('Retrieving build artifacts')
@@ -826,7 +826,7 @@ class OSBase:
                 acount += 1
         print_info('Copied {} files.'.format(acount))
 
-    def _copy_command_script_to_instance_dir(self, instance_dir: str, command_script: str) -> Optional[str]:
+    def _copy_command_script_to_instance_dir(self, instance_dir: str, command_script: str) -> T.Optional[str]:
         '''
         Copy a script from the host to the current instance directory and make it
         executable.
@@ -855,7 +855,7 @@ class OSBase:
         init_command=None,
         copy_command=False,
         header_msg=None,
-        bind_build_dir: Optional[str] = None,
+        bind_build_dir: T.Optional[str] = None,
         allowed: list[str] = None,
     ):
         '''Run an arbitrary command or script in the container'''
