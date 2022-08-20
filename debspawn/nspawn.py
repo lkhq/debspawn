@@ -18,9 +18,9 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import typing as T
 import platform
 import subprocess
-from typing import Union
 
 from .utils import (
     safe_run,
@@ -29,7 +29,6 @@ from .utils import (
     print_warn,
     print_error,
     run_forwarded,
-    systemd_escape,
 )
 from .injectpkg import PackageInjector
 from .utils.env import unicode_allowed, colored_output_allowed
@@ -101,7 +100,7 @@ def _execute_sdnspawn(
     env_vars: dict[str, str] = None,
     private_users: bool = False,
     nowait: bool = False,
-):
+) -> T.Union[subprocess.CompletedProcess, subprocess.Popen]:
     '''
     Execute systemd-nspawn with the given parameters.
     Mess around with cgroups if necessary.
@@ -192,11 +191,9 @@ def _execute_sdnspawn(
     cmd.extend(parameters)
 
     if nowait:
-        subprocess.Popen(cmd, shell=False)
-        return 0
+        return subprocess.Popen(cmd, shell=False, stdin=subprocess.DEVNULL)
     else:
-        proc = run_forwarded(cmd)
-        return proc.returncode
+        return run_forwarded(cmd)
 
 
 def nspawn_run_persist(
@@ -204,8 +201,8 @@ def nspawn_run_persist(
     base_dir,
     machine_name,
     chdir,
-    command: Union[list[str], str] = None,
-    flags: Union[list[str], str] = None,
+    command: T.Union[list[str], str] = None,
+    flags: T.Union[list[str], str] = None,
     *,
     tmp_apt_cache_dir: str = None,
     pkginjector: PackageInjector = None,
@@ -250,7 +247,7 @@ def nspawn_run_persist(
         osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
 
         # run command in container
-        ret = _execute_sdnspawn(
+        ns_proc = _execute_sdnspawn(
             osbase,
             params,
             machine_name,
@@ -262,35 +259,39 @@ def nspawn_run_persist(
             nowait=sdns_nowait,
         )
 
-        if sdns_nowait:
+        if not sdns_nowait:
+            ret = ns_proc.returncode
+        else:
             try:
                 import time
-
-                # get the machine scope name
-                scope_name = 'machine-{}.scope'.format(systemd_escape(machine_name))
 
                 # the container is (hopefully) running now, but let's check for that
                 time_ac_start = time.time()
                 container_booted = False
-                while True:
-                    _, _, scia_ret = run_command(['systemctl', 'is-active', scope_name])
-                    if scia_ret == 0:
+                while (time.time() - time_ac_start) < 60:
+                    scisr_out, _, _ = run_command(
+                        [
+                            'systemd-run',
+                            '-GP',
+                            '--wait',
+                            '-qM',
+                            machine_name,
+                            'systemctl',
+                            'is-system-running',
+                        ]
+                    )
+
+                    # check if we are actually running, try again later if not
+                    if scisr_out.strip() in ('running', 'degraded'):
                         print()
-                        # FIXME: Even though we wait for a READY signal from the container's init system,
-                        # we often still aren't fully booted up at this point
-                        # We wait for a few seconds here, which is obviously a bad solution which needs
-                        # a proper fix once one becomes available.
-                        time.sleep(5)
                         container_booted = True
-                        break
-                    if (time.time() - time_ac_start) > 60:
                         break
                     time.sleep(0.5)
 
                 if container_booted:
                     sdr_cmd = [
                         'systemd-run',
-                        '-t',
+                        '-GP',
                         '--wait',
                         '-qM',
                         machine_name,
@@ -300,10 +301,14 @@ def nspawn_run_persist(
                     proc = run_forwarded(sdr_cmd)
                     ret = proc.returncode
                 else:
-                    ret = 6
+                    ret = 7
                     print_error('Timed out while waiting for the container to boot.')
             finally:
                 run_forwarded(['machinectl', 'poweroff', machine_name])
+                try:
+                    ns_proc.wait(30)
+                except subprocess.TimeoutExpired:
+                    ns_proc.terminate()
 
         # archive APT cache, so future runs of this command are faster
         osbase.aptcache.merge_from_dir(aptcache_tmp_dir)
@@ -324,8 +329,8 @@ def nspawn_run_ephemeral(
     base_dir,
     machine_name,
     chdir,
-    command: Union[list[str], str] = None,
-    flags: Union[list[str], str] = None,
+    command: T.Union[list[str], str] = None,
+    flags: T.Union[list[str], str] = None,
     allowed: list[str] = None,
     syscall_filter: list[str] = None,
     env_vars: dict[str, str] = None,
@@ -358,7 +363,7 @@ def nspawn_run_ephemeral(
         syscall_filter=syscall_filter,
         env_vars=env_vars,
         private_users=private_users,
-    )
+    ).returncode
 
 
 def nspawn_make_helper_cmd(flags, build_uid: int):
@@ -385,7 +390,7 @@ def nspawn_run_helper_ephemeral(
     chdir='/tmp',
     *,
     build_uid: int,
-    nspawn_flags: Union[list[str], str] = None,
+    nspawn_flags: T.Union[list[str], str] = None,
     allowed: list[str] = None,
     env_vars: dict[str, str] = None,
     private_users: bool = False,
