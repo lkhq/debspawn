@@ -2,7 +2,7 @@
 name = "debspawn"
 description = "Debian package builder and build helper using systemd-nspawn"
 authors = [
-    "Matthias Klumpp <matthias@tenstral.net>"
+    {name = "Matthias Klumpp", email = "matthias@tenstral.net"},
 ]
 license = {text="LGPL-3.0-or-later"}
 readme = "README.md"
