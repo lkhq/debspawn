@@ -6,9 +6,11 @@ authors = [
 ]
 license = {text="LGPL-3.0-or-later"}
 readme = "README.md"
-python = "^3.9"
-homepage = "https://github.com/lkhq/debspawn"
-repository = "https://github.com/lkhq/debspawn"
+requires-python = ">=3.9"
+
+[project.urls]
+Documentation = "https://github.com/lkhq/debspawn"
+Source = "https://github.com/lkhq/debspawn"
 
 [build-system]
 requires = ["setuptools", "wheel", "pkgconfig"]
