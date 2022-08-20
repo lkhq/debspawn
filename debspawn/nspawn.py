@@ -19,6 +19,7 @@
 
 import os
 import platform
+import subprocess
 from typing import Union
 
 from .utils import (
@@ -28,6 +29,7 @@ from .utils import (
     print_warn,
     print_error,
     run_forwarded,
+    systemd_escape,
 )
 from .injectpkg import PackageInjector
 from .utils.env import unicode_allowed, colored_output_allowed
@@ -98,6 +100,7 @@ def _execute_sdnspawn(
     syscall_filter: list[str] = None,
     env_vars: dict[str, str] = None,
     private_users: bool = False,
+    nowait: bool = False,
 ):
     '''
     Execute systemd-nspawn with the given parameters.
@@ -152,6 +155,7 @@ def _execute_sdnspawn(
         # if we boot the container, we also register it with machinectl, otherwise
         # we run an unregistered container with the command as PID2
         cmd.append('-b')
+        cmd.append('--notify-ready=yes')
     else:
         cmd.append('--register=no')
         cmd.append('-a')
@@ -187,8 +191,12 @@ def _execute_sdnspawn(
 
     cmd.extend(parameters)
 
-    proc = run_forwarded(cmd)
-    return proc.returncode
+    if nowait:
+        subprocess.Popen(cmd, shell=False)
+        return 0
+    else:
+        proc = run_forwarded(cmd)
+        return proc.returncode
 
 
 def nspawn_run_persist(
@@ -232,7 +240,11 @@ def nspawn_run_persist(
             params.append('--personality={}'.format(personality))
         params.extend(flags)
         params.extend(['-{}D'.format('' if verbose else 'q'), base_dir])
-        params.extend(command)
+
+        # nspawn can not run a command in a booted container on its own
+        if not boot:
+            params.extend(command)
+        sdns_nowait = boot and command
 
         # ensure the temporary apt cache is up-to-date
         osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
@@ -247,7 +259,51 @@ def nspawn_run_persist(
             env_vars=env_vars,
             private_users=private_users,
             boot=boot,
+            nowait=sdns_nowait,
         )
+
+        if sdns_nowait:
+            try:
+                import time
+
+                # get the machine scope name
+                scope_name = 'machine-{}.scope'.format(systemd_escape(machine_name))
+
+                # the container is (hopefully) running now, but let's check for that
+                time_ac_start = time.time()
+                container_booted = False
+                while True:
+                    _, _, scia_ret = run_command(['systemctl', 'is-active', scope_name])
+                    if scia_ret == 0:
+                        print()
+                        # FIXME: Even though we wait for a READY signal from the container's init system,
+                        # we often still aren't fully booted up at this point
+                        # We wait for a few seconds here, which is obviously a bad solution which needs
+                        # a proper fix once one becomes available.
+                        time.sleep(5)
+                        container_booted = True
+                        break
+                    if (time.time() - time_ac_start) > 60:
+                        break
+                    time.sleep(0.5)
+
+                if container_booted:
+                    sdr_cmd = [
+                        'systemd-run',
+                        '-t',
+                        '--wait',
+                        '-qM',
+                        machine_name,
+                        '--working-directory',
+                        chdir,
+                    ] + command
+                    proc = run_forwarded(sdr_cmd)
+                    ret = proc.returncode
+                else:
+                    ret = 6
+                    print_error('Timed out while waiting for the container to boot.')
+            finally:
+                run_forwarded(['machinectl', 'poweroff', machine_name])
 
         # archive APT cache, so future runs of this command are faster
         osbase.aptcache.merge_from_dir(aptcache_tmp_dir)

@@ -852,6 +852,7 @@ class OSBase:
         command,
         build_dir,
         artifacts_dir,
+        boot: bool = False,
         init_command=None,
         copy_command=False,
         header_msg=None,
@@ -996,7 +997,7 @@ class OSBase:
                         nspawn_flags.extend(['--bind-ro={}:/srv/build/'.format(build_dir)])
 
             r = nspawn_run_persist(
-                self, instance_dir, machine_name, chdir, command, nspawn_flags, allowed=allowed
+                self, instance_dir, machine_name, chdir, command, nspawn_flags, allowed=allowed, boot=boot
             )
             if r != 0:
                 return False

@@ -278,6 +278,7 @@ def command_run(options, custom_command):
         custom_command,
         options.build_dir,
         options.artifacts_dir,
+        boot=options.boot,
         init_command=options.init_command,
         copy_command=options.external_commad,
         header_msg=options.header,
@@ -668,6 +669,12 @@ def create_parser(formatter_class=None):
             'List one or more additional permissions to grant the container. Takes a comma-separated '
             'list of capability names.'
         ),
+    )
+    sp.add_argument(
+        '--boot',
+        action='store_true',
+        dest='boot',
+        help='Boot container image (requires the image to contain an init system).',
     )
     sp.add_argument('command', action='store', nargs='*', default=None, help='The command to run.')
 

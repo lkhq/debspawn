@@ -22,15 +22,15 @@ import sys
 import stat
 import fcntl
 import shutil
+import typing as T
 import subprocess
-from typing import Any, Optional
 from pathlib import Path
 from contextlib import contextmanager
 
 from ..config import GlobalConfig
 
 
-def listify(item: Any):
+def listify(item: T.Any):
     '''
     Return a list of :item, unless :item already is a lit.
     '''
@@ -48,7 +48,7 @@ def cd(where):
         os.chdir(ncwd)
 
 
-def random_string(prefix: Optional[str] = None, count: int = 8):
+def random_string(prefix: T.Optional[str] = None, count: int = 8):
     '''
     Create a string of random alphanumeric characters of a given length,
     separated with a hyphen from an optional prefix.
@@ -63,6 +63,16 @@ def random_string(prefix: Optional[str] = None, count: int = 8):
     if prefix:
         return '{}-{}'.format(prefix, rdm_id)
     return rdm_id
+
+
+def systemd_escape(name: str) -> T.Optional[str]:
+    '''Escape a string using systemd's escaping rules.'''
+    from .command import run_command
+
+    out, _, ret = run_command(['systemd-escape', name])
+    if ret != 0:
+        return None
+    return out.strip()
 
 
 @contextmanager

@@ -22,6 +22,7 @@ from .misc import (
     listify,
     temp_dir,
     rmtree_mntsafe,
+    systemd_escape,
     format_filesize,
     hardlink_or_copy,
 )
@@ -43,4 +44,5 @@ __all__ = [
     'hardlink_or_copy',
     'format_filesize',
     'rmtree_mntsafe',
+    'systemd_escape',
 ]
