@@ -270,7 +270,7 @@ def _rmtree_mntsafe_fd(topfd, path, onerror):
                             # This can only happen if someone replaces
                             # a directory with a symlink after the call to
                             # os.scandir or stat.S_ISDIR above.
-                            raise OSError("Cannot call rmtree on a symbolic " "link")
+                            raise OSError('Cannot call rmtree on a symbolic link')
                         except OSError:
                             onerror(os.path.islink, fullname, sys.exc_info())
                 finally:
