@@ -118,7 +118,7 @@ setup(
     include_package_data=True,
     #
     packages=packages,
-    cmdclass=cmdclass,  # type: ignore
+    cmdclass=cmdclass,
     package_data=package_data,
     scripts=scripts,
     install_requires=install_requires,
