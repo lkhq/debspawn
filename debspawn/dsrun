@@ -272,7 +272,7 @@ def run_qatasks(qa_lintian=True):
         cmd = ['lintian',
                '-I',  # infos by default
                '--pedantic',  # pedantic hints by default,
-               '--no-tag-display-limit'  # display all tags found (even if that may be a lot occasionally)
+               '--tag-display-limit', '0',  # display all tags found (even if that may be a lot occasionally)
                ]
         run_command(cmd)
 
