@@ -228,8 +228,9 @@ def nspawn_run_persist(
         params = [
             '--chdir={}'.format(chdir),
             '--link-journal=no',
-            '--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir),
         ]
+        if aptcache_tmp_dir:
+            params.append('--bind={}:/var/cache/apt/archives/'.format(aptcache_tmp_dir))
         if pkginjector and pkginjector.instance_repo_dir:
             params.append('--bind={}:/srv/extra-packages/'.format(pkginjector.instance_repo_dir))
 
@@ -244,7 +245,8 @@ def nspawn_run_persist(
         sdns_nowait = boot and command
 
         # ensure the temporary apt cache is up-to-date
-        osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
+        if aptcache_tmp_dir:
+            osbase.aptcache.create_instance_cache(aptcache_tmp_dir)
 
         # run command in container
         ns_proc = _execute_sdnspawn(
@@ -310,14 +312,20 @@ def nspawn_run_persist(
                 except subprocess.TimeoutExpired:
                     ns_proc.terminate()
 
-        # archive APT cache, so future runs of this command are faster
-        osbase.aptcache.merge_from_dir(aptcache_tmp_dir)
+        # archive APT cache, so future runs of this command are faster (unless disabled in configuration)
+        if aptcache_tmp_dir:
+            osbase.aptcache.merge_from_dir(aptcache_tmp_dir)
 
         return ret
 
-    if tmp_apt_cache_dir:
+    if not osbase.cache_packages:
+        # APT package caching was explicitly disabled by the user
+        ret = run_nspawn_with_aptcache(None)
+    elif tmp_apt_cache_dir:
+        # we will be reusing an externally provided temporary APT cache directory
         ret = run_nspawn_with_aptcache(tmp_apt_cache_dir)
     else:
+        # we will create our own temporary APT cache dir
         with temp_dir('aptcache-' + machine_name) as aptcache_tmp:
             ret = run_nspawn_with_aptcache(aptcache_tmp)
 

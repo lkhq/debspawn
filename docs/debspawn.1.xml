@@ -250,6 +250,20 @@
 						host's <filename>/dev</filename> and <filename>/proc</filename> filesystems
 						available from within the container. See the <parameter>--allow</parameter> option
 						of <command>&package; run</command> for more details.
+						(Default: <code>false</code>)
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
+				<term><option>CachePackages</option></term>
+				<listitem>
+					<para>
+						Boolean option. If set to <literal>false</literal>, <command>&package;</command> will not
+						manage its own local cache of APT packages, but will instead always try to download
+						them. It is only recommended to change this option if you are already running a separate APT
+						package repository mirror or a caching proxy such as apt-cacher-ng(8).
+						(Default: <code>true</code>)
 					</para>
 				</listitem>
 			</varlistentry>

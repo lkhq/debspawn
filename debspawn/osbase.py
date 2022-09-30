@@ -195,6 +195,10 @@ class OSBase:
         return self._aptcache
 
     @property
+    def cache_packages(self) -> bool:
+        return self._gconf.cache_packages
+
+    @property
     def has_base_suite(self) -> bool:
         return True if self.base_suite and self.base_suite != self.suite else False
 

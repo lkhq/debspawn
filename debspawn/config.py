@@ -71,6 +71,7 @@ class GlobalConfig:
             self._temp_dir = cdata.get('TempDir', '/var/tmp/debspawn/')
             self._default_bootstrap_variant = cdata.get('DefaultBootstrapVariant', 'buildd')
             self._allow_unsafe_perms = cdata.get('AllowUnsafePermissions', False)
+            self._cache_packages = bool(cdata.get('CachePackages', True))
 
             self._syscall_filter = cdata.get('SyscallFilter', 'compat')
             if self._syscall_filter == 'compat':
@@ -126,11 +127,18 @@ class GlobalConfig:
 
         @property
         def syscall_filter(self) -> list:
+            """Customize which syscalls should be filtered."""
             return self._syscall_filter
 
         @property
         def allow_unsafe_perms(self) -> bool:
+            """Whether usage of unsafe permissions is allowed."""
             return self._allow_unsafe_perms
+
+        @property
+        def cache_packages(self) -> bool:
+            """Whether APT packages should be cached by debspawn."""
+            return self._cache_packages
 
     def __init__(self, fname=None):
         if not GlobalConfig._instance:
