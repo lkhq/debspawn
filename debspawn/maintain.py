@@ -195,7 +195,7 @@ def maintain_print_status(gconf: GlobalConfig):
 
     from . import __version__
     from .nspawn import systemd_version, systemd_detect_virt
-    from .osbase import debootstrap_version, print_container_base_image_info
+    from .osbase import bootstrap_tool_version, print_container_base_image_info
 
     print('Debspawn Status Report', end='')
     sys.stdout.flush()
@@ -213,7 +213,7 @@ def maintain_print_status(gconf: GlobalConfig):
     print('Platform:', platform.platform(aliased=True))
     print('Virtualization:', systemd_detect_virt())
     print('Systemd-nspawn version:', systemd_version())
-    print('Debootstrap version:', debootstrap_version())
+    print('Bootstrap tool:', '{} {}'.format(gconf.bootstrap_tool, bootstrap_tool_version(gconf)))
 
     print_section('Container image list')
     print_container_base_image_info(gconf)

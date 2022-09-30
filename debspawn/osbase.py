@@ -35,6 +35,7 @@ from .utils import (
     print_section,
     format_filesize,
 )
+from .config import GlobalConfig
 from .nspawn import nspawn_run_persist, nspawn_run_helper_persist
 from .aptcache import APTCache
 from .utils.env import ensure_root, get_owner_uid_gid, get_random_free_uid_gid
@@ -43,14 +44,16 @@ from .utils.command import safe_run
 from .utils.zstd_tar import ensure_tar_zstd, compress_directory, decompress_tarball
 
 
-def debootstrap_version():
+def bootstrap_tool_version(gconf=None):
+    if not gconf:
+        gconf = GlobalConfig()
     ds_version = 'unknown'
     try:
-        out, _, _ = safe_run(['debootstrap', '--version'])
+        out, _, _ = safe_run([gconf.bootstrap_tool, '--version'])
         parts = out.strip().split(' ', 2)
         ds_version = parts[0 if len(parts) < 2 else 1]
     except Exception as e:
-        print_warn('Unable to determine debootstrap version: {}'.format(e))
+        print_warn('Unable to determine bootstrap tool version: {}'.format(e))
 
     return ds_version
 
@@ -60,7 +63,17 @@ class OSBase:
     Describes an OS base registered with debspawn
     '''
 
-    def __init__(self, gconf, suite, arch, variant=None, *, base_suite=None, custom_name=None, cachekey=None):
+    def __init__(
+        self,
+        gconf: GlobalConfig,
+        suite: str,
+        arch: str,
+        variant=None,
+        *,
+        base_suite=None,
+        custom_name=None,
+        cachekey=None,
+    ):
         self._gconf = gconf
         self._suite = suite
         self._base_suite = base_suite
@@ -81,6 +94,9 @@ class OSBase:
 
         self._parameters_checked = False
         self._aptcache = APTCache(self)
+
+        # debootstrap-compatible tools that we know about
+        self._known_bootstrap_tools = ('debootstrap', 'mmdebstrap', 'qemu-debootstrap')
 
         # get a fresh UID to give to our build user within the container
         self._builder_uid = get_random_free_uid_gid()[0]
@@ -309,6 +325,7 @@ class OSBase:
             data['AllowRecommends'] = True
         if with_init:
             data['IncludesInit'] = True
+        data['BootstrapTool'] = self._gconf.bootstrap_tool
 
         with open(self.get_config_location(), 'wt') as f:
             f.write(json.dumps(data, sort_keys=True, indent=4))
@@ -389,6 +406,11 @@ class OSBase:
         if not extra_suites:
             extra_suites = []
 
+        bootstrap_tool_exe = self._gconf.bootstrap_tool
+        if not shutil.which(bootstrap_tool_exe):
+            print_error('Unable to find executable for bootstrap tool "{}".'.format(bootstrap_tool_exe))
+            return False
+
         # ensure image location exists
         Path(self._gconf.osroots_dir).mkdir(parents=True, exist_ok=True)
 
@@ -397,6 +419,9 @@ class OSBase:
         else:
             print_section('Creating new base: {} [{}]'.format(self.suite, self.arch))
 
+        print('Bootstrap tool:', '{} {}'.format(bootstrap_tool_exe, bootstrap_tool_version(self._gconf)))
+        if bootstrap_tool_exe not in self._known_bootstrap_tools:
+            print_warn('Using unfamiliar bootstrap tool: {}'.format(bootstrap_tool_exe))
         if self._custom_name:
             print('Custom name: {}'.format(self.name))
         print('Using mirror: {}'.format(mirror if mirror else 'default'))
@@ -408,7 +433,7 @@ class OSBase:
         include_pkgs = ['python3-minimal', 'eatmydata']
         if with_init:
             include_pkgs.append('systemd-sysv')
-        cmd = ['debootstrap', '--arch={}'.format(self.arch), '--include=' + ','.join(include_pkgs)]
+        cmd = [bootstrap_tool_exe, '--arch={}'.format(self.arch), '--include=' + ','.join(include_pkgs)]
         if components:
             cmd.append('--components={}'.format(','.join(components)))
         if self.variant:

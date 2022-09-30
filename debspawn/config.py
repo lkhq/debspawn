@@ -72,6 +72,7 @@ class GlobalConfig:
             self._default_bootstrap_variant = cdata.get('DefaultBootstrapVariant', 'buildd')
             self._allow_unsafe_perms = cdata.get('AllowUnsafePermissions', False)
             self._cache_packages = bool(cdata.get('CachePackages', True))
+            self._bootstrap_tool = cdata.get('BootstrapTool', 'debootstrap')
 
             self._syscall_filter = cdata.get('SyscallFilter', 'compat')
             if self._syscall_filter == 'compat':
@@ -139,6 +140,11 @@ class GlobalConfig:
         def cache_packages(self) -> bool:
             """Whether APT packages should be cached by debspawn."""
             return self._cache_packages
+
+        @property
+        def bootstrap_tool(self) -> str:
+            """The chroot bootstrap tool that we should use."""
+            return self._bootstrap_tool
 
     def __init__(self, fname=None):
         if not GlobalConfig._instance:
