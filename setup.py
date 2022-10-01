@@ -99,7 +99,7 @@ package_data = {'': ['debspawn/dsrun']}
 
 scripts = ['debspawn.py']
 
-install_requires = ['toml>=0.10']
+install_requires = ['tomlkit>=0.8']
 
 setup(
     name=__appname__,

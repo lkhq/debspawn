@@ -20,7 +20,7 @@
 import os
 import sys
 
-import toml
+import tomlkit
 
 thisfile = __file__
 if not os.path.isabs(thisfile):
@@ -46,8 +46,8 @@ class GlobalConfig:
             if os.path.isfile(fname):
                 with open(fname) as f:
                     try:
-                        cdata = toml.load(f)
-                    except toml.TomlDecodeError as e:
+                        cdata = tomlkit.load(f)
+                    except tomlkit.exceptions.ParseError as e:
                         print(
                             'Unable to parse global configuration (global.toml): {}'.format(str(e)),
                             file=sys.stderr,

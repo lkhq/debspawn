@@ -41,7 +41,7 @@ jobs:
 
     - name: Install dependencies
       run: python -m pip install
-               toml types-toml
+               tomlkit
                pkgconfig
                flake8
                pytest
