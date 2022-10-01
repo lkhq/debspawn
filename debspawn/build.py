@@ -34,9 +34,11 @@ from .utils.env import (
     get_random_free_uid_gid,
 )
 from .utils.log import (
+    input_bool,
     print_info,
     print_warn,
     print_error,
+    print_bullet,
     print_header,
     print_section,
     capture_console_output,
@@ -63,7 +65,7 @@ def interact_with_build_environment(
     aptcache_tmp,
     pkginjector,
     prev_exitcode,
-):
+) -> bool:
     '''Launch an interactive shell in the build environment'''
 
     # find the right directory to switch to
@@ -96,27 +98,23 @@ def interact_with_build_environment(
         verbose=True,
     )
 
+    print()
+    copy_artifacts = input_bool(
+        'Should any generated build artifacts (binary/source packages, etc.) be saved?', default=False
+    )
+    if copy_artifacts:
+        print_bullet('Artifacts will be copied to the results directory.')
+    else:
+        print_bullet('Artifacts will not be kept.')
+
     if source_pkg_dir:
-        print()
-        while True:
-            try:
-                copy_changes = input(
-                    (
-                        'Should changes to the debian/ directory be copied back to the host?\n'
-                        'This will OVERRIDE all changes made on files on the host. [y/N]: '
-                    )
-                )
-            except EOFError:
-                copy_changes = 'n'
-            if copy_changes == 'y' or copy_changes == 'Y':
-                copy_changes = True
-                break
-            elif copy_changes == 'n' or copy_changes == 'N':
-                copy_changes = False
-                break
-            elif not copy_changes:
-                copy_changes = False
-                break
+        copy_changes = input_bool(
+            (
+                'Should changes to the debian/ directory be copied back to the host?\n'
+                'This will OVERRIDE all changes made on files on the host.'
+            ),
+            default=False,
+        )
 
         if copy_changes:
             print_info('Cleaning up...')
@@ -176,9 +174,11 @@ def interact_with_build_environment(
                 os.remove(fname)
             print()
         else:
-            print_info('Discarding build environment.')
+            print_bullet('Discarding build environment.')
     else:
         print_info('Can not copy back changes as original package directory is unknown.')
+
+    return copy_artifacts
 
 
 def internal_execute_build(
@@ -293,7 +293,7 @@ def internal_execute_build(
                 print()  # extra blank line after Lintian output
 
             if interact:
-                interact_with_build_environment(
+                ri = interact_with_build_environment(
                     osbase,
                     instance_dir,
                     machine_name,
@@ -303,8 +303,9 @@ def internal_execute_build(
                     pkginjector=pkginjector,
                     prev_exitcode=r,
                 )
-                # exit with status of previous exit code
-                if r != 0:
+                # if we exit with a non-True result, we stop here and don't proceed
+                # with the next steps that save artifacts.
+                if not ri:
                     return False
 
             build_dir_size = get_tree_size(pkg_dir)

@@ -129,6 +129,25 @@ def print_bool_item(prefix: str, b: bool, text_true: str = 'yes', text_false: st
     sys.stdout.flush()
 
 
+def input_bool(question_text, default=False) -> bool:
+    """As user a Yes/No question."""
+    if default:
+        default_info = '[Y/n]'
+    else:
+        default_info = '[y/N]'
+    while True:
+        try:
+            in_str = input('{} {}:'.format(question_text, default_info))
+        except EOFError:
+            return default
+        if in_str == 'y' or in_str == 'Y':
+            return True
+        elif in_str == 'n' or in_str == 'N':
+            return False
+        elif not in_str:
+            return default
+
+
 class TwoStreamLogger:
     '''
     Permits logging messages to stdout/stderr as well as to a file.
