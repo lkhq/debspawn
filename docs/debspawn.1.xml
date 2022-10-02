@@ -274,7 +274,7 @@
 					<para>
 						Set the bootstrap tool that should be used for bootstrapping new images.
 						The tool should have an interface compatible with debootstrap(8). This option
-						allows to use alternative tools like mmdebstrap(1) with <command>&package;</command>.
+						allows one to use alternative tools like mmdebstrap(1) with <command>&package;</command>.
 						(Default: <code>debootstrap</code>)
 					</para>
 				</listitem>
