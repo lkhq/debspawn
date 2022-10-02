@@ -1,3 +1,18 @@
+Version 0.6.0
+~~~~~~~~~~~~~
+Released: 2022-10-02
+
+Features:
+ * Allow containers that run a custom command to be booted as well
+ * Add configuration option to disable package caching
+ * Add configuration option to set a different bootstrap tool
+ * Make artifact storage in interactive mode an explicit action
+
+Bugfixes:
+ * Fix pyproject.toml license/author fields
+ * Don't use deprecated Lintian argument
+ * Use tomlkit instead of deprecated toml
+
 Version 0.5.2
 ~~~~~~~~~~~~~
 Released: 2022-02-22
