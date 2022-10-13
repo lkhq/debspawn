@@ -32,7 +32,8 @@
 	       <cmdsynopsis>
 		       <command>&command;</command>
 		       @RUN_FLAGS_SYNOPSIS@
-		       <arg choice="req">SUITE</arg>
+		       <arg choice="req">NAME</arg>
+		       <arg choice="req">COMMAND</arg>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 
@@ -43,8 +44,8 @@
 			the same environment that is normally used for building packages.
 		</para>
 		<para>
-			<command>&command;</command> is explicitly designed to be used by other tools for custom applications, and usually,
-			you will want to use <command>debspawn build</command> instead to build Debian packages.
+			<command>&command;</command> is explicitly designed to be used by other automation tools for custom applications,
+			and usually you will want to use <command>debspawn build</command> instead to build Debian packages.
 		</para>
 	</refsect1>
 
@@ -52,6 +53,15 @@
 		<title>Options</title>
 
 		<variablelist>
+			<varlistentry>
+				<term>NAME</term>
+				<listitem><para>The name of the container image (usually a distribution suite name).</para></listitem>
+			</varlistentry>
+			<varlistentry>
+				<term>COMMAND</term>
+				<listitem><para>The command to run.</para></listitem>
+			</varlistentry>
+
 			@RUN_FLAGS_ENTRIES@
 		</variablelist>
 	</refsect1>

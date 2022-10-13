@@ -32,7 +32,7 @@
 	       <cmdsynopsis>
 		       <command>&command;</command>
 		       @UPDATE_FLAGS_SYNOPSIS@
-		       <arg choice="req">SUITE</arg>
+		       <arg choice="req">NAME</arg>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 
@@ -64,6 +64,11 @@
 		<title>Options</title>
 
 		<variablelist>
+			<varlistentry>
+				<term>NAME</term>
+				<listitem><para>The name of the container image (usually a distribution suite name).</para></listitem>
+			</varlistentry>
+
 			@UPDATE_FLAGS_ENTRIES@
 		</variablelist>
 	</refsect1>
