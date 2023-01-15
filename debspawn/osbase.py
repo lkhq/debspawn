@@ -519,9 +519,12 @@ class OSBase:
                 # so we can retry and don't silently use old packages
                 # (only available with newer APT versions)
                 f.write('APT::Update::Error-Mode "any";\n')
+                f.write('APT::AutoRemove::SuggestsImportant "false";\n')
+                f.write('APT::AutoRemove::RecommendsImportant "false";\n')
+                f.write('Acquire::Languages "none";\n')
                 if not allow_recommends:
-                    f.write('APT::Install-Recommends "0";\n')
-                    f.write('APT::Install-Suggests "0";\n')
+                    f.write('APT::Install-Recommends "false";\n')
+                    f.write('APT::Install-Suggests "false";\n')
 
             if with_init:
                 # if we are allowing to boot this container, add a passwordless root login
