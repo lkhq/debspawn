@@ -148,11 +148,15 @@ def update_container(builder_uid):
         pwd.getpwnam(BUILD_USER)
     except KeyError:
         print('No "{}" user, creating it.'.format(BUILD_USER))
-        run_command('adduser --system --no-create-home --disabled-password --uid {} {}'
+        run_command('useradd -M -f -1 -d /nonexistent --uid {} {}'
                     .format(builder_uid, BUILD_USER))
 
     run_command('mkdir -p /srv/build')
     run_command('chown {} /srv/build'.format(BUILD_USER))
+
+    # ensure the non existent directory is gone even if it was
+    # created accidentally
+    run_command('rm -rf /nonexistent')
 
     return True
 
@@ -171,6 +175,7 @@ def prepare_package_build(arch_only=False, suite=None):
     print_section('Preparing container for build')
 
     with eatmydata():
+        run_command('rm -rf /nonexistent')
         run_apt_command('update')
         run_apt_command('full-upgrade')
         run_apt_command(['install', '--no-install-recommends',
