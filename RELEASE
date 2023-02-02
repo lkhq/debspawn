@@ -2,12 +2,12 @@ Debspawn Release Notes
 
 1. Write NEWS entries for Debspawn in the same format as usual.
 
-git shortlog v0.6.0.. | grep -i -v trivial | grep -v Merge > NEWS.new
+git shortlog v0.6.1.. | grep -i -v trivial | grep -v Merge > NEWS.new
 
 --------------------------------------------------------------------------------
-Version 0.6.1
+Version 0.6.2
 ~~~~~~~~~~~~~
-Released: 2022-xx-xx
+Released: 2023-xx-xx
 
 Notes:
 
@@ -18,8 +18,8 @@ Bugfixes:
 
 2. Commit changes in Git:
 
-git commit -a -m "Release version 0.6.1"
-git tag -s -f -m "Release 0.6.1" v0.6.1 <gpg password>
+git commit -a -m "Release version 0.6.2"
+git tag -s -f -m "Release 0.6.2" v0.6.2 <gpg password>
 git push --tags
 git push
 
