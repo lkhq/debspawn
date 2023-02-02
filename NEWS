@@ -1,3 +1,15 @@
+Version 0.6.1
+~~~~~~~~~~~~~
+Released: 2023-01-02
+
+Features:
+ * Make container APT configuration more sbuild-like
+
+Bugfixes:
+ * docs: Update positional argument info in manual pages
+ * Use useradd instead of adduser
+ * Don't force a suite when packages are injected
+
 Version 0.6.0
 ~~~~~~~~~~~~~
 Released: 2022-10-02
