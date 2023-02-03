@@ -424,7 +424,7 @@ def nspawn_run_helper_persist(
     chdir='/tmp',
     *,
     build_uid: int,
-    nspawn_flags=[],
+    nspawn_flags: T.Union[list[str], str] = None,
     tmp_apt_cache_dir=None,
     pkginjector=None,
     allowed: list[str] = None,

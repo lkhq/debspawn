@@ -30,6 +30,10 @@ from contextlib import contextmanager
 from ..config import GlobalConfig
 
 
+class MountError(Exception):
+    """Error while dealing with mountpoints."""
+
+
 def listify(item: T.Any):
     '''
     Return a list of :item, unless :item already is a lit.
@@ -202,7 +206,7 @@ def bindmount(from_path, to_path):
     cmd = ['mount', '--bind', from_path, to_path]
     ret = subprocess.run(cmd, capture_output=True, check=False)
     if ret.returncode != 0:
-        raise Exception('Unable to create bindmount {} -> {}'.format(from_path, to_path))
+        raise MountError('Unable to create bindmount {} -> {}'.format(from_path, to_path))
 
 
 def umount(path, lazy: bool = True):
@@ -214,7 +218,7 @@ def umount(path, lazy: bool = True):
     cmd.append(path)
     ret = subprocess.run(cmd, capture_output=True, check=False)
     if ret.returncode != 0:
-        raise Exception('Unable to umount path {}'.format(path))
+        raise MountError('Unable to umount path {}'.format(path))
 
     # try again if the mountpoint is still there, as
     # overmounting may have happened

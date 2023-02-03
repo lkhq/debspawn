@@ -55,6 +55,10 @@ from .utils.misc import (
 from .utils.command import safe_run
 
 
+class BuildError(Exception):
+    """Package build failed with a generic error."""
+
+
 def interact_with_build_environment(
     osbase,
     instance_dir,
@@ -195,7 +199,7 @@ def internal_execute_build(
     '''Perform the actual build on an extracted package directory'''
     assert not build_only or isinstance(build_only, str)
     if not pkg_dir:
-        raise Exception('Package directory is missing!')
+        raise ValueError('Package directory is missing!')
     pkg_dir = os.path.normpath(pkg_dir)
     if not build_env:
         build_env = {}
@@ -332,7 +336,7 @@ def print_build_detail(osbase, pkgname, version):
 def _read_source_package_details():
     out, err, ret = safe_run(['dpkg-parsechangelog'])
     if ret != 0:
-        raise Exception('Running dpkg-parsechangelog failed: {}{}'.format(out, err))
+        raise BuildError('Running dpkg-parsechangelog failed: {}{}'.format(out, err))
 
     pkg_sourcename = None
     pkg_version = None

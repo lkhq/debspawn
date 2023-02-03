@@ -22,18 +22,22 @@ import shutil
 from .command import run_command
 
 
+class TarError(Exception):
+    """Generic error while using tar/zstd."""
+
+
 def ensure_tar_zstd():
     '''Check if the required binaries for compression are available'''
 
     if not shutil.which('zstd'):
-        raise Exception(
+        raise TarError(
             (
                 'The "zsdt" binary was not found, we can not compress tarballs. '
                 'Please install zstd to continue!'
             )
         )
     if not shutil.which('tar'):
-        raise Exception(
+        raise TarError(
             'The "tar" binary was not found, we can not create tarballs. Please install tar to continue!'
         )
 
@@ -46,7 +50,7 @@ def compress_directory(dirname, tarname):
     out, err, ret = run_command(cmd)
 
     if ret != 0:
-        raise Exception('Unable to create tarball "{}":\n{}{}'.format(tarname, out, err))
+        raise TarError('Unable to create tarball "{}":\n{}{}'.format(tarname, out, err))
 
 
 def decompress_tarball(tarname, dirname):
@@ -57,4 +61,4 @@ def decompress_tarball(tarname, dirname):
     out, err, ret = run_command(cmd)
 
     if ret != 0:
-        raise Exception('Unable to decompress tarball "{}":\n{}{}'.format(tarname, out, err))
+        raise TarError('Unable to decompress tarball "{}":\n{}{}'.format(tarname, out, err))
