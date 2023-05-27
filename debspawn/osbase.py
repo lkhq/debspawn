@@ -387,6 +387,30 @@ class OSBase:
             if https_proxy:
                 f.write('Acquire::https::Proxy "{}";\n'.format(https_proxy))
 
+    def _setup_apt_repo_preferences(self, instance_dir, preferred_suites):
+        '''Setup APT repository preferences.
+        APT somtimes wants to install packages from older repositories to satisfy
+        dependencies, even though we must build with versions from the newer repositories.
+        This especially is the case for `NotAutomatic` suites like "experimental", where packages
+        would not get auto-installed from.
+        Passing "-t <suite>" to the APT commands restricts the solver way too much, so
+        valid dependency chains are no chosen for partial suites if the particl suites don't
+        contain all dependencies as well.
+        This is a compromise to make APT do the right thing.
+        NOTE: With suites like experimental, we may need to set the preferences later if we want
+        to avoid experimental packages being added to the base image. That comes with its own
+        difficulties though, so we avoid that for now.
+        '''
+
+        aptpref_fname = os.path.join(instance_dir, 'etc', 'apt', 'preferences.d', '10debspawn')
+        with open(aptpref_fname, 'w') as f:
+            first = True
+            for suite in preferred_suites:
+                if not first:
+                    f.write('\n')
+                first = False
+                f.write(('Package: *\n' 'Pin: release o={}\n' 'Pin-Priority: 600\n').format(suite))
+
     def _create_internal(
         self,
         mirror=None,
@@ -511,6 +535,10 @@ class OSBase:
                         f.write('\n')
                         for line in extra_source_lines.split('\\n'):
                             f.write('{}\n'.format(line.strip()))
+
+            # set preference for extra suites in dependency resolution
+            if extra_suites:
+                self._setup_apt_repo_preferences(tdir, extra_suites)
 
             # write our default APT settings for this container
             aptconf_fname = os.path.join(tdir, 'etc', 'apt', 'apt.conf.d', '99debspawn')
