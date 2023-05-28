@@ -310,7 +310,14 @@ class OSBase:
         '''
 
         print_info('Saving configuration settings.')
-        data: T.Dict[str, T.Union[str, bool]] = {'Suite': self.suite, 'Architecture': self.arch}
+        data: T.Dict[str, T.Union[str, bool]] = {
+            'Name': self.name,
+            'CustomName': self._custom_name,
+            'Suite': self.suite,
+            'BaseSuite': self.base_suite,
+            'Architecture': self.arch,
+        }
+
         if self.variant:
             data['Variant'] = self.variant
         if mirror:
@@ -773,7 +780,10 @@ class OSBase:
         # read configuration data
         with open(config_fname, 'rt') as f:
             cdata: T.Dict[str, T.Union[str, bool]] = json.loads(f.read())
+            self._name = cdata.get('Name', self.name)
+            self._custom_name = cdata.get('CustomName', self._custom_name)
             self._suite = cdata.get('Suite', self.suite)
+            self._base_suite = cdata.get('BaseSuite', self.base_suite)
             self._arch = cdata.get('Architecture', self.arch)
             self._variant = cdata.get('Variant', self.variant)
             mirror = cdata.get('Mirror')
