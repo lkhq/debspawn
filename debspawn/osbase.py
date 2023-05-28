@@ -409,6 +409,10 @@ class OSBase:
         difficulties though, so we avoid that for now.
         '''
 
+        if not preferred_suites:
+            preferred_suites = []
+        preferred_suites.insert(0, self.suite)
+
         aptpref_fname = os.path.join(instance_dir, 'etc', 'apt', 'preferences.d', '10debspawn')
         with open(aptpref_fname, 'w') as f:
             first = True
@@ -416,7 +420,10 @@ class OSBase:
                 if not first:
                     f.write('\n')
                 first = False
-                f.write(('Package: *\n' 'Pin: release o={}\n' 'Pin-Priority: 600\n').format(suite))
+                priority = 500
+                if suite == self.suite:
+                    priority = 600
+                f.write(('Package: *\n' 'Pin: release o={}\n' 'Pin-Priority: {}\n').format(suite, priority))
 
     def _create_internal(
         self,
@@ -544,7 +551,7 @@ class OSBase:
                             f.write('{}\n'.format(line.strip()))
 
             # set preference for extra suites in dependency resolution
-            if extra_suites:
+            if extra_suites or self.has_base_suite:
                 self._setup_apt_repo_preferences(tdir, extra_suites)
 
             # write our default APT settings for this container
