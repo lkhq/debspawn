@@ -22,7 +22,6 @@ class DocbookEditor:
         self._replacements['@{}@'.format(name)] = replacement
 
     def register_command_flag_synopsis(self, actions, command_name):
-
         flags_text = ''
         flags_entries = ''
         for item in actions:
@@ -65,7 +64,6 @@ class DocbookEditor:
         self.add_substvar('{}_FLAGS_ENTRIES'.format(command_name.upper()), flags_entries)
 
     def process_file(self, input_fname, output_fname):
-
         with open(input_fname, 'r') as f:
             template_content = f.read()
 
@@ -92,7 +90,6 @@ def generate_docbook_pages(build_dir):
     xml_manpages.append(editor.process_file('docs/debspawn.1.xml', os.path.join(build_dir, 'debspawn.1.xml')))
 
     for command, sp in parser._get_positional_actions()[0]._name_parser_map.items():
-
         editor.register_command_flag_synopsis(sp._get_optional_actions(), command)
         template_fname = 'docs/debspawn-{}.1.xml'.format(command)
         if not os.path.isfile(template_fname):
