@@ -5,7 +5,7 @@ Debspawn Release Notes
 git shortlog v0.6.1.. | grep -i -v trivial | grep -v Merge > NEWS.new
 
 --------------------------------------------------------------------------------
-Version 0.6.2
+Version 0.6.3
 ~~~~~~~~~~~~~
 Released: 2023-xx-xx
 
@@ -18,8 +18,8 @@ Bugfixes:
 
 2. Commit changes in Git:
 
-git commit -a -m "Release version 0.6.2"
-git tag -s -f -m "Release 0.6.2" v0.6.2 <gpg password>
+git commit -a -m "Release version 0.6.3"
+git tag -s -f -m "Release 0.6.3" v0.6.3 <gpg password>
 git push --tags
 git push
 
