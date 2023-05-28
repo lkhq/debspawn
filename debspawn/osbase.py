@@ -420,9 +420,7 @@ class OSBase:
                 if not first:
                     f.write('\n')
                 first = False
-                priority = 500
-                if suite == self.suite:
-                    priority = 600
+                priority = 900
                 f.write(('Package: *\n' 'Pin: release o={}\n' 'Pin-Priority: {}\n').format(suite, priority))
 
     def _create_internal(
