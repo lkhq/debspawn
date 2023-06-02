@@ -386,10 +386,11 @@ def _get_build_flags(build_only=None, include_orig=False, maintainer=None, extra
     return True, buildflags
 
 
-def _sign_result(results_dir, spkg_name, spkg_version, build_arch):
+def _sign_result(results_dir, spkg_name, spkg_version, build_arch, build_only):
     print_section('Signing Package')
     spkg_version_noepoch = version_noepoch(spkg_version)
-    changes_basename = '{}_{}_{}.changes'.format(spkg_name, spkg_version_noepoch, build_arch)
+    sign_arch = 'source' if build_only == 'source' else build_arch
+    changes_basename = '{}_{}_{}.changes'.format(spkg_name, spkg_version_noepoch, sign_arch)
 
     with switch_unprivileged():
         proc = subprocess.run(['debsign', os.path.join(results_dir, changes_basename)], check=False)
@@ -517,7 +518,7 @@ def build_from_directory(
 
     # sign the resulting package
     if sign:
-        r = _sign_result(osbase.results_dir, pkg_sourcename, pkg_version, osbase.arch)
+        r = _sign_result(osbase.results_dir, pkg_sourcename, pkg_version, osbase.arch, build_only)
         if not r:
             return False
 
@@ -613,7 +614,7 @@ def build_from_dsc(
 
     # sign the resulting package
     if sign:
-        r = _sign_result(osbase.results_dir, pkg_sourcename, pkg_version, osbase.arch)
+        r = _sign_result(osbase.results_dir, pkg_sourcename, pkg_version, osbase.arch, build_only)
         if not r:
             return False
 
