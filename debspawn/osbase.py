@@ -394,6 +394,24 @@ class OSBase:
             if https_proxy:
                 f.write('Acquire::https::Proxy "{}";\n'.format(https_proxy))
 
+    def _setup_etchosts(self, instance_dir):
+        '''Set /etc/hosts for the container.
+        Many packages spawn webservers as part of their tests, which need to resolve
+        "localhost" even when on our private network. So we need to provide /etc/hosts
+        on our own, so this works even with systemd-nspawn's private network.
+        '''
+
+        hosts_fname = os.path.join(instance_dir, 'etc', 'hosts')
+        with open(hosts_fname, 'w') as f:
+            f.write(
+                '127.0.0.1       localhost\n'
+                '\n'
+                '# The following lines are desirable for IPv6 capable hosts\n'
+                '::1     localhost ip6-localhost ip6-loopback\n'
+                'ff02::1 ip6-allnodes\n'
+                'ff02::2 ip6-allrouters\n'
+            )
+
     def _setup_apt_repo_preferences(self, instance_dir, preferred_suites):
         '''Setup APT repository preferences.
         APT somtimes wants to install packages from older repositories to satisfy
@@ -601,6 +619,9 @@ class OSBase:
             # configure APT proxy, so the configure operation will work behind proxys
             self._setup_apt_proxy(tdir)
 
+            # setup hosts
+            self._setup_etchosts(tdir)
+
             print_section('Configure')
             if (
                 nspawn_run_helper_persist(
@@ -756,6 +777,9 @@ class OSBase:
                 != 0
             ):
                 return False
+
+            # setup hosts
+            self._setup_etchosts(instance_dir)
 
             # drop unwanted files from the image
             self._remove_unwanted_files(instance_dir)
