@@ -153,6 +153,8 @@ def get_random_free_uid_gid():
     uid = 1000
     gid = 1000
     for pw in pwd.getpwall():
+        if pw.pw_name == 'nobody':
+            continue
         if pw.pw_uid > uid:
             uid = pw.pw_uid
         if pw.pw_gid > gid:

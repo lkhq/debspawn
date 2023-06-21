@@ -35,6 +35,9 @@ BUILD_DIR = '/srv/build'
 # additional packages to be used when building
 EXTRAPKG_DIR = '/srv/extra-packages'
 
+# directory that may or may not be exist, but must never be written to
+INVALID_DIR = '/run/invalid'
+
 
 #
 # Globals
@@ -56,7 +59,8 @@ def run_command(cmd, env=None, *, check=True):
     p = subprocess.run(cmd, env=proc_env, check=False)
     if p.returncode != 0:
         if check:
-            print('Command `{}` failed.'.format(' '.join(cmd)))
+            print('Command `{}` failed.'.format(' '.join(cmd)),
+                  file=sys.stderr)
             sys.exit(p.returncode)
         else:
             return False
@@ -133,6 +137,39 @@ def eatmydata():
         del os.environ['LD_PRELOAD']
 
 
+def ensure_no_nonexistent_dirs():
+    nonexistent_dirs = ('/nonexistent', INVALID_DIR)
+    for path in nonexistent_dirs:
+        if os.path.exists(path):
+            if os.geteuid() == 0:
+                run_command('rm -r {}'.format(path))
+                continue
+
+            if path == INVALID_DIR:
+                # ensure invalid dir has no permissions
+                try:
+                    os.chmod(INVALID_DIR, 0o000)
+                except PermissionError:
+                    print('WARNING: Directory {} exists and is writable.'.format(INVALID_DIR),
+                          file=sys.stderr)
+            else:
+                print('WARNING: Directory {} exists and can not be removed!'.format(path),
+                      file=sys.stderr)
+
+
+def drop_privileges():
+    import grp
+
+    if os.geteuid() != 0:
+        return
+
+    builder_gid = grp.getgrnam(BUILD_USER).gr_gid
+    builder_uid = pwd.getpwnam(BUILD_USER).pw_uid
+    os.setgroups([])
+    os.setgid(builder_gid)
+    os.setuid(builder_uid)
+
+
 def update_container(builder_uid):
     with eatmydata():
         run_apt_command('update')
@@ -148,15 +185,15 @@ def update_container(builder_uid):
         pwd.getpwnam(BUILD_USER)
     except KeyError:
         print('No "{}" user, creating it.'.format(BUILD_USER))
-        run_command('useradd -M -f -1 -d /nonexistent --uid {} {}'
-                    .format(builder_uid, BUILD_USER))
+        run_command('useradd -M -f -1 -d {} --uid {} {}'
+                    .format(INVALID_DIR, builder_uid, BUILD_USER))
 
     run_command('mkdir -p /srv/build')
     run_command('chown {} /srv/build'.format(BUILD_USER))
 
     # ensure the non existent directory is gone even if it was
     # created accidentally
-    run_command('rm -rf /nonexistent')
+    ensure_no_nonexistent_dirs()
 
     return True
 
@@ -175,7 +212,6 @@ def prepare_package_build(arch_only=False, suite=None):
     print_section('Preparing container for build')
 
     with eatmydata():
-        run_command('rm -rf /nonexistent')
         run_apt_command('update')
         run_apt_command('full-upgrade')
         run_apt_command(['install', '--no-install-recommends',
@@ -197,7 +233,8 @@ def prepare_package_build(arch_only=False, suite=None):
                                             stdout=f)
                     ret = proc.wait()
                     if ret != 0:
-                        print('ERROR: Unable to generate temporary APT repository for injected packages.')
+                        print('ERROR: Unable to generate temporary APT repository for injected packages.',
+                              file=sys.stderr)
                         sys.exit(2)
 
                 with open('/etc/apt/sources.list', 'a') as f:
@@ -228,6 +265,7 @@ def prepare_package_build(arch_only=False, suite=None):
 
 
 def build_package(buildflags=None, suite=None):
+    drop_privileges()
     print_section('Build')
 
     os.chdir(BUILD_DIR)
@@ -250,6 +288,7 @@ def build_package(buildflags=None, suite=None):
 
 def run_qatasks(qa_lintian=True):
     ''' Run QA tasks on a built package immediately after build (currently Lintian) '''
+    drop_privileges()
     os.chdir(BUILD_DIR)
     for f in glob('./*'):
         if os.path.isdir(f):
@@ -291,13 +330,17 @@ def setup_environment(builder_uid=None, use_color=True, use_unicode=True, *, is_
 
     del os.environ['LOGNAME']
 
+    # ensure no directories exists that shouldn't be there
+    ensure_no_nonexistent_dirs()
+
     if builder_uid and builder_uid > 0 and os.geteuid() == 0:
         # we are root and got a UID to change the BUILD_USER to
         try:
             pwd.getpwnam(BUILD_USER)
         except KeyError:
             if not is_update:
-                print('WARNING: No "{}" user found in this container!'.format(BUILD_USER))
+                print('WARNING: No "{}" user found in this container!'.format(BUILD_USER),
+                      file=sys.stderr)
             return
         run_command('usermod -u {} {}'.format(builder_uid, BUILD_USER))
 
@@ -370,7 +413,7 @@ def main():
         if not r:
             return 2
     else:
-        print('ERROR: No action specified.')
+        print('ERROR: No action specified.', file=sys.stderr)
         return 1
 
     return 0
