@@ -6,6 +6,7 @@ cd $BASEDIR
 
 echo "=== ISort ==="
 python -m isort .
+python -m isort ./debspawn/dsrun
 
 echo "=== Black ==="
 python -m black .
