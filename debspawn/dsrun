@@ -217,29 +217,31 @@ def prepare_package_build(arch_only=False, suite=None):
         run_apt_command(['install', '--no-install-recommends',
                          'build-essential', 'dpkg-dev', 'fakeroot'])
 
-        # check if we have extra packages to register with APT
-        if os.path.exists(EXTRAPKG_DIR) and os.path.isdir(EXTRAPKG_DIR):
-            if os.listdir(EXTRAPKG_DIR):
+    # check if we have extra packages to register with APT
+    if os.path.exists(EXTRAPKG_DIR) and os.path.isdir(EXTRAPKG_DIR):
+        if os.listdir(EXTRAPKG_DIR):
+            with eatmydata():
                 run_apt_command(['install', '--no-install-recommends', 'apt-utils'])
-                print()
-                print('Using injected packages as additional APT package source.')
+            print()
+            print('Using injected packages as additional APT package source.')
 
-                os.chdir(EXTRAPKG_DIR)
-                with open(os.path.join(EXTRAPKG_DIR, 'Packages'), 'wt') as f:
-                    proc = subprocess.Popen(['apt-ftparchive',
-                                             'packages',
-                                             '.'],
-                                            cwd=EXTRAPKG_DIR,
-                                            stdout=f)
-                    ret = proc.wait()
-                    if ret != 0:
-                        print('ERROR: Unable to generate temporary APT repository for injected packages.',
-                              file=sys.stderr)
-                        sys.exit(2)
+            os.chdir(EXTRAPKG_DIR)
+            with open(os.path.join(EXTRAPKG_DIR, 'Packages'), 'wt') as f:
+                proc = subprocess.Popen(['apt-ftparchive',
+                                            'packages',
+                                            '.'],
+                                        cwd=EXTRAPKG_DIR,
+                                        stdout=f)
+                ret = proc.wait()
+                if ret != 0:
+                    print('ERROR: Unable to generate temporary APT repository for injected packages.',
+                            file=sys.stderr)
+                    sys.exit(2)
 
-                with open('/etc/apt/sources.list', 'a') as f:
-                    f.write('deb [trusted=yes] file://{} ./\n'.format(EXTRAPKG_DIR))
+            with open('/etc/apt/sources.list', 'a') as f:
+                f.write('deb [trusted=yes] file://{} ./\n'.format(EXTRAPKG_DIR))
 
+            with eatmydata():
                 # make APT aware of the new packages, update base packages if needed
                 run_apt_command('update')
                 run_apt_command('full-upgrade')
