@@ -188,6 +188,10 @@ def _execute_sdnspawn(
     for v_name, v_value in env_vars.items():
         cmd.extend(['-E', '{}={}'.format(v_name, v_value)])
 
+    # never try to bindmount /etc/localtime
+    cmd.append('--timezone=copy')
+
+    # add custom parameters
     cmd.extend(parameters)
 
     if nowait:
