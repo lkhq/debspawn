@@ -208,7 +208,25 @@ def prepare_run():
     return True
 
 
+def _generate_hashes(filename):
+    import hashlib
+
+    hash_md5 = hashlib.md5()
+    hash_sha256 = hashlib.sha256()
+    file_size = 0
+
+    with open(filename, 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b''):
+            hash_md5.update(chunk)
+            hash_sha256.update(chunk)
+        file_size = f.tell()
+
+    return hash_md5.hexdigest(), hash_sha256.hexdigest(), file_size
+
+
 def prepare_package_build(arch_only=False, suite=None):
+    from datetime import datetime, timezone
+
     print_section('Preparing container for build')
 
     with eatmydata():
@@ -225,8 +243,9 @@ def prepare_package_build(arch_only=False, suite=None):
             print()
             print('Using injected packages as additional APT package source.')
 
+            packages_index_fname = os.path.join(EXTRAPKG_DIR, 'Packages')
             os.chdir(EXTRAPKG_DIR)
-            with open(os.path.join(EXTRAPKG_DIR, 'Packages'), 'wt') as f:
+            with open(packages_index_fname, 'wt') as f:
                 proc = subprocess.Popen(['apt-ftparchive',
                                             'packages',
                                             '.'],
@@ -237,6 +256,26 @@ def prepare_package_build(arch_only=False, suite=None):
                     print('ERROR: Unable to generate temporary APT repository for injected packages.',
                             file=sys.stderr)
                     sys.exit(2)
+
+            with open(os.path.join(EXTRAPKG_DIR, 'Release'), 'wt') as f:
+                release_tmpl = '''Archive: local-build-inject
+Origin: LocalPkg
+Label: LocalPkg
+Acquire-By-Hash: no
+Component: main
+Date: {date}
+MD5Sum:
+ {md5_hash} {size} Packages
+SHA256:
+ {sha256_hash} {size} Packages
+'''
+                md5_hash, sha256_hash, size = _generate_hashes(packages_index_fname)
+                f.write(release_tmpl.format(
+                    date=datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S +0000'),
+                    md5_hash=md5_hash,
+                    sha256_hash=sha256_hash,
+                    size=size)
+                )
 
             with open('/etc/apt/sources.list', 'a') as f:
                 f.write('deb [trusted=yes] file://{} ./\n'.format(EXTRAPKG_DIR))
