@@ -247,14 +247,14 @@ def prepare_package_build(arch_only=False, suite=None):
             os.chdir(EXTRAPKG_DIR)
             with open(packages_index_fname, 'wt') as f:
                 proc = subprocess.Popen(['apt-ftparchive',
-                                            'packages',
-                                            '.'],
+                                         'packages',
+                                         '.'],
                                         cwd=EXTRAPKG_DIR,
                                         stdout=f)
                 ret = proc.wait()
                 if ret != 0:
                     print('ERROR: Unable to generate temporary APT repository for injected packages.',
-                            file=sys.stderr)
+                          file=sys.stderr)
                     sys.exit(2)
 
             with open(os.path.join(EXTRAPKG_DIR, 'Release'), 'wt') as f:

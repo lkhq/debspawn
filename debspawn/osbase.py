@@ -450,7 +450,7 @@ class OSBase:
                 f.write(('Package: *\n' 'Pin: release a={}\n' 'Pin-Priority: {}\n').format(suite, priority))
 
                 # we *always* prefer locally injected packages above anything else
-                f.write(('\n' 'Package: *\n' 'Pin: release o=LocalPkg\n' 'Pin-Priority: 1000\n'))
+                f.write('\nPackage: *\nPin: release o=LocalPkg\nPin-Priority: 1000\n')
 
     def _create_internal(
         self,
