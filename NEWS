@@ -1,3 +1,15 @@
+Version 0.6.3
+~~~~~~~~~~~~~
+Released: 2023-12-22
+
+Bugfixes:
+ * Ensure containers have a dummy /etc/hosts file (Matthias Klumpp)
+ * Work around nspawn wanting to ensure its user-home exists (Matthias Klumpp)
+ * dsrun: Use eatmydata a bit more sparingly (Matthias Klumpp)
+ * Ensure passwd is available in the build environment (Matthias Klumpp)
+ * Ensure locally injected packages are always preferred (Matthias Klumpp)
+ * Fix debsign error on source only builds (Maykel Moya)
+
 Version 0.6.2
 ~~~~~~~~~~~~~
 Released: 2023-05-28
