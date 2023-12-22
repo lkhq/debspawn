@@ -492,7 +492,7 @@ class OSBase:
         if with_init:
             print('Includes init: yes')
 
-        include_pkgs = ['python3-minimal', 'eatmydata']
+        include_pkgs = ['passwd', 'python3-minimal', 'eatmydata']
         if with_init:
             include_pkgs.append('systemd-sysv')
         cmd = [bootstrap_tool_exe, '--arch={}'.format(self.arch), '--include=' + ','.join(include_pkgs)]
