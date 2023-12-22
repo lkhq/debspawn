@@ -40,7 +40,7 @@ def listify(item: T.Any):
     '''
     if not item:
         return []
-    return item if type(item) == list else [item]
+    return item if isinstance(item, list) else [item]
 
 
 @contextmanager
