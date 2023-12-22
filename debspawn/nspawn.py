@@ -160,6 +160,10 @@ def _execute_sdnspawn(
         cmd.append('-a')
     if private_users:
         cmd.append('-U')  # User namespaces with --private-users=pick --private-users-chown, if possible
+
+    # never try to bindmount /etc/localtime
+    cmd.append('--timezone=copy')
+
     if full_dev_access:
         cmd.extend(['--bind', '/dev'])
         if systemd_version_atleast(244):
@@ -187,9 +191,6 @@ def _execute_sdnspawn(
 
     for v_name, v_value in env_vars.items():
         cmd.extend(['-E', '{}={}'.format(v_name, v_value)])
-
-    # never try to bindmount /etc/localtime
-    cmd.append('--timezone=copy')
 
     # add custom parameters
     cmd.extend(parameters)

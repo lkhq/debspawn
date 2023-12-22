@@ -329,7 +329,6 @@ def build_package(buildflags=None, suite=None):
 
 def run_qatasks(qa_lintian=True):
     ''' Run QA tasks on a built package immediately after build (currently Lintian) '''
-    drop_privileges()
     os.chdir(BUILD_DIR)
     for f in glob('./*'):
         if os.path.isdir(f):
@@ -345,10 +344,7 @@ def run_qatasks(qa_lintian=True):
 
         print_section('QA: Lintian')
 
-        # drop privileges
-        pw = pwd.getpwnam(BUILD_USER)
-        os.seteuid(pw.pw_uid)
-
+        drop_privileges()
         cmd = ['lintian',
                '-I',  # infos by default
                '--pedantic',  # pedantic hints by default,
