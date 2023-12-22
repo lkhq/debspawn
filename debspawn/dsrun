@@ -258,9 +258,9 @@ def prepare_package_build(arch_only=False, suite=None):
                     sys.exit(2)
 
             with open(os.path.join(EXTRAPKG_DIR, 'Release'), 'wt') as f:
-                release_tmpl = '''Archive: local-build-inject
-Origin: LocalPkg
-Label: LocalPkg
+                release_tmpl = '''Archive: local-pkg-inject
+Origin: LocalInjected
+Label: LocalInjected
 Acquire-By-Hash: no
 Component: main
 Date: {date}
