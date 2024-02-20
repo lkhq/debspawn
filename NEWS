@@ -1,3 +1,11 @@
+Version 0.6.4
+~~~~~~~~~~~~~
+Released: 2024-02-20
+
+Bugfixes:
+ * Ensure nspawn never tries to bindmount /etc/localtime
+ * Fix Lintian check permission error
+
 Version 0.6.3
 ~~~~~~~~~~~~~
 Released: 2023-12-22
