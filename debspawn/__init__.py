@@ -18,4 +18,4 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 __appname__ = 'debspawn'
-__version__ = '0.6.4'
+__version__ = '0.6.5'
