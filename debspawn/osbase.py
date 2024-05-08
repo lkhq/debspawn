@@ -447,7 +447,7 @@ class OSBase:
                 priority = 500
                 if suite == self.suite:
                     priority = 600
-                f.write(('Package: *\n' 'Pin: release a={}\n' 'Pin-Priority: {}\n').format(suite, priority))
+                f.write(('Package: *\n' 'Pin: release {}\n' 'Pin-Priority: {}\n').format(suite, priority))
 
                 # we *always* prefer locally injected packages above anything else
                 f.write('\nPackage: *\nPin: release o=LocalInjected\nPin-Priority: 1000\n')
