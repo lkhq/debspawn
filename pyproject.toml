@@ -9,6 +9,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 dynamic = ['version']
 
+dependencies = [
+    "tomlkit>=0.8",
+]
+
 [project.urls]
 Documentation = "https://github.com/lkhq/debspawn"
 Source = "https://github.com/lkhq/debspawn"

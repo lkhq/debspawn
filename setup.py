@@ -6,6 +6,7 @@ import shutil
 import platform
 from subprocess import check_call
 
+import tomllib
 from setuptools import setup
 from setuptools.command.install_scripts import install_scripts as install_scripts_orig
 
@@ -99,7 +100,9 @@ package_data = {'': ['debspawn/dsrun']}
 
 scripts = ['debspawn.py']
 
-install_requires = ['tomlkit>=0.8']
+with open('pyproject.toml', 'rb') as f:
+    pp_data = tomllib.load(f)
+    install_requires = pp_data['project']['dependencies']
 
 setup(
     name=__appname__,
@@ -112,7 +115,7 @@ setup(
     long_description=open(os.path.join(source_root, 'README.md')).read(),
     long_description_content_type='text/markdown',
     #
-    python_requires='>=3.9',
+    python_requires='>=3.11',
     platforms=['any'],
     zip_safe=False,
     include_package_data=True,
