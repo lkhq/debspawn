@@ -39,8 +39,12 @@
 	<refsect1>
 		<title>Description</title>
 		<para>
-			Create a new base image for a suite known to <command>debootstrap(1)</command>. The image will later be used to spawn
+			Create a new base image for a suite known to <command>debootstrap(1)</command> or
+			<command>mmdebstrap(1)</command>. The image will later be used to spawn
 			ephemeral containers in which packages can be built.
+			If <command>mmdebstrap</command> is installed on the system it will be preferred
+			over <command>debootstrap</command> unless a specific bootstrap tool is set in the
+			global configuration.
 		</para>
 	</refsect1>
 

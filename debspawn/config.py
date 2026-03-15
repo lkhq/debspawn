@@ -19,6 +19,7 @@
 
 import os
 import sys
+import shutil
 
 import tomlkit
 
@@ -72,7 +73,13 @@ class GlobalConfig:
             self._default_bootstrap_variant = cdata.get('DefaultBootstrapVariant', 'buildd')
             self._allow_unsafe_perms = cdata.get('AllowUnsafePermissions', False)
             self._cache_packages = bool(cdata.get('CachePackages', True))
-            self._bootstrap_tool = cdata.get('BootstrapTool', 'debootstrap')
+            self._bootstrap_tool = cdata.get('BootstrapTool', None)
+            if not self._bootstrap_tool:
+                # prefer mmdebstrap over debootstrap if it is available on this system
+                if shutil.which('mmdebstrap'):
+                    self._bootstrap_tool = 'mmdebstrap'
+                else:
+                    self._bootstrap_tool = 'debootstrap'
 
             self._syscall_filter = cdata.get('SyscallFilter', 'compat')
             if self._syscall_filter == 'compat':
