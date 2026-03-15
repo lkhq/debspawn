@@ -279,6 +279,7 @@ def command_run(options, custom_command):
         options.build_dir,
         options.artifacts_dir,
         boot=options.boot,
+        persistent=options.persistent,
         init_command=options.init_command,
         copy_command=options.external_commad,
         header_msg=options.header,
@@ -598,7 +599,7 @@ def create_parser(formatter_class=None):
     sp.set_defaults(func=command_login)
 
     # 'run' command
-    sp = subparsers.add_parser('run', help='Run arbitrary command in an ephemeral container')
+    sp = subparsers.add_parser('run', help='Run arbitrary command in the nspawn container')
     add_container_select_arguments(sp)
     sp.add_argument(
         '--artifacts-out',
@@ -675,6 +676,15 @@ def create_parser(formatter_class=None):
         action='store_true',
         dest='boot',
         help='Boot container image (requires the image to contain an init system).',
+    )
+    sp.add_argument(
+        '--persistent',
+        action='store_true',
+        dest='persistent',
+        help=(
+            'Make changes done by the command or script persistent, writing them back into the '
+            'container base image after the run completes.'
+        ),
     )
     sp.add_argument('command', action='store', nargs='*', default=None, help='The command to run.')
 

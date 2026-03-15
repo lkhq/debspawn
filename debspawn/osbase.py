@@ -962,6 +962,7 @@ class OSBase:
         build_dir,
         artifacts_dir,
         boot: bool = False,
+        persistent: bool = False,
         init_command=None,
         copy_command=False,
         header_msg=None,
@@ -973,6 +974,10 @@ class OSBase:
 
         if not self._load_existent():
             print_error('Can not run command in "{}": The base image does not exist.'.format(self.name))
+            return False
+
+        if persistent and self._cachekey:
+            print_error('Can not have a cache-key while also making changes persistent.')
             return False
 
         if len(command) <= 0:
@@ -1113,6 +1118,10 @@ class OSBase:
 
             # copy results to target directory
             self.retrieve_artifacts(os.path.join(instance_dir, 'srv', 'artifacts'), artifacts_dir)
+
+            if persistent:
+                print_section('Recreating tarball')
+                self.make_instance_permanent(instance_dir)
 
         print_info('Done.')
         return True
