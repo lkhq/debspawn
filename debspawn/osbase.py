@@ -303,7 +303,15 @@ class OSBase:
         return '{}-{}'.format(node_name_prefix, uniq_suffix)
 
     def _write_config_json(
-        self, mirror, components, extra_suites, extra_source_lines, *, allow_recommends: bool, with_init: bool
+        self,
+        mirror,
+        components,
+        extra_suites,
+        extra_source_lines,
+        extra_packages,
+        *,
+        allow_recommends: bool,
+        with_init: bool,
     ):
         '''
         Create configuration file for this container base image
@@ -328,6 +336,8 @@ class OSBase:
             data['ExtraSuites'] = extra_suites
         if extra_source_lines:
             data['ExtraSourceLines'] = extra_source_lines
+        if extra_packages:
+            data['ExtraPackages'] = extra_packages
         if allow_recommends:
             data['AllowRecommends'] = True
         if with_init:
@@ -459,6 +469,7 @@ class OSBase:
         *,
         extra_suites: list[str] = None,
         extra_source_lines: str = None,
+        extra_packages: list[str] = None,
         allow_recommends: bool = False,
         with_init: bool = False,
         show_header: bool = True,
@@ -498,6 +509,9 @@ class OSBase:
         include_pkgs = ['passwd', 'python3-minimal', 'eatmydata']
         if with_init:
             include_pkgs.append('systemd-sysv')
+        if extra_packages:
+            include_pkgs.extend(extra_packages)
+            print('Extra packages: {}'.format(', '.join(extra_packages)))
         cmd = [bootstrap_tool_exe, '--arch={}'.format(self.arch), '--include=' + ','.join(include_pkgs)]
         if components:
             cmd.append('--components={}'.format(','.join(components)))
@@ -648,6 +662,7 @@ class OSBase:
             components,
             extra_suites,
             extra_source_lines,
+            extra_packages,
             allow_recommends=allow_recommends,
             with_init=with_init,
         )
@@ -661,6 +676,7 @@ class OSBase:
         *,
         extra_suites: list[str] = None,
         extra_source_lines: str = None,
+        extra_packages: list[str] = None,
         allow_recommends: bool = False,
         with_init: bool = False,
     ):
@@ -676,6 +692,7 @@ class OSBase:
             components=components,
             extra_suites=extra_suites,
             extra_source_lines=extra_source_lines,
+            extra_packages=extra_packages,
             allow_recommends=allow_recommends,
             with_init=with_init,
             show_header=True,
@@ -829,6 +846,7 @@ class OSBase:
             components = cdata.get('Components')
             extra_suites = cdata.get('ExtraSuites', [])
             extra_source_lines = cdata.get('ExtraSourceLines')
+            extra_packages = cdata.get('ExtraPackages', [])
             allow_recommends = cdata.get('AllowRecommends', False)
             with_init = cdata.get('IncludesInit', False)
 
@@ -854,6 +872,7 @@ class OSBase:
                 components=components,
                 extra_suites=extra_suites,
                 extra_source_lines=extra_source_lines,
+                extra_packages=extra_packages,
                 allow_recommends=allow_recommends,
                 with_init=with_init,
                 show_header=False,

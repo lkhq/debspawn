@@ -93,6 +93,10 @@ def command_create(options):
     if options.extra_suites:
         extra_suites = options.extra_suites.strip().split(' ')
 
+    extra_packages = None
+    if options.extra_packages:
+        extra_packages = [p.strip() for p in options.extra_packages.split(',') if p.strip()]
+
     osbase = OSBase(
         gconf,
         options.suite,
@@ -106,6 +110,7 @@ def command_create(options):
         components,
         extra_suites=extra_suites,
         extra_source_lines=options.extra_source_lines,
+        extra_packages=extra_packages,
         allow_recommends=options.allow_recommends,
         with_init=options.with_init,
     )
@@ -444,6 +449,13 @@ def create_parser(formatter_class=None):
             'Do not disable APT installing "recommends"-type dependencies by default, and instead use '
             'the default behavior for full, normal system installations with "recommends" enabled.'
         ),
+    )
+    sp.add_argument(
+        '--extra-packages',
+        action='store',
+        dest='extra_packages',
+        default=None,
+        help='A comma-separated list of additional packages to install into the image during bootstrap.',
     )
     sp.add_argument(
         '--with-init',
