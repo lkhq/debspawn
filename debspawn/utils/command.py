@@ -60,8 +60,8 @@ def run_command(command, input=None):
     except OSError:
         return (None, None, -1)
 
-    (output, stderr) = pipe.communicate(input=input)
-    (output, stderr) = (c.decode('utf-8', errors='ignore') for c in (output, stderr))
+    output, stderr = pipe.communicate(input=input)
+    output, stderr = (c.decode('utf-8', errors='ignore') for c in (output, stderr))
     return (output, stderr, pipe.returncode)
 
 

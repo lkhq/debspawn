@@ -56,9 +56,7 @@ class DocbookEditor:
                                       {}
                                       </para>
                                  </listitem>
-                              </varlistentry>'''.format(
-                options_text, desc_text
-            )
+                              </varlistentry>'''.format(options_text, desc_text)
 
         self.add_substvar('{}_FLAGS_SYNOPSIS'.format(command_name.upper()), flags_text)
         self.add_substvar('{}_FLAGS_ENTRIES'.format(command_name.upper()), flags_entries)
