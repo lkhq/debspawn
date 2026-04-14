@@ -93,6 +93,15 @@
 			</varlistentry>
 
 			<varlistentry>
+				<term><option>exists</option></term>
+				<listitem>
+					<para>
+						Check whether a specific container image exists.
+					</para>
+				</listitem>
+			</varlistentry>
+
+			<varlistentry>
 				<term><option>delete</option></term>
 				<listitem>
 					<para>

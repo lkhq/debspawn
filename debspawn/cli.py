@@ -159,6 +159,24 @@ def command_list(options):
     print_container_base_image_info(gconf)
 
 
+def command_exists(options):
+    '''Check whether a container image exists'''
+
+    check_print_version(options)
+    if not options.name:
+        print_error('Need at least an image name to check for existence!')
+        sys.exit(1)
+    gconf = init_config(options)
+    osbase = OSBase(gconf, options.suite, options.arch, options.variant, custom_name=options.name)
+
+    if osbase.exists():
+        print('Image "{}" exists.'.format(osbase.name))
+        sys.exit(0)
+
+    print('Image "{}" does not exist.'.format(osbase.name))
+    sys.exit(4)
+
+
 def command_build(options):
     '''Build a package in a new volatile container'''
 
@@ -487,6 +505,11 @@ def create_parser(formatter_class=None):
     # 'list' command
     sp = subparsers.add_parser('list', help='List available container images', aliases=['ls'])
     sp.set_defaults(func=command_list)
+
+    # 'exists' command
+    sp = subparsers.add_parser('exists', help='Check whether a container image exists')
+    add_container_select_arguments(sp)
+    sp.set_defaults(func=command_exists)
 
     # 'build' command
     sp = subparsers.add_parser(
