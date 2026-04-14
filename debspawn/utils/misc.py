@@ -79,6 +79,25 @@ def systemd_escape(name: str) -> T.Optional[str]:
     return out.strip()
 
 
+def sanitize_command_list(command: list[T.Any] | str | None) -> list[str] | None:
+    """Sanitize a command list or string for execution, by splitting strings into lists and checking for validity."""
+    import shlex
+
+    if not command:
+        return None
+
+    if isinstance(command, str):
+        return shlex.split(command)
+
+    command_list = listify(command)
+    if len(command_list) == 1:
+        if isinstance(command_list[0], str):
+            return shlex.split(command_list[0])
+        raise ValueError(f'Command {command_list[0]} is not a valid command.')
+
+    return command_list
+
+
 @contextmanager
 def temp_dir(basename=None):
     '''Context manager for a temporary directory in debspawn's temp-dir location.

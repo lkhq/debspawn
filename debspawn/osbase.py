@@ -34,6 +34,7 @@ from .utils import (
     print_header,
     print_section,
     format_filesize,
+    sanitize_command_list,
 )
 from .config import GlobalConfig
 from .nspawn import nspawn_run_persist, nspawn_run_helper_persist
@@ -999,16 +1000,12 @@ class OSBase:
             print_error('Can not have a cache-key while also making changes persistent.')
             return False
 
-        if len(command) <= 0:
+        command = sanitize_command_list(command)
+        if not command:
             print_error('No command was given. Can not continue.')
             return False
 
-        if isinstance(init_command, str):
-            if init_command:
-                import shlex
-
-                init_command = shlex.split(init_command)
-        init_command = listify(init_command)
+        init_command = sanitize_command_list(init_command)
         allowed = listify(allowed)
         if bind_build_dir == 'n':
             bind_build_dir = None

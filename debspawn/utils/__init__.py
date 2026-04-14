@@ -25,6 +25,7 @@ from .misc import (
     systemd_escape,
     format_filesize,
     hardlink_or_copy,
+    sanitize_command_list,
 )
 from .command import safe_run, run_forwarded
 
@@ -37,6 +38,7 @@ __all__ = [
     'colored_output_allowed',
     'unicode_allowed',
     'safe_run',
+    'sanitize_command_list',
     'run_forwarded',
     'listify',
     'temp_dir',
