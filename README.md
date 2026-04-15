@@ -20,7 +20,7 @@ builds done elsewhere, or to develop a Debian package).
 Due to that, the most common operations are as easily accessible as possible and should require zero configuration
 by default. Additionally, `debspawn` will always try to do the right thing automatically before resorting to a flag
 that the user has to set.
-Options which change the build environment are - with one exception - not made available intentionally, so
+Options which change the build environment are - with few exceptions - not made available intentionally, so
 achieving reproducible builds is easier.
 See the FAQ below for more details.
 

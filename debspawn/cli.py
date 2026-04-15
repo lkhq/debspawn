@@ -231,6 +231,7 @@ def command_build(options):
             log_build=not options.no_buildlog,
             extra_dpkg_flags=buildflags,
             build_env=env_vars,
+            allow_network=options.allow_network,
         )
     else:
         r = build_from_dsc(
@@ -245,6 +246,7 @@ def command_build(options):
             log_build=not options.no_buildlog,
             extra_dpkg_flags=buildflags,
             build_env=env_vars,
+            allow_network=options.allow_network,
         )
     if not r:
         sys.exit(2)
@@ -587,6 +589,12 @@ def create_parser(formatter_class=None):
             'Run an interactive shell in the build environment after build. This implies `--no-buildlog` '
             'and disables the log.'
         ),
+    )
+    sp.add_argument(
+        '--allow-network',
+        action='store_true',
+        dest='allow_network',
+        help='Allow network access during the package build step (disabled by default).',
     )
     sp.add_argument(
         '-e',

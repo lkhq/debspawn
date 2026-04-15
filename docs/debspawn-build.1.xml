@@ -62,6 +62,10 @@
 			should copy back the changes made in the packages' <filename>debian/</filename> directory to the host to make them permanent.
 			Please keep in mind that while interactive mode is enabled, no build log can be created.
 		</para>
+		<para>
+			By default, network access is disabled during the untrusted package build step.
+			You can explicitly opt into network access with <option>--allow-network</option> if your build workflow requires it.
+		</para>
 	</refsect1>
 
 	<refsect1>

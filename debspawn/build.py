@@ -195,6 +195,7 @@ def internal_execute_build(
     source_pkg_dir=None,
     buildflags: list[str] = None,
     build_env: dict[str, str] = None,
+    allow_network: bool = False,
 ):
     '''Perform the actual build on an extracted package directory'''
     assert not build_only or isinstance(build_only, str)
@@ -258,7 +259,11 @@ def internal_execute_build(
                 return False
 
             # run the actual build. At this point, code is less trusted, and we disable network access.
-            nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir), '-u', 'builder', '--private-network']
+            nspawn_flags = ['--bind={}:/srv/build/'.format(pkg_dir), '-u', 'builder']
+            if not allow_network:
+                nspawn_flags.append('--private-network')
+            else:
+                print_warn('Network access for the package build step was enabled explicitly.')
             helper_flags = ['--build-run']
             helper_flags.extend(['--suite', osbase.suite])
             if buildflags:
@@ -425,6 +430,7 @@ def build_from_directory(
     log_build=True,
     extra_dpkg_flags: list[str] = None,
     build_env: dict[str, str] = None,
+    allow_network: bool = False,
 ):
     ensure_root()
     osbase.ensure_exists()
@@ -499,6 +505,7 @@ def build_from_directory(
             source_pkg_dir=pkg_dir,
             buildflags=buildflags,
             build_env=build_env,
+            allow_network=allow_network,
         )
 
         # copy build results
@@ -540,6 +547,7 @@ def build_from_dsc(
     log_build: bool = True,
     extra_dpkg_flags: Iterable[str] = None,
     build_env: dict[str, str] = None,
+    allow_network: bool = False,
 ):
     ensure_root()
     osbase.ensure_exists()
@@ -595,6 +603,7 @@ def build_from_dsc(
             interact=interact,
             buildflags=buildflags,
             build_env=build_env,
+            allow_network=allow_network,
         )
 
         # copy build results
