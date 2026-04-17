@@ -455,9 +455,13 @@ class OSBase:
                 if not first:
                     f.write('\n')
                 first = False
+                # Pin all listed suites at the same priority (500).
+                # This is just enough to override the NotAutomatic archive default (priority 1)
+                # for suites like experimental, while keeping equal footing with unlisted suites
+                # (e.g. trixie-security) that also sit at 500 by default. Equal priority means
+                # APT selects the highest available version across all suites, so security updates
+                # are never blocked by a hard preference for the target suite.
                 priority = 500
-                if suite == self.suite:
-                    priority = 600
                 f.write(('Package: *\n' 'Pin: release {}\n' 'Pin-Priority: {}\n').format(suite, priority))
 
                 # we *always* prefer locally injected packages above anything else
