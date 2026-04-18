@@ -2,26 +2,29 @@ Debspawn Release Notes
 
 1. Write NEWS entries for Debspawn in the same format as usual.
 
-git shortlog v0.6.4.. | grep -i -v trivial | grep -v Merge > NEWS.new
+git shortlog v0.6.5.. | grep -i -v trivial | grep -v Merge > NEWS.new
 
 --------------------------------------------------------------------------------
-Version 0.6.5
+Version 0.6.6
 ~~~~~~~~~~~~~
-Released: 2024-xx-xx
+Released: 2026-xx-xx
 
 Notes:
 
 Features:
 
 Bugfixes:
+
+Miscellaneous:
+
+Contributors:
 --------------------------------------------------------------------------------
 
 2. Commit changes in Git:
 
-git commit -a -m "Release version 0.6.5"
-git tag -s -f -m "Release 0.6.5" v0.6.5 <gpg password>
-git push --tags
-git push
+git commit -a -m "Release version 0.6.6"
+git tag -s -f -m "Release 0.6.6" v0.6.6 <gpg password>
+git push && git push --tags
 
 3. Upload to PyPI:
 
