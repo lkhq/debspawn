@@ -1,3 +1,24 @@
+Version 0.6.5
+~~~~~~~~~~~~~
+Released: 2026-04-18
+
+Features:
+ * Allow making persistent changes using the "run" command (Matthias Klumpp)
+ * Prefer mmdebstrap over debootstrap if available (Matthias Klumpp)
+ * Allow extra to-be-installed packages to be specified for bootstrap (Matthias Klumpp)
+ * Add "exists" subcommand for convenience (Matthias Klumpp)
+ * Add flag for network-enabled package builds (Matthias Klumpp)
+ * Allow running "run" commands as unprivileged users (Matthias Klumpp)
+
+Bugfixes:
+ * Fix package pinning when specifying a suite by its release codename (Darsey Litzenberger)
+ * Properly run multi-argument commands in debspawn-run (Matthias Klumpp)
+ * Make all suites in the container equal priority (Matthias Klumpp)
+ * When booted, run our command using machinectl, not systemd-run (Matthias Klumpp)
+
+Miscellaneous:
+ * Define dependencies in pyproject.toml only (Matthias Klumpp)
+
 Version 0.6.4
 ~~~~~~~~~~~~~
 Released: 2024-02-20
