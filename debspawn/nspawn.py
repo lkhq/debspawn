@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2018-2022 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2018-2026 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -18,6 +18,7 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shlex
 import typing as T
 import platform
 import subprocess
@@ -250,8 +251,8 @@ def nspawn_run_persist(
 
         if personality:
             params.append('--personality={}'.format(personality))
-        if run_user and run_user != 'root':
-            # Let nspawn execute the command directly as the selected container user.
+        if not boot and run_user and run_user != 'root':
+            # For non-booted containers, let nspawn execute the command as the selected user.
             params.append('--user={}'.format(run_user))
         params.extend(flags)
         params.extend(['-{}D'.format('' if verbose else 'q'), base_dir])
@@ -287,43 +288,51 @@ def nspawn_run_persist(
                 # the container is (hopefully) running now, but let's check for that
                 time_ac_start = time.time()
                 container_booted = False
+                probe_error = None
+                probe_fatal = False
                 while (time.time() - time_ac_start) < 60:
-                    scisr_out, _, _ = run_command(
-                        [
-                            'systemd-run',
-                            '-GP',
-                            '--wait',
-                            '-qM',
-                            machine_name,
-                            'systemctl',
-                            'is-system-running',
-                        ]
-                    )
+                    if ns_proc.poll() is not None:
+                        ret = ns_proc.returncode if ns_proc.returncode else 1
+                        print_error('Container exited before it finished booting (exit code {}).'.format(ret))
+                        container_booted = False
+                        break
 
-                    # check if we are actually running, try again later if not
-                    if scisr_out.strip() in ('running', 'degraded'):
+                    scisr_out, scisr_err, scisr_ret = run_command(
+                        ['machinectl', 'show', '--property=State', '--value', machine_name]
+                    )
+                    scisr_state = scisr_out.strip() if scisr_out else ''
+
+                    if scisr_ret != 0 and not scisr_state:
+                        if scisr_err:
+                            probe_error = scisr_err.strip()
+                        time.sleep(0.5)
+                        continue
+
+                    if scisr_state in ('opening', 'running'):
                         print()
                         container_booted = True
                         break
+                    if scisr_state == 'offline':
+                        # The container manager may not be reachable just yet.
+                        time.sleep(0.5)
+                        continue
                     time.sleep(0.5)
 
                 if container_booted:
-                    sdr_cmd = [
-                        'systemd-run',
-                        '-GP',
-                        '--wait',
-                        '-qM',
-                        machine_name,
-                        '--working-directory',
-                        chdir,
-                    ] + command
-                    if run_user and run_user != 'root':
-                        sdr_cmd.insert(-len(command), '--uid={}'.format(run_user))
-                    proc = run_forwarded(sdr_cmd)
+                    # Execute in the booted machine via machinectl to avoid relying on
+                    # systemd-run machine transport support.
+                    machine_target = '{}@{}'.format(run_user if run_user else 'root', machine_name)
+                    shell_cmd = 'cd {} && exec {}'.format(
+                        shlex.quote(chdir),
+                        ' '.join(shlex.quote(c) for c in command),
+                    )
+                    proc = run_forwarded(['machinectl', 'shell', machine_target, '/bin/sh', '-lc', shell_cmd])
                     ret = proc.returncode
-                else:
+                elif not probe_fatal and ns_proc.poll() is None:
                     ret = 7
                     print_error('Timed out while waiting for the container to boot.')
+                    if probe_error:
+                        print_error('Last boot probe error: {}'.format(probe_error))
             finally:
                 run_forwarded(['machinectl', 'poweroff', machine_name])
                 try:
