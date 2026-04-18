@@ -513,7 +513,7 @@ class OSBase:
 
         include_pkgs = ['passwd', 'python3-minimal', 'eatmydata']
         if with_init:
-            include_pkgs.append('systemd-sysv')
+            include_pkgs.extend(['systemd-sysv', 'login'])
         if extra_packages:
             include_pkgs.extend(extra_packages)
             print('Extra packages: {}'.format(', '.join(extra_packages)))
@@ -992,6 +992,7 @@ class OSBase:
         header_msg=None,
         bind_build_dir: T.Optional[str] = None,
         allowed: list[str] = None,
+        run_as: str = 'privileged',
     ):
         '''Run an arbitrary command or script in the container'''
         ensure_root()
@@ -1003,6 +1004,12 @@ class OSBase:
         if persistent and self._cachekey:
             print_error('Can not have a cache-key while also making changes persistent.')
             return False
+
+        if run_as not in ('privileged', 'unprivileged'):
+            print_error('Unknown user mode "{}". Expected "privileged" or "unprivileged".'.format(run_as))
+            return False
+
+        command_user = 'root' if run_as == 'privileged' else 'builder'
 
         command = sanitize_command_list(command)
         if not command:
@@ -1074,6 +1081,7 @@ class OSBase:
                     init_command,
                     init_nspawn_flags,
                     allowed=filtered_allowed,
+                    run_user=command_user,
                 )
                 if r != 0:
                     return False
@@ -1131,7 +1139,15 @@ class OSBase:
                         nspawn_flags.extend(['--bind-ro={}:/srv/build/'.format(build_dir)])
 
             r = nspawn_run_persist(
-                self, instance_dir, machine_name, chdir, command, nspawn_flags, allowed=allowed, boot=boot
+                self,
+                instance_dir,
+                machine_name,
+                chdir,
+                command,
+                nspawn_flags,
+                allowed=allowed,
+                boot=boot,
+                run_user=command_user,
             )
             if r != 0:
                 return False

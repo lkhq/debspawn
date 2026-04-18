@@ -310,6 +310,7 @@ def command_run(options, custom_command):
         header_msg=options.header,
         bind_build_dir=bind_build_dir,
         allowed=allowed,
+        run_as=options.run_as,
     )
     if not r:
         sys.exit(2)
@@ -727,6 +728,17 @@ def create_parser(formatter_class=None):
         help=(
             'Make changes done by the command or script persistent, writing them back into the '
             'container base image after the run completes.'
+        ),
+    )
+    sp.add_argument(
+        '--run-as',
+        action='store',
+        dest='run_as',
+        default='privileged',
+        choices=['privileged', 'unprivileged'],
+        help=(
+            'Run the command as root (`privileged`, default) or as the container\'s unprivileged '
+            '`builder` user (`unprivileged`).'
         ),
     )
     sp.add_argument('command', action='store', nargs='*', default=None, help='The command to run.')

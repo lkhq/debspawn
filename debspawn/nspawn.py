@@ -217,7 +217,16 @@ def nspawn_run_persist(
     private_users: bool = False,
     boot: bool = False,
     verbose: bool = False,
+    run_user: str = 'root',
 ):
+    if run_user not in ('root', 'builder'):
+        print_error(
+            'Invalid run user "{}". Only "root" (privileged) and "builder" (unprivileged) are supported.'.format(
+                run_user
+            )
+        )
+        return 1
+
     if isinstance(command, str):
         command = command.split(' ')
     elif not command:
@@ -241,6 +250,9 @@ def nspawn_run_persist(
 
         if personality:
             params.append('--personality={}'.format(personality))
+        if run_user and run_user != 'root':
+            # Let nspawn execute the command directly as the selected container user.
+            params.append('--user={}'.format(run_user))
         params.extend(flags)
         params.extend(['-{}D'.format('' if verbose else 'q'), base_dir])
 
@@ -305,6 +317,8 @@ def nspawn_run_persist(
                         '--working-directory',
                         chdir,
                     ] + command
+                    if run_user and run_user != 'root':
+                        sdr_cmd.insert(-len(command), '--uid={}'.format(run_user))
                     proc = run_forwarded(sdr_cmd)
                     ret = proc.returncode
                 else:
